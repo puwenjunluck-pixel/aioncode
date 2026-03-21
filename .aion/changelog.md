@@ -2,6 +2,13 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-21 23:30 | feat: initial commit — AionCode v0.3
+- 首次 git 提交，94 个文件入库
+- 排除 projects.json（含本地路径），加入 .gitignore
+- Commit: 251a3a5
+
+---
+
 ## 2026-03-21 22:00 | feat: Write Protocol + Dashboard 日志/帮助中心 + 升级机制重构
 
 ### Summary
