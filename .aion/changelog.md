@@ -2,6 +2,18 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-22 01:00 | feat: AionCode v0.4 — Python unified CLI rewrite
+- 将 install.sh/uninstall.sh/dashboard.py 合并为统一 Python CLI 包
+- 8 个子命令：init, install, upgrade, uninstall, dashboard, doctor, version, clean
+- 跨平台支持（pathlib + UTF-8 + Windows 长路径 + UAC）
+- rich 终端渲染，PyInstaller 单文件打包
+- GitHub Actions CI 四平台构建（macOS-arm64/x64, Linux-x64, Windows-x64）
+- 旧脚本 install.sh / uninstall.sh 标记 deprecated
+- 47 个文件新增，8460 行代码
+- Commit: d7bbd5c
+
+---
+
 ## 2026-03-21 23:30 | feat: initial commit — AionCode v0.3
 - 首次 git 提交，94 个文件入库
 - 排除 projects.json（含本地路径），加入 .gitignore
