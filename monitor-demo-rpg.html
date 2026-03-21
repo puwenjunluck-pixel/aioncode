@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AionCode Quest Log — RPG Agent Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Press Start 2P', monospace;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    font-size: 10px;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* ── Pixel border utility ── */
+  .pixel-border {
+    border: 3px solid #ffd700;
+    box-shadow:
+      0 0 0 3px #1a1a2e,
+      0 0 0 6px #ffd700,
+      inset 0 0 12px rgba(255, 215, 0, 0.05);
+  }
+
+  .pixel-border-blue {
+    border: 3px solid #4ecdc4;
+    box-shadow:
+      0 0 0 3px #1a1a2e,
+      0 0 0 6px #4ecdc4,
+      inset 0 0 12px rgba(78, 205, 196, 0.05);
+  }
+
+  .pixel-border-red {
+    border: 3px solid #ff6b6b;
+    box-shadow:
+      0 0 0 3px #1a1a2e,
+      0 0 0 6px #ff6b6b,
+      inset 0 0 12px rgba(255, 107, 107, 0.05);
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    margin: 12px;
+    background: #16213e;
+    border: 3px solid #ffd700;
+    box-shadow:
+      0 0 0 3px #1a1a2e,
+      0 0 0 6px #ffd700,
+      0 0 30px rgba(255, 215, 0, 0.15);
+  }
+
+  .header-title {
+    font-size: 16px;
+    color: #ffd700;
+    text-shadow: 2px 2px 0 #b8860b, 0 0 20px rgba(255, 215, 0, 0.4);
+    letter-spacing: 2px;
+  }
+
+  .header-title .blink {
+    animation: blink 1s step-end infinite;
+  }
+
+  .header-clock {
+    font-size: 11px;
+    color: #4ecdc4;
+    text-shadow: 0 0 8px rgba(78, 205, 196, 0.5);
+  }
+
+  .header-level {
+    font-size: 12px;
+    color: #a8e6cf;
+    text-shadow: 0 0 8px rgba(168, 230, 207, 0.4);
+  }
+
+  .header-level .lvl-num {
+    color: #ffd700;
+    font-size: 18px;
+  }
+
+  /* ── Stats Bar (Character Sheet) ── */
+  .stats-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 12px 24px;
+    margin: 0 12px 12px;
+    background: #16213e;
+    border: 2px solid #4ecdc4;
+    box-shadow: 0 0 0 2px #1a1a2e, 0 0 0 4px #4ecdc4;
+    flex-wrap: wrap;
+  }
+
+  .stat-item {
+    font-size: 9px;
+    color: #e0e0e0;
+  }
+
+  .stat-item .stat-label { color: #a8e6cf; }
+  .stat-item .stat-value { color: #ffd700; }
+  .stat-item .stat-value-red { color: #ff6b6b; }
+  .stat-item .stat-value-blue { color: #4ecdc4; }
+
+  /* ── Main Layout ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 0 12px 12px;
+  }
+
+  /* ── Panel Shared ── */
+  .panel {
+    background: #16213e;
+    padding: 16px;
+  }
+
+  .panel-title {
+    font-size: 12px;
+    color: #ffd700;
+    margin-bottom: 14px;
+    text-shadow: 1px 1px 0 #b8860b;
+    border-bottom: 2px dashed #ffd70044;
+    padding-bottom: 8px;
+  }
+
+  .panel-title .icon { margin-right: 8px; }
+
+  /* ── Party Panel (Left) ── */
+  .hero-card {
+    background: #0f3460;
+    padding: 14px;
+    margin-bottom: 14px;
+    border: 2px solid #ffd700;
+    box-shadow: 0 0 0 2px #16213e, 0 0 0 4px #ffd700;
+  }
+
+  .hero-name {
+    font-size: 11px;
+    color: #ffd700;
+    margin-bottom: 4px;
+  }
+
+  .hero-class {
+    font-size: 8px;
+    color: #a8e6cf;
+    margin-bottom: 10px;
+  }
+
+  .hero-task {
+    font-size: 8px;
+    color: #e0e0e0;
+    margin-bottom: 8px;
+    line-height: 1.6;
+  }
+
+  .hero-task .file { color: #4ecdc4; }
+
+  /* ── XP / HP Bars ── */
+  .bar-container {
+    margin-bottom: 8px;
+  }
+
+  .bar-label {
+    font-size: 7px;
+    color: #a8e6cf;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .bar-track {
+    display: flex;
+    gap: 2px;
+    height: 14px;
+  }
+
+  .bar-segment {
+    flex: 1;
+    background: #1a1a2e;
+    border: 1px solid #333;
+    transition: background 0.3s;
+  }
+
+  .bar-segment.filled-gold { background: #ffd700; border-color: #b8860b; box-shadow: 0 0 4px rgba(255, 215, 0, 0.4); }
+  .bar-segment.filled-green { background: #a8e6cf; border-color: #6dbb9a; box-shadow: 0 0 4px rgba(168, 230, 207, 0.3); }
+  .bar-segment.filled-red { background: #ff6b6b; border-color: #cc5555; box-shadow: 0 0 4px rgba(255, 107, 107, 0.3); }
+  .bar-segment.filled-blue { background: #4ecdc4; border-color: #3aa89e; box-shadow: 0 0 4px rgba(78, 205, 196, 0.3); }
+
+  /* ── Party Members Grid ── */
+  .party-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  .member-card {
+    background: #0f3460;
+    padding: 10px;
+    border: 2px solid #4ecdc4;
+    box-shadow: 0 0 0 2px #16213e, 0 0 0 4px #4ecdc4;
+    text-align: center;
+    position: relative;
+    min-height: 130px;
+  }
+
+  .member-card.status-done {
+    border-color: #a8e6cf;
+    box-shadow: 0 0 0 2px #16213e, 0 0 0 4px #a8e6cf, 0 0 12px rgba(168, 230, 207, 0.2);
+  }
+
+  .member-card.status-error {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 0 2px #16213e, 0 0 0 4px #ff6b6b, 0 0 12px rgba(255, 107, 107, 0.2);
+  }
+
+  .member-sprite {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  .member-name {
+    font-size: 7px;
+    color: #ffd700;
+    margin-bottom: 2px;
+  }
+
+  .member-class {
+    font-size: 6px;
+    color: #4ecdc4;
+    margin-bottom: 6px;
+  }
+
+  .member-status {
+    font-size: 6px;
+    padding: 2px 6px;
+    display: inline-block;
+    margin-bottom: 6px;
+  }
+
+  .member-status.working {
+    background: #4ecdc422;
+    color: #4ecdc4;
+    border: 1px solid #4ecdc4;
+  }
+
+  .member-status.done {
+    background: #a8e6cf22;
+    color: #a8e6cf;
+    border: 1px solid #a8e6cf;
+  }
+
+  .member-status.error {
+    background: #ff6b6b22;
+    color: #ff6b6b;
+    border: 1px solid #ff6b6b;
+    animation: pulse-red 1.5s ease-in-out infinite;
+  }
+
+  .member-task {
+    font-size: 6px;
+    color: #e0e0e0;
+    line-height: 1.6;
+    word-break: break-all;
+  }
+
+  .ko-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-12deg);
+    font-size: 18px;
+    color: #ff6b6b;
+    text-shadow: 2px 2px 0 #990000;
+    animation: shake 0.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .levelup-flash {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 6px;
+    color: #ffd700;
+    background: #1a1a2e;
+    padding: 2px 6px;
+    border: 2px solid #ffd700;
+    animation: levelup 1.2s ease-in-out infinite;
+    z-index: 2;
+  }
+
+  /* ── Quest Log (Right) ── */
+  .quest-log {
+    max-height: 520px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ffd700 #1a1a2e;
+  }
+
+  .quest-log::-webkit-scrollbar { width: 8px; }
+  .quest-log::-webkit-scrollbar-track { background: #1a1a2e; }
+  .quest-log::-webkit-scrollbar-thumb { background: #ffd700; border: 1px solid #1a1a2e; }
+
+  .quest-entry {
+    display: flex;
+    gap: 10px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: #0f346022;
+    border-left: 3px solid #4ecdc4;
+    animation: fadeSlideIn 0.4s ease-out;
+  }
+
+  .quest-entry.complete { border-left-color: #a8e6cf; }
+  .quest-entry.failed { border-left-color: #ff6b6b; }
+  .quest-entry.active { border-left-color: #ffd700; background: #0f346044; }
+
+  .quest-time {
+    font-size: 6px;
+    color: #4ecdc4;
+    min-width: 55px;
+    padding-top: 2px;
+  }
+
+  .quest-body {
+    flex: 1;
+  }
+
+  .quest-title {
+    font-size: 7px;
+    color: #ffd700;
+    margin-bottom: 2px;
+  }
+
+  .quest-desc {
+    font-size: 6px;
+    color: #a0a0a0;
+    line-height: 1.6;
+  }
+
+  .quest-reward {
+    font-size: 6px;
+    color: #a8e6cf;
+    margin-top: 2px;
+  }
+
+  .quest-status-badge {
+    font-size: 6px;
+    padding: 1px 5px;
+    margin-left: 6px;
+  }
+
+  .quest-status-badge.complete { color: #a8e6cf; border: 1px solid #a8e6cf; }
+  .quest-status-badge.active { color: #ffd700; border: 1px solid #ffd700; animation: blink 1.5s step-end infinite; }
+  .quest-status-badge.failed { color: #ff6b6b; border: 1px solid #ff6b6b; }
+
+  /* ── Guild Section ── */
+  .guild-section {
+    margin: 0 12px 12px;
+    background: #16213e;
+    padding: 16px;
+  }
+
+  .guild-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .guild-role {
+    background: #0f3460;
+    padding: 12px;
+    text-align: center;
+    border: 2px solid #ffd70066;
+    box-shadow: 0 0 0 2px #16213e, 0 0 0 4px #ffd70066;
+    transition: all 0.3s;
+  }
+
+  .guild-role:hover {
+    border-color: #ffd700;
+    box-shadow: 0 0 0 2px #16213e, 0 0 0 4px #ffd700, 0 0 20px rgba(255, 215, 0, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .guild-sprite { font-size: 28px; margin-bottom: 6px; }
+  .guild-name { font-size: 8px; color: #ffd700; margin-bottom: 2px; }
+  .guild-desc { font-size: 6px; color: #a0a0a0; line-height: 1.6; }
+  .guild-stat { font-size: 6px; color: #4ecdc4; margin-top: 6px; }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    padding: 12px;
+    font-size: 7px;
+    color: #555;
+  }
+
+  .footer a { color: #ffd700; text-decoration: none; }
+
+  /* ── Animations ── */
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes levelup {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.15); text-shadow: 0 0 8px #ffd700; }
+  }
+
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 0 2px #16213e, 0 0 0 4px #ff6b6b; }
+    50% { box-shadow: 0 0 0 2px #16213e, 0 0 0 4px #ff6b6b, 0 0 18px rgba(255, 107, 107, 0.4); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translate(-50%, -50%) rotate(-12deg); }
+    25% { transform: translate(-48%, -52%) rotate(-14deg); }
+    75% { transform: translate(-52%, -48%) rotate(-10deg); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+
+  .float-anim { animation: float 2s ease-in-out infinite; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .guild-grid { grid-template-columns: 1fr 1fr; }
+    .party-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════ HEADER ════════ -->
+<div class="header pixel-border">
+  <div class="header-title">
+    <span class="blink">></span> AIONCODE QUEST LOG
+  </div>
+  <div class="header-level">
+    LV <span class="lvl-num" id="heroLevel">12</span> &nbsp; IMPLEMENT PHASE
+  </div>
+  <div class="header-clock" id="clock">00:00:00</div>
+</div>
+
+<!-- ════════ STATS BAR ════════ -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <span class="stat-label">ATK:</span>
+    <span class="stat-value" id="statAtk">47</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-label">DEF:</span>
+    <span class="stat-value-blue" id="statDef">12 rules</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-label">HP:</span>
+    <span class="stat-value" id="statHp">84.2K / 100K</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-label">MP:</span>
+    <span class="stat-value-blue" id="statMp">42.1K</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-label">GOLD:</span>
+    <span class="stat-value" id="statGold">$2.53</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-label">EXP:</span>
+    <span class="stat-value" id="statExp">3,847</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-label">KILLS:</span>
+    <span class="stat-value-red" id="statKills">0 bugs</span>
+  </div>
+</div>
+
+<!-- ════════ MAIN GRID ════════ -->
+<div class="main-grid">
+
+  <!-- ──── LEFT: PARTY ──── -->
+  <div class="panel pixel-border">
+    <div class="panel-title"><span class="icon">⚔️</span>PARTY</div>
+
+    <!-- Hero Card -->
+    <div class="hero-card">
+      <div class="hero-name">⚡ AIONCODE — HERO</div>
+      <div class="hero-class">Class: Orchestrator &nbsp;|&nbsp; Phase: Implement</div>
+      <div class="hero-task">
+        Working on <span class="file">auth/middleware.py</span> — Step 3/7
+      </div>
+
+      <!-- XP Bar -->
+      <div class="bar-container">
+        <div class="bar-label">
+          <span>XP — Plan Progress</span>
+          <span id="heroXpPct">43%</span>
+        </div>
+        <div class="bar-track" id="heroXpBar">
+          <div class="bar-segment filled-gold"></div>
+          <div class="bar-segment filled-gold"></div>
+          <div class="bar-segment filled-gold"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+        </div>
+      </div>
+
+      <!-- HP Bar (token usage) -->
+      <div class="bar-container">
+        <div class="bar-label">
+          <span>HP — Token Budget</span>
+          <span id="heroHpPct">84%</span>
+        </div>
+        <div class="bar-track" id="heroHpBar">
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+        </div>
+      </div>
+
+      <!-- MP Bar (cost) -->
+      <div class="bar-container">
+        <div class="bar-label">
+          <span>MP — Budget Remaining</span>
+          <span id="heroMpPct">75%</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Party Members Grid -->
+    <div class="party-grid">
+
+      <!-- RANGER-1 -->
+      <div class="member-card">
+        <div class="member-sprite float-anim">🏹</div>
+        <div class="member-name">RANGER-1</div>
+        <div class="member-class">Scout / File Reader</div>
+        <div class="member-status working">WORKING</div>
+        <div class="member-task">Reading config.yaml</div>
+        <div class="bar-track" style="margin-top:6px">
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+        </div>
+      </div>
+
+      <!-- WARRIOR-1 -->
+      <div class="member-card">
+        <div class="member-sprite float-anim">⚔️</div>
+        <div class="member-name">WARRIOR-1</div>
+        <div class="member-class">Builder / Writer</div>
+        <div class="member-status working">WORKING</div>
+        <div class="member-task">Writing auth/jwt.py</div>
+        <div class="bar-track" style="margin-top:6px">
+          <div class="bar-segment filled-gold"></div>
+          <div class="bar-segment filled-gold"></div>
+          <div class="bar-segment filled-gold"></div>
+          <div class="bar-segment filled-gold"></div>
+          <div class="bar-segment"></div>
+        </div>
+      </div>
+
+      <!-- RANGER-2 -->
+      <div class="member-card status-done">
+        <div class="levelup-flash">LEVEL UP!</div>
+        <div class="member-sprite">🗺️</div>
+        <div class="member-name">RANGER-2</div>
+        <div class="member-class">Scout / Grep</div>
+        <div class="member-status done">COMPLETE</div>
+        <div class="member-task">Found 12 matches</div>
+        <div class="bar-track" style="margin-top:6px">
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+          <div class="bar-segment filled-green"></div>
+        </div>
+      </div>
+
+      <!-- MAGE-1 -->
+      <div class="member-card">
+        <div class="member-sprite float-anim">🔮</div>
+        <div class="member-name">MAGE-1</div>
+        <div class="member-class">Reviewer / Analyst</div>
+        <div class="member-status working">WORKING</div>
+        <div class="member-task">Reviewing diff +47/-3</div>
+        <div class="bar-track" style="margin-top:6px">
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+        </div>
+      </div>
+
+      <!-- WARRIOR-2 -->
+      <div class="member-card status-error">
+        <div class="ko-overlay">K.O.</div>
+        <div class="member-sprite">💀</div>
+        <div class="member-name">WARRIOR-2</div>
+        <div class="member-class">Builder / Bash</div>
+        <div class="member-status error">ERROR</div>
+        <div class="member-task">Exit code 1</div>
+        <div class="bar-track" style="margin-top:6px">
+          <div class="bar-segment filled-red"></div>
+          <div class="bar-segment filled-red"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+        </div>
+      </div>
+
+      <!-- RANGER-3 -->
+      <div class="member-card">
+        <div class="member-sprite float-anim">🦅</div>
+        <div class="member-name">RANGER-3</div>
+        <div class="member-class">Scout / Glob</div>
+        <div class="member-status working">WORKING</div>
+        <div class="member-task">Scanning **/*.py</div>
+        <div class="bar-track" style="margin-top:6px">
+          <div class="bar-segment filled-blue"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+          <div class="bar-segment"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ──── RIGHT: QUEST LOG ──── -->
+  <div class="panel pixel-border-blue">
+    <div class="panel-title"><span class="icon">📜</span>QUEST LOG</div>
+    <div class="quest-log" id="questLog">
+      <!-- Initial quests populated by JS -->
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════ GUILD SECTION ════════ -->
+<div class="guild-section pixel-border">
+  <div class="panel-title"><span class="icon">🏰</span>GUILD — AGENT TEAM</div>
+  <div class="guild-grid">
+    <div class="guild-role">
+      <div class="guild-sprite">🧙</div>
+      <div class="guild-name">ARCHITECT</div>
+      <div class="guild-desc">System design, API specs, architecture decisions</div>
+      <div class="guild-stat">Gemini 2.5 Pro &nbsp;|&nbsp; 3 quests done</div>
+    </div>
+    <div class="guild-role">
+      <div class="guild-sprite">⚒️</div>
+      <div class="guild-name">DEVELOPER</div>
+      <div class="guild-desc">Code implementation, file writes, bash commands</div>
+      <div class="guild-stat">Claude Opus 4 &nbsp;|&nbsp; 12 quests done</div>
+    </div>
+    <div class="guild-role">
+      <div class="guild-sprite">🔍</div>
+      <div class="guild-name">REVIEWER</div>
+      <div class="guild-desc">Code review, bug detection, quality gates</div>
+      <div class="guild-stat">Claude Sonnet 4 &nbsp;|&nbsp; 5 quests done</div>
+    </div>
+    <div class="guild-role">
+      <div class="guild-sprite">📋</div>
+      <div class="guild-name">PM</div>
+      <div class="guild-desc">Requirements gathering, plan tracking, user comms</div>
+      <div class="guild-stat">GPT-4.1 &nbsp;|&nbsp; 7 quests done</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ FOOTER ════════ -->
+<div class="footer">
+  AIONCODE v0.1 &nbsp;|&nbsp; PIXEL QUEST MONITOR &nbsp;|&nbsp;
+  SAVE POINT: <span id="saveTime">--:--</span>
+</div>
+
+<script>
+  // ── Clock ──
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('clock').textContent = h + ':' + m + ':' + s;
+    document.getElementById('saveTime').textContent = h + ':' + m;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ── Quest Log Data ──
+  const questTemplates = [
+    { title: 'Quest: Read auth.py', desc: 'Scouted enemy territory — 142 lines analyzed', reward: '+15 EXP', status: 'complete', agent: 'RANGER-1' },
+    { title: 'Quest: Write jwt_handler.py', desc: 'Forged new weapon — JWT token generation module', reward: '+30 EXP, +1 ATK', status: 'complete', agent: 'WARRIOR-1' },
+    { title: 'Quest: Grep for "password"', desc: 'Searched 847 files across the realm', reward: '+8 EXP', status: 'complete', agent: 'RANGER-2' },
+    { title: 'Quest: Review middleware.py', desc: 'Mage analysis — found 2 vulnerabilities', reward: '+20 EXP, +2 DEF', status: 'complete', agent: 'MAGE-1' },
+    { title: 'Quest: Run pytest', desc: 'Battle commenced — 14 tests engaged', reward: '+25 EXP', status: 'failed', agent: 'WARRIOR-2' },
+    { title: 'Quest: Edit config.yaml', desc: 'Enchanting configuration scrolls', reward: '+12 EXP', status: 'active', agent: 'WARRIOR-1' },
+    { title: 'Quest: Scan models/', desc: 'Cartography — mapping 23 model files', reward: '+10 EXP', status: 'complete', agent: 'RANGER-3' },
+    { title: 'Quest: Write auth/session.py', desc: 'Crafting session management armor', reward: '+35 EXP, +2 DEF', status: 'active', agent: 'WARRIOR-1' },
+    { title: 'Quest: Read requirements.txt', desc: 'Inventory check — 47 dependencies catalogued', reward: '+5 EXP', status: 'complete', agent: 'RANGER-1' },
+    { title: 'Quest: Analyze error logs', desc: 'Divination spell cast on stack traces', reward: '+18 EXP', status: 'complete', agent: 'MAGE-1' },
+    { title: 'Quest: Write migration 003', desc: 'Building new dungeon floor — users table', reward: '+28 EXP', status: 'complete', agent: 'WARRIOR-1' },
+    { title: 'Quest: Glob **/*.test.py', desc: 'Scout mission — located 31 test scrolls', reward: '+7 EXP', status: 'complete', agent: 'RANGER-3' },
+    { title: 'Quest: Review PR #42', desc: 'Council review — 3 comments, 1 approval', reward: '+22 EXP, +1 DEF', status: 'complete', agent: 'MAGE-1' },
+    { title: 'Quest: Write validators.py', desc: 'Forging input validation shields', reward: '+32 EXP, +3 DEF', status: 'active', agent: 'WARRIOR-1' },
+    { title: 'Quest: Bash: npm install', desc: 'Summoning node_modules from the void', reward: '+5 EXP', status: 'complete', agent: 'WARRIOR-2' },
+    { title: 'Quest: Read .env.example', desc: 'Deciphering ancient configuration runes', reward: '+6 EXP', status: 'complete', agent: 'RANGER-1' },
+    { title: 'Quest: Design API schema', desc: 'Architect blueprints for /api/v2 realm', reward: '+40 EXP, +3 ATK', status: 'complete', agent: 'ARCHITECT' },
+    { title: 'Quest: Write rate_limiter.py', desc: 'Constructing castle gate defenses', reward: '+30 EXP, +4 DEF', status: 'active', agent: 'WARRIOR-1' },
+    { title: 'Quest: Grep TODO/FIXME', desc: 'Bounty board scan — 23 open bounties found', reward: '+10 EXP', status: 'complete', agent: 'RANGER-2' },
+    { title: 'Quest: Run type-check', desc: 'Casting detect-magic on all source files', reward: '+15 EXP', status: 'active', agent: 'MAGE-1' },
+  ];
+
+  // Time offset for quest timestamps
+  const baseTime = Date.now() - (questTemplates.length * 3000);
+
+  function formatTime(ts) {
+    const d = new Date(ts);
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    return h + ':' + m + ':' + s;
+  }
+
+  function createQuestHTML(quest, time) {
+    const statusClass = quest.status === 'complete' ? 'complete' : quest.status === 'failed' ? 'failed' : 'active';
+    const badgeLabel = quest.status === 'complete' ? 'COMPLETE!' : quest.status === 'failed' ? 'FAILED' : 'ACTIVE...';
+    return `
+      <div class="quest-entry ${statusClass}">
+        <div class="quest-time">${formatTime(time)}</div>
+        <div class="quest-body">
+          <div class="quest-title">
+            ${quest.title}
+            <span class="quest-status-badge ${statusClass}">${badgeLabel}</span>
+          </div>
+          <div class="quest-desc">${quest.desc} [${quest.agent}]</div>
+          <div class="quest-reward">${quest.reward}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Initialize Quest Log with first 6 entries ──
+  const questLog = document.getElementById('questLog');
+  let questIndex = 0;
+  const shownCount = 6;
+
+  for (let i = 0; i < shownCount && i < questTemplates.length; i++) {
+    const time = baseTime + (i * 3000);
+    questLog.innerHTML = createQuestHTML(questTemplates[i], time) + questLog.innerHTML;
+    questIndex = i + 1;
+  }
+
+  // ── Add new quest every 3 seconds ──
+  setInterval(() => {
+    if (questIndex >= questTemplates.length) {
+      questIndex = 0; // loop
+    }
+    const quest = questTemplates[questIndex];
+    const time = Date.now();
+
+    const entryHTML = createQuestHTML(quest, time);
+    questLog.insertAdjacentHTML('afterbegin', entryHTML);
+
+    // Keep max 15 entries visible
+    while (questLog.children.length > 15) {
+      questLog.removeChild(questLog.lastChild);
+    }
+
+    questIndex++;
+
+    // Update stats randomly
+    updateStats();
+  }, 3000);
+
+  // ── Dynamic Stats Update ──
+  let totalExp = 3847;
+  let totalGold = 2.53;
+  let kills = 0;
+  let atk = 47;
+  let level = 12;
+
+  function updateStats() {
+    const expGain = Math.floor(Math.random() * 25) + 5;
+    totalExp += expGain;
+    document.getElementById('statExp').textContent = totalExp.toLocaleString();
+
+    const costGain = parseFloat((Math.random() * 0.08 + 0.01).toFixed(3));
+    totalGold += costGain;
+    document.getElementById('statGold').textContent = '$' + totalGold.toFixed(2);
+
+    // Random ATK increase
+    if (Math.random() > 0.7) {
+      atk++;
+      document.getElementById('statAtk').textContent = atk;
+    }
+
+    // Random bug kill
+    if (Math.random() > 0.85) {
+      kills++;
+      document.getElementById('statKills').textContent = kills + (kills === 1 ? ' bug' : ' bugs');
+    }
+
+    // Level up check
+    if (totalExp > (level * 500)) {
+      level++;
+      document.getElementById('heroLevel').textContent = level;
+      flashLevelUp();
+    }
+
+    // Update HP (token usage — slowly decrease)
+    const hpPct = Math.max(20, 84 - (totalExp - 3847) * 0.005);
+    document.getElementById('heroHpPct').textContent = Math.round(hpPct) + '%';
+    document.getElementById('statHp').textContent =
+      (hpPct / 100 * 100).toFixed(1) + 'K / 100K';
+
+    // Randomly advance XP bar segments
+    if (Math.random() > 0.6) {
+      const xpBar = document.getElementById('heroXpBar');
+      const segs = xpBar.querySelectorAll('.bar-segment');
+      for (let i = 0; i < segs.length; i++) {
+        if (!segs[i].classList.contains('filled-gold')) {
+          segs[i].classList.add('filled-gold');
+          const pct = Math.round(((i + 1) / segs.length) * 100);
+          document.getElementById('heroXpPct').textContent = pct + '%';
+          break;
+        }
+      }
+    }
+  }
+
+  // ── Level Up Flash ──
+  function flashLevelUp() {
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 36px;
+      color: #ffd700;
+      text-shadow: 3px 3px 0 #b8860b, 0 0 40px rgba(255, 215, 0, 0.8);
+      z-index: 9999;
+      animation: levelup 0.8s ease-in-out;
+      pointer-events: none;
+    `;
+    flash.textContent = 'LEVEL UP!';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 1500);
+  }
+
+  // ── Cycle member statuses for life ──
+  const memberCards = document.querySelectorAll('.member-card');
+  setInterval(() => {
+    // Randomly toggle a working member's progress bar
+    memberCards.forEach(card => {
+      if (card.classList.contains('status-error')) return;
+      const bars = card.querySelectorAll('.bar-segment');
+      if (Math.random() > 0.5) {
+        for (let i = 0; i < bars.length; i++) {
+          const filled = bars[i].classList.contains('filled-blue') ||
+                         bars[i].classList.contains('filled-gold') ||
+                         bars[i].classList.contains('filled-green');
+          if (!filled) {
+            const colors = ['filled-blue', 'filled-gold', 'filled-green'];
+            // Use existing color from previous segment or default
+            const prevColor = i > 0 ? (bars[i-1].classList.contains('filled-gold') ? 'filled-gold' :
+                              bars[i-1].classList.contains('filled-green') ? 'filled-green' : 'filled-blue') : 'filled-blue';
+            bars[i].classList.add(prevColor);
+            break;
+          }
+        }
+      }
+    });
+  }, 2000);
+
+  // ── Party member status cycling ──
+  const statusCycle = ['working', 'working', 'working', 'done'];
+  setInterval(() => {
+    memberCards.forEach(card => {
+      if (card.classList.contains('status-error') || card.classList.contains('status-done')) return;
+      if (Math.random() > 0.8) {
+        const statusEl = card.querySelector('.member-status');
+        if (statusEl && statusEl.classList.contains('working')) {
+          // Sometimes complete a task
+          if (Math.random() > 0.6) {
+            statusEl.classList.remove('working');
+            statusEl.classList.add('done');
+            statusEl.textContent = 'COMPLETE';
+            card.classList.add('status-done');
+
+            // Add level up flash
+            const luf = document.createElement('div');
+            luf.className = 'levelup-flash';
+            luf.textContent = 'LEVEL UP!';
+            card.appendChild(luf);
+
+            // Reset after 5 seconds
+            setTimeout(() => {
+              statusEl.classList.remove('done');
+              statusEl.classList.add('working');
+              statusEl.textContent = 'WORKING';
+              card.classList.remove('status-done');
+              if (luf.parentNode) luf.remove();
+
+              // Reset progress bar
+              const bars = card.querySelectorAll('.bar-segment');
+              bars.forEach(b => {
+                b.classList.remove('filled-blue', 'filled-gold', 'filled-green');
+              });
+            }, 5000);
+          }
+        }
+      }
+    });
+  }, 4000);
+</script>
+
+</body>
+</html>
