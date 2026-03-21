@@ -12,6 +12,15 @@ Thumbs.db
 # Node (if any tooling is added later)
 node_modules/
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.spec.bak
+
 # AionCode runtime files (not project intelligence)
 .aion/monitor/events.jsonl
 .aion/sessions.jsonl

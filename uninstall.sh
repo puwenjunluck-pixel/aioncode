@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# DEPRECATED: This script is deprecated in favor of the unified Python CLI.
+# Use `aioncode uninstall` instead. See: https://github.com/puwenjunluck-pixel/aioncode
+#
 # AionCode uninstaller — safely removes AionCode from your project
 # Does NOT remove .aion/ (your rules and docs are valuable!)
 # Usage: bash uninstall.sh [target-dir]

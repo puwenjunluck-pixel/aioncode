@@ -1,0 +1,21 @@
+# AionCode Project Configuration
+# Docs: https://github.com/user/aioncode
+
+version: "0.3"
+
+rules:
+  # Maximum rules per category before suggesting consolidation
+  max_per_category: 30
+
+workflow:
+  # Recommended phase order (not enforced)
+  phases:
+    - design
+    - demo      # optional: generate interactive HTML prototypes
+    - plan
+    - impl
+    - test      # optional: generate tests
+    - verify
+    - review
+    - learn
+    - commit

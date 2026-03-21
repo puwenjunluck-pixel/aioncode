@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# DEPRECATED: This script is deprecated in favor of the unified Python CLI.
+# Use `aioncode init` instead. See: https://github.com/puwenjunluck-pixel/aioncode
+#
 # AionCode installer — copies commands and scaffolding to your project
 # Usage: bash install.sh [target-dir]
 #        bash install.sh --check [target-dir]
