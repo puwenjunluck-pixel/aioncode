@@ -10,7 +10,6 @@ from aioncode.utils.console import (
     banner,
     confirm,
     error,
-    file_table,
     header,
     info,
     install_report,
@@ -19,11 +18,9 @@ from aioncode.utils.console import (
     warning,
 )
 from aioncode.utils.integrity import (
-    compare_template,
     merge_claude_md,
 )
 from aioncode.utils.platform import open_utf8, resolve_path
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -31,20 +28,49 @@ from aioncode.utils.platform import open_utf8, resolve_path
 
 # Directories to scaffold (always create if missing)
 SCAFFOLD_DIRS = [
-    "refs", "prototypes", "specs", "plans", "reviews", "contracts",
-    "monitor", "tests", "tests/reports", "tests/perf", "tests/ui", "bugs",
+    "refs",
+    "prototypes",
+    "specs",
+    "plans",
+    "reviews",
+    "contracts",
+    "monitor",
+    "tests",
+    "tests/reports",
+    "tests/perf",
+    "tests/ui",
+    "bugs",
 ]
 
 # Source code file extensions for project type detection
 SOURCE_EXTENSIONS = {
-    ".ts", ".js", ".py", ".go", ".java", ".vue", ".tsx", ".jsx",
-    ".rb", ".rs", ".kt", ".swift", ".cs", ".cpp", ".c", ".php",
+    ".ts",
+    ".js",
+    ".py",
+    ".go",
+    ".java",
+    ".vue",
+    ".tsx",
+    ".jsx",
+    ".rb",
+    ".rs",
+    ".kt",
+    ".swift",
+    ".cs",
+    ".cpp",
+    ".c",
+    ".php",
 }
 
 # Existing doc patterns to suggest importing
 DOC_PATTERNS = [
-    "docs/architecture.md", "docs/ARCHITECTURE.md", "ARCHITECTURE.md",
-    "docs/api.md", "docs/API.md", "DESIGN.md", "docs/design.md",
+    "docs/architecture.md",
+    "docs/ARCHITECTURE.md",
+    "ARCHITECTURE.md",
+    "docs/api.md",
+    "docs/API.md",
+    "DESIGN.md",
+    "docs/design.md",
 ]
 
 # .gitignore entries AionCode needs
@@ -57,6 +83,7 @@ GITIGNORE_ENTRIES = [
 # ---------------------------------------------------------------------------
 # Template resolution
 # ---------------------------------------------------------------------------
+
 
 def _get_templates_dir() -> Path:
     """Locate the bundled templates directory."""
@@ -88,6 +115,7 @@ def _get_commands_dir() -> Path:
 # ---------------------------------------------------------------------------
 # Project detection
 # ---------------------------------------------------------------------------
+
 
 def _detect_project(target: Path) -> dict:
     """Detect project characteristics."""
@@ -137,7 +165,10 @@ def _detect_project(target: Path) -> dict:
                 break
             # Skip hidden dirs and common noise
             parts = p.parts
-            if any(part.startswith(".") or part in ("node_modules", "venv", "__pycache__", "dist", "build") for part in parts):
+            if any(
+                part.startswith(".") or part in ("node_modules", "venv", "__pycache__", "dist", "build")
+                for part in parts
+            ):
                 continue
             if p.is_file() and p.suffix in SOURCE_EXTENSIONS:
                 count += 1
@@ -160,6 +191,7 @@ def _detect_project(target: Path) -> dict:
 # Version helpers
 # ---------------------------------------------------------------------------
 
+
 def _get_source_version(templates_dir: Path) -> str:
     """Read version from templates/aion/config.yml."""
     config = templates_dir / "aion" / "config.yml"
@@ -179,6 +211,7 @@ def _get_source_version(templates_dir: Path) -> str:
 # Core init logic
 # ---------------------------------------------------------------------------
 
+
 def _init_project(target: Path, *, upgrade: bool = False) -> None:
     """Execute project initialization."""
     target = resolve_path(target)
@@ -196,14 +229,13 @@ def _init_project(target: Path, *, upgrade: bool = False) -> None:
 
     # --- Environment checks ---
     header("Environment Check")
-    checks: list[str] = []
-
     if not target.is_dir():
         error(f"Target directory does not exist: {target}")
         raise SystemExit(1)
     success("Target directory exists")
 
     import os
+
     if not os.access(target, os.W_OK):
         error("No write permission to target directory")
         raise SystemExit(1)
@@ -272,18 +304,12 @@ def _init_project(target: Path, *, upgrade: bool = False) -> None:
             rel = f.relative_to(aion_src)
             dst_file = aion_dst / rel
 
-            if dst_file.exists():
-                if upgrade and not dst_file.exists():
-                    # Upgrade mode: add missing files
-                    dst_file.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(f, dst_file)
-                    created.append(f".aion/{rel}")
-                else:
-                    skipped.append(f".aion/{rel}")
-            else:
+            if not dst_file.exists():
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(f, dst_file)
                 created.append(f".aion/{rel}")
+            else:
+                skipped.append(f".aion/{rel}")
 
     # Create scaffold directories
     dirs_created = 0
@@ -426,6 +452,7 @@ def _init_project(target: Path, *, upgrade: bool = False) -> None:
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def run_init(args: argparse.Namespace) -> None:
     """CLI entry point for `aioncode init`."""

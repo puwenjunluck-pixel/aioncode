@@ -56,6 +56,7 @@ def _add_to_path_windows(install_dir: Path) -> bool:
     """Add install_dir to the user PATH on Windows."""
     try:
         import winreg
+
         key = winreg.OpenKey(
             winreg.HKEY_CURRENT_USER,
             r"Environment",
@@ -74,10 +75,14 @@ def _add_to_path_windows(install_dir: Path) -> bool:
             winreg.CloseKey(key)
             # Notify the system of the change
             import ctypes
+
             HWND_BROADCAST = 0xFFFF
             WM_SETTINGCHANGE = 0x001A
             ctypes.windll.user32.SendMessageW(  # type: ignore[attr-defined]
-                HWND_BROADCAST, WM_SETTINGCHANGE, 0, "Environment",
+                HWND_BROADCAST,
+                WM_SETTINGCHANGE,
+                0,
+                "Environment",
             )
             return True
         winreg.CloseKey(key)
@@ -100,11 +105,11 @@ def _install_shell_completion() -> list[str]:
     bash_comp_dir.mkdir(parents=True, exist_ok=True)
     bash_script = bash_comp_dir / "aioncode"
     bash_script.write_text(
-        '_aioncode() {\n'
+        "_aioncode() {\n"
         '  local commands="install init upgrade uninstall doctor version dashboard clean"\n'
         '  COMPREPLY=($(compgen -W "$commands" -- "${COMP_WORDS[COMP_CWORD]}"))\n'
-        '}\n'
-        'complete -F _aioncode aioncode\n',
+        "}\n"
+        "complete -F _aioncode aioncode\n",
         encoding="utf-8",
     )
     actions.append(f"bash: {bash_script}")
@@ -114,9 +119,9 @@ def _install_shell_completion() -> list[str]:
     zsh_comp_dir.mkdir(parents=True, exist_ok=True)
     zsh_script = zsh_comp_dir / "_aioncode"
     zsh_script.write_text(
-        '#compdef aioncode\n'
-        '_aioncode() {\n'
-        '  local commands=(\n'
+        "#compdef aioncode\n"
+        "_aioncode() {\n"
+        "  local commands=(\n"
         '    "install:Install aioncode to system PATH"\n'
         '    "init:Initialize .aion/ in current directory"\n'
         '    "upgrade:Upgrade to the latest version"\n'
@@ -125,9 +130,9 @@ def _install_shell_completion() -> list[str]:
         '    "version:Show version and bootstrap status"\n'
         '    "dashboard:Start the web UI"\n'
         '    "clean:Clean up temporary files"\n'
-        '  )\n'
+        "  )\n"
         '  _describe "command" commands\n'
-        '}\n'
+        "}\n"
         '_aioncode "$@"\n',
         encoding="utf-8",
     )
@@ -197,4 +202,4 @@ def run_install(args: argparse.Namespace) -> None:
         path_dirs = os.environ.get("PATH", "").split(os.pathsep)
         if str(install_dir) not in path_dirs:
             warning(f"Note: {install_dir} may not be in your PATH")
-            info(f"Add to your shell profile: export PATH=\"{install_dir}:$PATH\"")
+            info(f'Add to your shell profile: export PATH="{install_dir}:$PATH"')

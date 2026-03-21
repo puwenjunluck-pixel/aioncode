@@ -25,13 +25,17 @@ USER_AGENT = f"aioncode/{__version__}"
 # GitHub API helpers (using stdlib urllib to avoid requests at import time)
 # ---------------------------------------------------------------------------
 
+
 def _github_get(endpoint: str, timeout: int = 10) -> Any:
     """Make a GET request to the GitHub API."""
     url = f"{GITHUB_API}/{endpoint}"
-    req = Request(url, headers={
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": USER_AGENT,
-    })
+    req = Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": USER_AGENT,
+        },
+    )
     with urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
@@ -39,6 +43,7 @@ def _github_get(endpoint: str, timeout: int = 10) -> Any:
 # ---------------------------------------------------------------------------
 # Release queries
 # ---------------------------------------------------------------------------
+
 
 class ReleaseInfo:
     """Information about a GitHub release."""
@@ -113,6 +118,7 @@ def is_github_reachable(timeout: int = 5) -> bool:
 # Download with progress
 # ---------------------------------------------------------------------------
 
+
 def download_file(
     url: str,
     dest: Path | None = None,
@@ -160,6 +166,7 @@ def download_file(
         finally:
             if fd is not None:
                 import os
+
                 os.close(fd)
 
     return dest

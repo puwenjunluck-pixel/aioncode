@@ -6,8 +6,6 @@ import hashlib
 import re
 from pathlib import Path
 
-from aioncode.utils.platform import open_utf8
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -20,6 +18,7 @@ FINGERPRINT_PATTERN = re.compile(r"<!--\s*aion:fingerprint:([a-f0-9]{32})\s*-->"
 # ---------------------------------------------------------------------------
 # MD5 helpers
 # ---------------------------------------------------------------------------
+
 
 def md5_of_bytes(data: bytes) -> str:
     """Compute MD5 hex digest of raw bytes."""
@@ -39,6 +38,7 @@ def md5_of_text(text: str) -> str:
 # ---------------------------------------------------------------------------
 # Fingerprint operations (for Regenerable files)
 # ---------------------------------------------------------------------------
+
 
 def extract_fingerprint(path: Path) -> str | None:
     """Extract the aion fingerprint from a file, or None if not present."""
@@ -73,6 +73,7 @@ def append_fingerprint(text: str) -> str:
 # ---------------------------------------------------------------------------
 # Template comparison (for init/upgrade anti-reverse-sync)
 # ---------------------------------------------------------------------------
+
 
 class TemplateComparison:
     """Result of comparing a template file with its installed counterpart."""
@@ -117,6 +118,7 @@ def compare_template(template_path: Path, target_path: Path) -> TemplateComparis
 # ---------------------------------------------------------------------------
 # CLAUDE.md marker merge (ported from install.sh L346-384)
 # ---------------------------------------------------------------------------
+
 
 class MergeResult:
     """Result of a CLAUDE.md merge operation."""

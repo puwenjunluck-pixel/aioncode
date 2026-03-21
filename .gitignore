@@ -20,6 +20,8 @@ __pycache__/
 dist/
 build/
 *.spec.bak
+.ruff_cache/
+.pytest_cache/
 
 # AionCode runtime files (not project intelligence)
 .aion/monitor/events.jsonl

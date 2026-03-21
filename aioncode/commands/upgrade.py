@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import argparse
 import os
-import platform
 import shutil
 import stat
 import sys
-import tempfile
 from pathlib import Path
 
 from aioncode import __version__
@@ -32,13 +30,14 @@ from aioncode.utils.platform import IS_WINDOWS, get_platform_tag
 
 def _compare_versions(current: str, latest: str) -> int:
     """Compare version strings. Returns -1, 0, or 1."""
+
     def parse(v: str) -> tuple[int, ...]:
         return tuple(int(x) for x in v.split(".") if x.isdigit())
 
-    c, l = parse(current), parse(latest)
-    if c < l:
+    cur, lat = parse(current), parse(latest)
+    if cur < lat:
         return -1
-    if c > l:
+    if cur > lat:
         return 1
     return 0
 
@@ -61,10 +60,7 @@ def _replace_binary(new_binary: Path, target: Path) -> None:
         # Schedule cleanup of .old file via a batch script
         cleanup_bat = target.parent / "_aioncode_cleanup.bat"
         cleanup_bat.write_text(
-            '@echo off\n'
-            'timeout /t 2 /nobreak >nul\n'
-            f'del /f /q "{old_backup}"\n'
-            f'del /f /q "{cleanup_bat}"\n',
+            f'@echo off\ntimeout /t 2 /nobreak >nul\ndel /f /q "{old_backup}"\ndel /f /q "{cleanup_bat}"\n',
             encoding="utf-8",
         )
         os.startfile(str(cleanup_bat))  # type: ignore[attr-defined]
@@ -144,7 +140,7 @@ def run_upgrade(args: argparse.Namespace) -> None:
         error(f"Failed to replace binary: {e}")
         warning(f"Downloaded file saved at: {tmp_path}")
         warning(f"Manually copy it to: {current_binary}")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
     finally:
         # Clean up temp file
         try:

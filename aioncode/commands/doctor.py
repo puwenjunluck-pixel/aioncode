@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 from aioncode import __version__
-from aioncode.utils.console import banner, header, status_table, info, muted
+from aioncode.utils.console import banner, header, info, muted, status_table
 from aioncode.utils.platform import (
     IS_WINDOWS,
     check_long_path_support,
@@ -93,11 +93,14 @@ def run_doctor(args: argparse.Namespace) -> None:
 
     if IS_WINDOWS:
         long_path = check_long_path_support()
-        system_checks.append(("Long paths", long_path, "Enabled" if long_path else "Disabled — may cause issues with deep paths"))
+        system_checks.append(
+            ("Long paths", long_path, "Enabled" if long_path else "Disabled — may cause issues with deep paths")
+        )
 
     # GitHub connectivity
     header("Connectivity")
     from aioncode.utils.network import is_github_reachable
+
     gh_ok = is_github_reachable()
     system_checks.append(("GitHub API", gh_ok, "Reachable" if gh_ok else "Unreachable — upgrade won't work"))
 

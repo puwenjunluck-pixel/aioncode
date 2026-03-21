@@ -27,7 +27,8 @@ def _build_parser() -> argparse.ArgumentParser:
         description="AionCode — AI-powered development intelligence framework",
     )
     parser.add_argument(
-        "-V", "--version",
+        "-V",
+        "--version",
         action="version",
         version=f"aioncode {__version__}",
     )
@@ -90,27 +91,35 @@ def main(argv: list[str] | None = None) -> None:
     match args.command:
         case "init":
             from aioncode.commands.init import run_init
+
             run_init(args)
         case "install":
             from aioncode.commands.install import run_install
+
             run_install(args)
         case "uninstall":
             from aioncode.commands.uninstall import run_uninstall
+
             run_uninstall(args)
         case "upgrade":
             from aioncode.commands.upgrade import run_upgrade
+
             run_upgrade(args)
         case "dashboard":
             from aioncode.commands.dashboard import run_dashboard
+
             run_dashboard(args)
         case "doctor":
             from aioncode.commands.doctor import run_doctor
+
             run_doctor(args)
         case "version":
             from aioncode.commands.version import run_version
+
             run_version(args)
         case "clean":
             from aioncode.commands.clean import run_clean
+
             run_clean(args)
         case _:
             parser.print_help()

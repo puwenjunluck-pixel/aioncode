@@ -54,6 +54,7 @@ def run_version(args: argparse.Namespace) -> None:
     # Check for updates (non-blocking)
     try:
         from aioncode.utils.network import get_latest_release
+
         release = get_latest_release()
         if release and release.version != __version__:
             print()

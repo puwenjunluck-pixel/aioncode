@@ -7,7 +7,6 @@ import platform
 import sys
 from pathlib import Path
 
-
 # ---------------------------------------------------------------------------
 # Platform detection
 # ---------------------------------------------------------------------------
@@ -34,6 +33,7 @@ def get_system_info() -> dict[str, str]:
 # Architecture detection (for binary downloads)
 # ---------------------------------------------------------------------------
 
+
 def get_platform_tag() -> str:
     """Return a platform-architecture tag for GitHub Releases binary matching.
 
@@ -53,6 +53,7 @@ def get_platform_tag() -> str:
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
+
 
 def resolve_path(path: str | Path) -> Path:
     """Resolve a path, handling Windows long paths transparently."""
@@ -104,11 +105,13 @@ def get_install_dir() -> Path:
 # Permissions
 # ---------------------------------------------------------------------------
 
+
 def is_admin() -> bool:
     """Check if the current process has admin/root privileges."""
     if IS_WINDOWS:
         try:
             import ctypes
+
             return bool(ctypes.windll.shell32.IsUserAnAdmin())  # type: ignore[attr-defined]
         except (AttributeError, OSError):
             return False
@@ -127,10 +130,16 @@ def request_elevation(argv: list[str] | None = None) -> bool:
     if IS_WINDOWS:
         try:
             import ctypes
+
             exe = sys.executable
             params = " ".join(argv or sys.argv)
             ret = ctypes.windll.shell32.ShellExecuteW(  # type: ignore[attr-defined]
-                None, "runas", exe, params, None, 1,
+                None,
+                "runas",
+                exe,
+                params,
+                None,
+                1,
             )
             return ret > 32  # ShellExecute returns > 32 on success
         except (AttributeError, OSError):
@@ -146,6 +155,7 @@ def request_elevation(argv: list[str] | None = None) -> bool:
 # Encoding
 # ---------------------------------------------------------------------------
 
+
 def ensure_utf8() -> None:
     """Force UTF-8 encoding for the entire process."""
     os.environ.setdefault("PYTHONUTF8", "1")
@@ -153,6 +163,7 @@ def ensure_utf8() -> None:
         # Also set console code page on Windows
         try:
             import ctypes
+
             ctypes.windll.kernel32.SetConsoleOutputCP(65001)  # type: ignore[attr-defined]
             ctypes.windll.kernel32.SetConsoleCP(65001)  # type: ignore[attr-defined]
         except (AttributeError, OSError):
@@ -177,12 +188,14 @@ def open_utf8(path: str | Path, mode: str = "r", **kwargs):
 # Windows long path support
 # ---------------------------------------------------------------------------
 
+
 def check_long_path_support() -> bool:
     """Check if Windows long path support is enabled."""
     if not IS_WINDOWS:
         return True  # Not applicable on Unix
     try:
         import winreg
+
         key = winreg.OpenKey(
             winreg.HKEY_LOCAL_MACHINE,
             r"SYSTEM\CurrentControlSet\Control\FileSystem",

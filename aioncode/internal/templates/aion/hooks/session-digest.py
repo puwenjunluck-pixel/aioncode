@@ -45,7 +45,7 @@ def read_events_from(checkpoint: int) -> list:
     if not EVENTS_FILE.exists():
         return []
     events = []
-    with open(EVENTS_FILE, "r", encoding="utf-8") as f:
+    with open(EVENTS_FILE, encoding="utf-8") as f:
         for i, line in enumerate(f):
             if i < checkpoint:
                 continue
@@ -63,7 +63,7 @@ def count_total_lines() -> int:
     """Count total lines in events.jsonl."""
     if not EVENTS_FILE.exists():
         return 0
-    with open(EVENTS_FILE, "r", encoding="utf-8") as f:
+    with open(EVENTS_FILE, encoding="utf-8") as f:
         return sum(1 for _ in f)
 
 
@@ -117,9 +117,7 @@ def compute_digest(events: list) -> dict:
         try:
             ft = first_ts.replace("Z", "+00:00") if first_ts.endswith("Z") else first_ts
             lt = last_ts.replace("Z", "+00:00") if last_ts.endswith("Z") else last_ts
-            duration_sec = max(0, int(
-                (datetime.fromisoformat(lt) - datetime.fromisoformat(ft)).total_seconds()
-            ))
+            duration_sec = max(0, int((datetime.fromisoformat(lt) - datetime.fromisoformat(ft)).total_seconds()))
         except (ValueError, TypeError):
             pass
 
@@ -157,7 +155,8 @@ def main():
 
     # Count PreToolUse events — skip if < threshold
     pre_tool_count = sum(
-        1 for _, e in events
+        1
+        for _, e in events
         if e.get("data", {}).get("hook_event_name", e.get("data", {}).get("event", "")) == "PreToolUse"
     )
     if pre_tool_count < MIN_TOOL_CALLS:

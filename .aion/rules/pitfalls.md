@@ -1,7 +1,7 @@
 ---
 category: pitfalls
-rule_count: 3
-last_updated: 2026-03-21
+rule_count: 4
+last_updated: 2026-03-22
 ---
 
 # Pitfalls — Known gotchas and traps
@@ -24,5 +24,8 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 - **dashboard.py 路由匹配顺序敏感** (scan, 2026-03-21) [cite_count: 0, last_cited: 2026-03-21]
   `do_GET()`/`do_POST()` 使用 `path.startswith()` 前缀匹配路由。具体路由（如 `/api/projects/{id}/bugs/stats`）必须在通用路由（如 `/api/projects/{id}/stats`）之前检查，否则通用路由会"吃掉"请求。新增 API 端点时必须注意插入位置。
 
-- **Dogfooding 禁止反向同步 templates/ ← .aion/** (discussion, 2026-03-21) [cite_count: 0, last_cited: 2026-03-21]
-  `templates/` 是产品模板（给用户的），`.aion/` 是本项目运行时数据（给自己的），数据流只能单向：`templates/` → `.aion/`（由 `install.sh` 执行）。绝对不能把 `.aion/rules/` 等项目特定内容复制回 `templates/`，否则所有新安装的用户会继承 AionCode 自身的项目规则。改完 `commands/` 源码后必须 `install.sh --upgrade` 同步到 `.claude/commands/`。
+- **NEVER 反向同步 .aion/ → templates/** (discussion, 2026-03-21) [cite_count: 0, last_cited: 2026-03-22]
+  禁止将 `.aion/` 下的任何文件复制回 `templates/`。`templates/` 是产品模板（给所有用户的），`.aion/` 是本项目运行时数据（仅给自己的），数据流只能单向：`templates/` → `.aion/`。违反会导致所有新安装的用户继承 AionCode 自身的项目规则。**此规则无例外，无豁免，无 override。**
+
+- **NEVER 同步 commands/ → .claude/commands/** (discussion, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
+  禁止执行任何将 `commands/*.md` 复制到 `.claude/commands/` 的操作（包括 `cp`、`rsync`、`shutil.copy` 等一切形式）。`commands/` 是源码，`.claude/commands/` 是运行版，二者必须隔离。违反此规则会导致 AI 工作流立刻失效。同步只能由用户自行执行。**此规则无例外，无豁免，无 override。**

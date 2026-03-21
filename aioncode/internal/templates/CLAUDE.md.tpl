@@ -36,8 +36,8 @@ Check these files for project context when starting a new task:
 /project:aion-impl    — Execute plans with rules enforcement
 /project:aion-test    — Generate tests, analyze coverage, create perf scripts
 /project:aion-verify  — Run build, tests, lint, type checks
-/project:aion-review  — Code review with auto-learning + fix loop
-/project:aion-learn   — Extract rules from recent work
+/project:aion-review  — Code review + auto-learning + quality gate + fix loop
+/project:aion-learn   — Extract rules from recent work (on-demand; auto-runs inside review)
 /project:aion-save    — Save current context to .aion/ docs
 /project:aion-commit  — Safe git commit with changelog
 /project:aion-status  — Show project intelligence status
@@ -47,7 +47,8 @@ Check these files for project context when starting a new task:
 /project:aion-loop    — Automated pipeline execution
 /project:aion-help    — Show commands, workflows, and usage guide
 
-New project: think → design → (demo) → plan → impl → (test) → verify → review → learn → commit
+New project: think → design → (demo) → plan → impl → (test) → verify → review → commit
 Existing project: scan → (choose intent) → impl/design → verify → review → commit
 Bug workflow: tester: bug report → engineer: impl {BUG-ID} → verify → review → commit
+Note: review now includes auto-learning (rule + style pattern extraction). commit requires review approval.
 Cross-check: crosscheck --model gemini → auto-generates bug reports

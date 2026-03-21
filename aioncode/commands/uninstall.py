@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import os
 import shutil
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -13,15 +11,13 @@ from aioncode import __version__
 from aioncode.utils.console import (
     banner,
     console,
-    error,
     header,
     info,
     muted,
     success,
-    warning,
 )
 from aioncode.utils.integrity import strip_claude_md_markers
-from aioncode.utils.platform import IS_WINDOWS, get_install_dir, open_utf8
+from aioncode.utils.platform import IS_WINDOWS, get_install_dir
 
 
 def _scan_project(target: Path) -> dict:
@@ -42,7 +38,8 @@ def _scan_project(target: Path) -> dict:
     claude_md = target / ".claude" / "CLAUDE.md"
     if claude_md.is_file():
         content = claude_md.read_text(encoding="utf-8")
-        from aioncode.utils.integrity import MARKER_START, MARKER_END
+        from aioncode.utils.integrity import MARKER_END, MARKER_START
+
         if MARKER_START in content:
             # Check if there's user content outside markers
             before = content.split(MARKER_START)[0].strip()

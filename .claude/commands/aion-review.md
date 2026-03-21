@@ -65,17 +65,41 @@ For each changed file:
 - **Security (30%)**: Injection, XSS, auth issues, secrets exposure, OWASP top 10 concerns
 - **Architecture Compliance (30%)**: Follows plan, respects contracts, consistent with existing patterns
 
+### Step 2.5: Quantitative Quality Gate
+For each changed file, run quantitative checks against `rules/style.md` thresholds:
+
+1. **File length**: Count non-empty, non-comment lines. > 500 → WARNING
+2. **Function length**: Count lines per function. > 50 → WARNING
+3. **Nesting depth**: Detect max indent level (if/for/while/try). > 4 → WARNING
+4. **Parameter count**: Check function signatures. > 5 → WARNING
+5. **Duplicate code**: Detect code blocks > 10 lines that appear in multiple locations
+
+Output a metrics table:
+```
+| File | Lines | Longest Func | Max Nesting | Status |
+|------|-------|-------------|-------------|--------|
+| init.py | 280 | 45 | 3 | ✅ |
+| dashboard.py | 4784 | 120 | 5 | ⚠️ Exempt (legacy) |
+```
+
+Each WARNING deducts 5 points from the Code Quality dimension score.
+Known exemptions (historical files with tech debt) should be marked but not penalized.
+New code that exceeds thresholds MUST be flagged as issues in Step 3.
+
 ### Step 3: Score and Verdict
 - **Score**: 0-100 based on weighted dimensions above
 - **Verdict**:
   - `approved` — score >= 70 and no critical issues
   - `needs_fix` — score < 70 or has critical issues
 
-### Step 4: Extract Rules
-After reviewing, identify patterns worth remembering:
-- Bugs that were fixed or introduced -> `pitfalls.md`
-- Code patterns established or enforced -> `style.md`
-- Performance improvements or concerns -> `perf.md`
+### Step 4: Auto-Learn — Extract Rules & Style Patterns
+This step replaces the standalone `/aion-learn` for daily workflow. After reviewing, automatically extract two types of knowledge:
+
+#### 4a. Rule Extraction (from review findings)
+Identify patterns worth remembering:
+- Bugs that were fixed or introduced → `pitfalls.md`
+- Code patterns established or enforced → `style.md`
+- Performance improvements or concerns → `perf.md`
 
 **Rule extraction criteria**:
 - The pattern is likely to recur in this project
@@ -89,9 +113,21 @@ After reviewing, identify patterns worth remembering:
 ```
 
 Read existing rules files first. If a similar rule exists:
-- If the new insight extends it -> update the existing rule
-- If it conflicts -> flag to user, do not auto-write
-- If it's a duplicate -> skip
+- If the new insight extends it → update the existing rule
+- If it conflicts → flag to user, do not auto-write
+- If it's a duplicate → skip
+
+#### 4b. Style Pattern Extraction (cross-session consistency)
+Scan the reviewed code for patterns that appear in ≥ 3 files consistently:
+
+1. **Error handling pattern**: What's the project's error handling convention? (e.g., raise SystemExit vs sys.exit vs return error)
+2. **Import style**: `from __future__ import annotations` usage, import grouping order, absolute vs relative
+3. **Naming conventions**: private function prefix `_`, constants `UPPER_SNAKE`, class `PascalCase`
+4. **Type annotation style**: `X | None` vs `Optional[X]`, return type annotations
+
+Only extract patterns that are **already consistent** across the codebase. If a pattern is inconsistent, flag it as an issue in the review instead.
+
+Write confirmed patterns to `rules/style.md` following the same format and dedup process.
 
 ### Step 4.5: Update Rule Citations (MUST — do not skip)
 After the review is complete, update citation metadata for all rules that were referenced during this review:
@@ -133,9 +169,12 @@ reviewed_at: {YYYY-MM-DD}
 
 ## Rules Extracted
 - Added to `rules/{category}.md`: {Rule title}
+
+## Style Patterns Learned
+- {Pattern description} (confirmed in ≥ 3 files)
 ```
 
-Write any new rules to the appropriate `.aion/rules/*.md` files.
+Write any new rules and style patterns to the appropriate `.aion/rules/*.md` files.
 
 ### Step 5.5: Auto-Fix Loop (conditional)
 If verdict is `needs_fix`:
@@ -193,7 +232,9 @@ Read and apply `.aion/checklists/review.md` if it exists. If not, use the built-
 - [ ] Plan compliance verified
 - [ ] Contract compliance verified (if contracts exist)
 - [ ] Score is justified with evidence from the review
+- [ ] Quantitative quality gate executed (file length, function length, nesting, params)
 - [ ] Reusable patterns extracted as rules (or explicitly noted as "none worth extracting")
+- [ ] Style patterns scanned and consistent patterns documented
 - [ ] Review file written to `.aion/reviews/`
 
 ## Anti-Patterns

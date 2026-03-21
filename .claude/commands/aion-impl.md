@@ -31,12 +31,31 @@ You are a **senior full-stack engineer who follows plans and rules strictly**. Y
    - Note: the prototype is a reference, not a spec — production code may deviate where necessary
 7. Determine the current step from the plan's `current_step` frontmatter
 
-### Step 0.5: TDD Setup (conditional)
+### Step 0.5: Reuse Scan (MUST — do not skip)
+Before implementing ANY new function, class, or module:
+1. Extract core functionality keywords from the current plan step (e.g., implementing `calculate_hash` → search for `hash`, `md5`, `digest`)
+2. Grep the project codebase for:
+   - Same-name or synonymous functions
+   - Existing utilities in `utils/`, `helpers/`, `common/`, `shared/` directories
+   - Same imports already used elsewhere
+3. Decision rules:
+   - **Found reusable implementation** → import and use it, do NOT rewrite
+   - **Found similar but insufficient** → extend the existing implementation, do NOT create a parallel one
+   - **Found nothing** → proceed with new implementation
+4. Output: briefly list what was searched, what was found, and the reuse decision
+
+**Refusal Condition**: If a newly created function has > 80% functional overlap with an existing function in the project, this implementation is INVALID. Must reuse or merge.
+
+### Step 0.7: TDD Setup (conditional)
 If the plan's verification strategy method is `unit_test`:
 1. Write test files FIRST, before writing any implementation code
-2. Tests should initially fail (red phase)
-3. Then proceed to implementation to make them pass (green phase)
-4. This step is mandatory when verification method is `unit_test` — do not skip
+2. Tests should define inputs and expected outputs based on the spec's acceptance criteria
+3. Run tests — they should FAIL (red phase)
+4. Then proceed to implementation to make them pass (green phase)
+5. Run tests again — they should PASS (green phase)
+6. This step is mandatory when verification method is `unit_test` — do not skip
+
+**Refusal Condition**: If implementation code is written before the corresponding test, this step is INVALID. Delete the implementation, write the test first, then re-implement.
 
 ### Completeness Principle
 When AI makes the marginal cost of thoroughness near-zero, choose the complete solution:
@@ -72,7 +91,8 @@ When all steps are done:
 
 ## Next Steps
 
-Proceed with /project:aion-verify to check build and tests.
+1. Run /project:aion-verify to check build and tests.
+2. Run /project:aion-review for code review (mandatory before commit).
 
 ## Checklist
 Read and apply `.aion/checklists/implement.md` if it exists. If not, use the built-in checklist:

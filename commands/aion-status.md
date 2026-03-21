@@ -59,6 +59,13 @@ Check which `.aion/` documents exist and their status:
 - `.aion/refs/` — list reference documents
 - `.aion/prototypes/` — list prototype directories
 
+### Step 2.5: Tech Debt Summary
+Check `.aion/refs/tech-debt.md` if it exists:
+1. Count entries by status: `open` vs `closed`
+2. Find the newest open entry date
+3. Report one line: `Tech Debt: {N} open / {M} closed (newest: {date})`
+4. If > 10 open items, add warning: "⚠️ Tech debt accumulating — consider running `aioncode clean` or addressing open items"
+
 ### Step 3: Recent Activity
 Read the last 3 entries from `.aion/changelog.md` (if it exists).
 

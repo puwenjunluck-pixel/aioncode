@@ -22,7 +22,6 @@ import sys
 import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -58,6 +57,7 @@ CLAUDE_MD_TPL = TEMPLATES_SRC / "CLAUDE.md.tpl"
 # Stored in user data dir when running as package, else beside the script
 # ---------------------------------------------------------------------------
 
+
 def _resolve_projects_file() -> Path:
     """Determine where to store projects.json."""
     # Check env override first
@@ -81,7 +81,7 @@ def _resolve_projects_file() -> Path:
 PROJECTS_FILE = _resolve_projects_file()
 
 
-def load_projects() -> List[dict]:
+def load_projects() -> list[dict]:
     """Load project list from JSON file, refresh status from disk."""
     if not PROJECTS_FILE.is_file():
         return []
@@ -96,16 +96,18 @@ def load_projects() -> List[dict]:
         p = Path(path)
         if not p.is_dir():
             continue  # skip removed directories
-        projects.append({
-            "name": entry.get("name", p.name),
-            "path": str(p.resolve()),
-            "has_git": (p / ".git").is_dir(),
-            "has_aion": (p / ".aion").is_dir(),
-        })
+        projects.append(
+            {
+                "name": entry.get("name", p.name),
+                "path": str(p.resolve()),
+                "has_git": (p / ".git").is_dir(),
+                "has_aion": (p / ".aion").is_dir(),
+            }
+        )
     return projects
 
 
-def save_projects(projects: List[dict]):
+def save_projects(projects: list[dict]):
     """Persist project list to JSON file."""
     data = [{"name": p["name"], "path": p["path"]} for p in projects]
     PROJECTS_FILE.write_text(
@@ -126,12 +128,14 @@ def add_project(path: str) -> dict:
         if p["path"] == str(resolved):
             return {"ok": False, "error": "Project already added"}
 
-    projects.append({
-        "name": resolved.name,
-        "path": str(resolved),
-        "has_git": (resolved / ".git").is_dir(),
-        "has_aion": (resolved / ".aion").is_dir(),
-    })
+    projects.append(
+        {
+            "name": resolved.name,
+            "path": str(resolved),
+            "has_git": (resolved / ".git").is_dir(),
+            "has_aion": (resolved / ".aion").is_dir(),
+        }
+    )
     projects.sort(key=lambda p: p["name"].lower())
     save_projects(projects)
     return {"ok": True, "name": resolved.name, "path": str(resolved)}
@@ -152,6 +156,7 @@ def remove_project(path: str) -> dict:
 # ---------------------------------------------------------------------------
 # Project initialization (mirrors install.sh)
 # ---------------------------------------------------------------------------
+
 
 def init_project(project_path: str) -> dict:
     """Initialize AionCode in a project directory. Returns status dict."""
@@ -242,6 +247,7 @@ def init_project(project_path: str) -> dict:
 # Project statistics
 # ---------------------------------------------------------------------------
 
+
 def _count_rules_in_file(filepath: Path) -> int:
     """Count rule entries (lines starting with '- **') in a markdown file."""
     if not filepath.is_file():
@@ -266,7 +272,7 @@ def _count_files_in_dir(dirpath: Path, extensions: tuple = (".md", ".yml", ".yam
     return count
 
 
-def _last_activity(changelog_path: Path) -> Optional[str]:
+def _last_activity(changelog_path: Path) -> str | None:
     """Extract last activity date from changelog.md."""
     if not changelog_path.is_file():
         return None
@@ -333,7 +339,8 @@ def get_project_stats(project_path: str) -> dict:
 # File tree & operations (restricted to .aion/)
 # ---------------------------------------------------------------------------
 
-def _validate_aion_path(project_path: str, relative_path: str) -> Optional[Path]:
+
+def _validate_aion_path(project_path: str, relative_path: str) -> Path | None:
     """Validate that a file path stays within .aion/. Returns resolved path or None."""
     aion_root = Path(project_path).resolve() / ".aion"
     # Normalize and resolve to prevent traversal
@@ -345,13 +352,13 @@ def _validate_aion_path(project_path: str, relative_path: str) -> Optional[Path]
     return target
 
 
-def get_file_tree(project_path: str) -> List[dict]:
+def get_file_tree(project_path: str) -> list[dict]:
     """Build a file tree of the .aion/ directory."""
     aion_root = Path(project_path).resolve() / ".aion"
     if not aion_root.is_dir():
         return []
 
-    def _build(directory: Path, prefix: str = "") -> List[dict]:
+    def _build(directory: Path, prefix: str = "") -> list[dict]:
         items = []
         try:
             entries = sorted(directory.iterdir(), key=lambda e: (not e.is_dir(), e.name.lower()))
@@ -362,20 +369,24 @@ def get_file_tree(project_path: str) -> List[dict]:
             rel = f"{prefix}{entry.name}" if prefix else entry.name
             if entry.is_dir():
                 children = _build(entry, f"{rel}/")
-                items.append({
-                    "name": entry.name,
-                    "path": rel,
-                    "type": "dir",
-                    "children": children,
-                })
+                items.append(
+                    {
+                        "name": entry.name,
+                        "path": rel,
+                        "type": "dir",
+                        "children": children,
+                    }
+                )
             elif entry.is_file():
-                items.append({
-                    "name": entry.name,
-                    "path": rel,
-                    "type": "file",
-                    "size": entry.stat().st_size,
-                    "mtime": datetime.fromtimestamp(entry.stat().st_mtime).isoformat(),
-                })
+                items.append(
+                    {
+                        "name": entry.name,
+                        "path": rel,
+                        "type": "file",
+                        "size": entry.stat().st_size,
+                        "mtime": datetime.fromtimestamp(entry.stat().st_mtime).isoformat(),
+                    }
+                )
         return items
 
     return _build(aion_root)
@@ -441,6 +452,7 @@ def create_file(project_path: str, relative_path: str, content: str = "") -> dic
 # Path encoding helpers
 # ---------------------------------------------------------------------------
 
+
 def encode_project_path(path: str) -> str:
     """Base64-encode a project path for use in URLs."""
     return base64.urlsafe_b64encode(path.encode("utf-8")).decode("ascii")
@@ -469,7 +481,7 @@ def read_monitor_events(project_path: str, since: int = 0):
     events = []
     total = 0
     if events_file.exists():
-        with open(events_file, "r", encoding="utf-8") as f:
+        with open(events_file, encoding="utf-8") as f:
             for i, line in enumerate(f):
                 total = i + 1
                 if i >= since:
@@ -500,7 +512,7 @@ def compute_monitor_state(project_path: str) -> dict:
         return state
 
     files_set = set()
-    with open(events_file, "r", encoding="utf-8") as f:
+    with open(events_file, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -578,7 +590,7 @@ BUGS_DIR = ".aion/bugs"
 TEAM_FILE = ".aion/team.yml"
 
 
-def _parse_bug_frontmatter(filepath: Path) -> Optional[dict]:
+def _parse_bug_frontmatter(filepath: Path) -> dict | None:
     """Parse YAML frontmatter from a bug report markdown file."""
     try:
         text = filepath.read_text(encoding="utf-8")
@@ -599,7 +611,7 @@ def _parse_bug_frontmatter(filepath: Path) -> Optional[dict]:
     return fm
 
 
-def list_bugs(project_path: str, filters: Optional[dict] = None) -> List[dict]:
+def list_bugs(project_path: str, filters: dict | None = None) -> list[dict]:
     """List bug reports from .aion/bugs/, optionally filtered."""
     bugs_dir = Path(project_path) / BUGS_DIR
     if not bugs_dir.is_dir():
@@ -682,9 +694,9 @@ def read_team_config(project_path: str) -> dict:
         return {"team": [], "models": [], "risk_keywords": {}}
     # Simple YAML-like parser for team.yml (avoid external dependency)
     # For full YAML, users would need PyYAML; we parse the essential structure
-    result: Dict = {"team": [], "models": [], "risk_keywords": {"critical": [], "low": []}}
+    result: dict = {"team": [], "models": [], "risk_keywords": {"critical": [], "low": []}}
     current_section = None
-    current_item: Optional[dict] = None
+    current_item: dict | None = None
     current_list_key = None
     for line in text.splitlines():
         stripped = line.strip()
@@ -805,7 +817,7 @@ def is_admin(request=None) -> bool:
 # ---------------------------------------------------------------------------
 
 # Global state
-_cached_projects: Optional[List[dict]] = None
+_cached_projects: list[dict] | None = None
 
 
 def _reload():
@@ -833,53 +845,53 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self._handle_list_projects()
         # -- Bug stats (must come before generic /stats) --
         elif path.startswith("/api/projects/") and path.endswith("/bugs/stats"):
-            encoded = path[len("/api/projects/"):-len("/bugs/stats")]
+            encoded = path[len("/api/projects/") : -len("/bugs/stats")]
             self._handle_bug_stats(encoded)
         elif path.startswith("/api/projects/") and path.endswith("/stats"):
-            encoded = path[len("/api/projects/"):-len("/stats")]
+            encoded = path[len("/api/projects/") : -len("/stats")]
             self._handle_stats(encoded)
         elif path.startswith("/api/projects/") and path.endswith("/files"):
-            encoded = path[len("/api/projects/"):-len("/files")]
+            encoded = path[len("/api/projects/") : -len("/files")]
             self._handle_file_tree(encoded)
         elif path.startswith("/api/projects/") and path.endswith("/file"):
-            encoded = path[len("/api/projects/"):-len("/file")]
+            encoded = path[len("/api/projects/") : -len("/file")]
             self._handle_read_file(encoded, query)
         elif path == "/api/browse":
             self._handle_browse(query)
         elif path == "/api/commands":
             self._handle_list_commands()
         elif path.startswith("/api/commands/"):
-            name = path[len("/api/commands/"):]
+            name = path[len("/api/commands/") :]
             self._handle_read_command(name)
         elif path.startswith("/api/projects/") and path.endswith("/sessions"):
-            encoded = path[len("/api/projects/"):-len("/sessions")]
+            encoded = path[len("/api/projects/") : -len("/sessions")]
             self._handle_sessions(encoded, query)
         elif path.startswith("/api/projects/") and path.endswith("/changelog"):
-            encoded = path[len("/api/projects/"):-len("/changelog")]
+            encoded = path[len("/api/projects/") : -len("/changelog")]
             self._handle_changelog(encoded, query)
         # -- Monitor routes --
         elif path.startswith("/monitor/"):
-            encoded = path[len("/monitor/"):]
+            encoded = path[len("/monitor/") :]
             self._serve_monitor_html(encoded)
         elif path.startswith("/api/monitor/") and path.endswith("/events"):
-            encoded = path[len("/api/monitor/"):-len("/events")]
+            encoded = path[len("/api/monitor/") : -len("/events")]
             self._handle_monitor_events(encoded, query)
         elif path.startswith("/api/monitor/") and path.endswith("/state"):
-            encoded = path[len("/api/monitor/"):-len("/state")]
+            encoded = path[len("/api/monitor/") : -len("/state")]
             self._handle_monitor_state(encoded)
         elif path.startswith("/api/projects/") and path.endswith("/events/stream"):
-            encoded = path[len("/api/projects/"):-len("/events/stream")]
+            encoded = path[len("/api/projects/") : -len("/events/stream")]
             self._handle_events_stream(encoded)
         elif path.startswith("/api/projects/") and path.endswith("/events/recent"):
-            encoded = path[len("/api/projects/"):-len("/events/recent")]
+            encoded = path[len("/api/projects/") : -len("/events/recent")]
             self._handle_recent_events(encoded, query)
         # -- Bug routes --
         elif path.startswith("/api/projects/") and path.endswith("/bugs"):
-            encoded = path[len("/api/projects/"):-len("/bugs")]
+            encoded = path[len("/api/projects/") : -len("/bugs")]
             self._handle_list_bugs(encoded, query)
         # -- Team/Admin routes --
         elif path.startswith("/api/projects/") and path.endswith("/team"):
-            encoded = path[len("/api/projects/"):-len("/team")]
+            encoded = path[len("/api/projects/") : -len("/team")]
             self._handle_read_team(encoded)
         else:
             self._json_response(404, {"error": "Not found"})
@@ -904,25 +916,25 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 return
             self._handle_init_project(body)
         elif path.startswith("/api/projects/") and path.endswith("/file"):
-            encoded = path[len("/api/projects/"):-len("/file")]
+            encoded = path[len("/api/projects/") : -len("/file")]
             body = self._read_json_body()
             if body is None:
                 return
             self._handle_create_file(encoded, body)
         # -- Monitor routes --
         elif path.startswith("/api/monitor/") and path.endswith("/clear"):
-            encoded = path[len("/api/monitor/"):-len("/clear")]
+            encoded = path[len("/api/monitor/") : -len("/clear")]
             self._handle_monitor_clear(encoded)
         # -- Team/Admin routes --
         elif path.startswith("/api/projects/") and path.endswith("/team"):
-            encoded = path[len("/api/projects/"):-len("/team")]
+            encoded = path[len("/api/projects/") : -len("/team")]
             body = self._read_json_body()
             if body is None:
                 return
             self._handle_write_team(encoded, body)
         # -- Upgrade route --
         elif path.startswith("/api/projects/") and path.endswith("/upgrade"):
-            encoded = path[len("/api/projects/"):-len("/upgrade")]
+            encoded = path[len("/api/projects/") : -len("/upgrade")]
             self._handle_upgrade_project(encoded)
         else:
             self._json_response(404, {"error": "Not found"})
@@ -932,7 +944,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         path = parsed.path.rstrip("/")
 
         if path.startswith("/api/projects/") and path.endswith("/file"):
-            encoded = path[len("/api/projects/"):-len("/file")]
+            encoded = path[len("/api/projects/") : -len("/file")]
             body = self._read_json_body()
             if body is None:
                 return
@@ -945,7 +957,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         path = parsed.path.rstrip("/")
 
         if path.startswith("/api/projects/") and path.endswith("/file"):
-            encoded = path[len("/api/projects/"):-len("/file")]
+            encoded = path[len("/api/projects/") : -len("/file")]
             query = dict(urllib.parse.parse_qsl(parsed.query))
             self._handle_delete_file(encoded, query)
         else:
@@ -967,15 +979,19 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                         line_s = line.strip()
                         if not title and line_s.startswith("# "):
                             title = line_s[2:].strip()
-                        elif title and not desc and line_s and not line_s.startswith("#") and not line_s.startswith("$"):
+                        elif (
+                            title and not desc and line_s and not line_s.startswith("#") and not line_s.startswith("$")
+                        ):
                             desc = line_s
                             break
-                    cmds.append({
-                        "name": f.stem,
-                        "filename": f.name,
-                        "title": title,
-                        "description": desc,
-                    })
+                    cmds.append(
+                        {
+                            "name": f.stem,
+                            "filename": f.name,
+                            "title": title,
+                            "description": desc,
+                        }
+                    )
                 except Exception:
                     cmds.append({"name": f.stem, "filename": f.name, "title": f.stem, "description": ""})
         self._json_response(200, {"commands": cmds})
@@ -1018,20 +1034,25 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     continue
                 has_git = (entry / ".git").is_dir()
                 has_aion = (entry / ".aion").is_dir()
-                dirs.append({
-                    "name": name,
-                    "path": str(entry),
-                    "has_git": has_git,
-                    "has_aion": has_aion,
-                })
+                dirs.append(
+                    {
+                        "name": name,
+                        "path": str(entry),
+                        "has_git": has_git,
+                        "has_aion": has_aion,
+                    }
+                )
         except PermissionError:
             pass
         parent = str(target_path.parent) if target_path != target_path.parent else None
-        self._json_response(200, {
-            "current": str(target_path),
-            "parent": parent,
-            "dirs": dirs,
-        })
+        self._json_response(
+            200,
+            {
+                "current": str(target_path),
+                "parent": parent,
+                "dirs": dirs,
+            },
+        )
 
     def _handle_list_projects(self):
         _reload()
@@ -1251,9 +1272,10 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         last_line = 0
         try:
             import time as _time
+
             while True:
                 if events_file.exists():
-                    with open(events_file, "r", encoding="utf-8") as f:
+                    with open(events_file, encoding="utf-8") as f:
                         lines = f.readlines()
                     total = len(lines)
                     if total > last_line:
@@ -1263,7 +1285,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                                 try:
                                     event = json.loads(line)
                                     sse_data = json.dumps(event, ensure_ascii=False)
-                                    self.wfile.write(f"data: {sse_data}\n\n".encode("utf-8"))
+                                    self.wfile.write(f"data: {sse_data}\n\n".encode())
                                 except json.JSONDecodeError:
                                     pass
                         self.wfile.flush()
@@ -1289,7 +1311,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             try:
                 file_size = events_file.stat().st_size
                 # For large files, only read the tail
-                with open(events_file, "r", encoding="utf-8") as f:
+                with open(events_file, encoding="utf-8") as f:
                     if file_size > 1_000_000:  # > 1MB, read last 200KB
                         f.seek(max(0, file_size - 200_000))
                         f.readline()  # skip partial line
@@ -1409,21 +1431,24 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
             self._json_response(400, {"error": "Invalid project path"})
             return
         import subprocess
+
         install_script = SCRIPT_DIR / "install.sh"
         if not install_script.is_file():
             self._json_response(500, {"error": "install.sh not found"})
             return
         try:
             result = subprocess.run(
-                ["bash", str(install_script), "--upgrade", project_path],
-                capture_output=True, text=True, timeout=30
+                ["bash", str(install_script), "--upgrade", project_path], capture_output=True, text=True, timeout=30
             )
             _reload()  # refresh project cache
-            self._json_response(200, {
-                "ok": result.returncode == 0,
-                "output": result.stdout,
-                "errors": result.stderr,
-            })
+            self._json_response(
+                200,
+                {
+                    "ok": result.returncode == 0,
+                    "output": result.stdout,
+                    "errors": result.stderr,
+                },
+            )
         except subprocess.TimeoutExpired:
             self._json_response(500, {"error": "Upgrade timed out"})
         except Exception as e:
@@ -1431,7 +1456,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
     # -- Helpers -----------------------------------------------------------
 
-    def _read_json_body(self) -> Optional[dict]:
+    def _read_json_body(self) -> dict | None:
         try:
             length = int(self.headers.get("Content-Length", 0))
             raw = self.rfile.read(length)
@@ -4754,6 +4779,7 @@ MONITOR_HTML = r"""<!DOCTYPE html>
 # Server
 # ---------------------------------------------------------------------------
 
+
 class ReusableTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
     allow_reuse_port = True
@@ -4766,7 +4792,7 @@ def main(port: int = PORT, host: str = ""):
     projects = load_projects()
     aion_count = sum(1 for p in projects if p["has_aion"])
 
-    print(f"\033[1;35mAionCode Dashboard\033[0m")
+    print("\033[1;35mAionCode Dashboard\033[0m")
     print(f"  URL:      http://localhost:{port}")
     print(f"  Projects: {len(projects)} registered ({aion_count} with .aion/)")
     print(f"  Data:     {PROJECTS_FILE}")

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -22,15 +21,17 @@ from rich.theme import Theme
 # Theme & Console singleton
 # ---------------------------------------------------------------------------
 
-AION_THEME = Theme({
-    "info": "cyan",
-    "success": "bold green",
-    "warning": "bold yellow",
-    "error": "bold red",
-    "header": "bold magenta",
-    "muted": "dim",
-    "path": "underline blue",
-})
+AION_THEME = Theme(
+    {
+        "info": "cyan",
+        "success": "bold green",
+        "warning": "bold yellow",
+        "error": "bold red",
+        "header": "bold magenta",
+        "muted": "dim",
+        "path": "underline blue",
+    }
+)
 
 
 def _make_console() -> Console:
@@ -44,6 +45,7 @@ console = _make_console()
 # ---------------------------------------------------------------------------
 # Output helpers
 # ---------------------------------------------------------------------------
+
 
 def header(text: str) -> None:
     """Print a styled header."""
@@ -86,6 +88,7 @@ def banner(title: str, subtitle: str = "") -> None:
 # Interactive prompts
 # ---------------------------------------------------------------------------
 
+
 def confirm(prompt: str, default: bool = False) -> bool:
     """Ask a yes/no question. Returns boolean."""
     suffix = "[Y/n]" if default else "[y/N]"
@@ -113,6 +116,7 @@ def ask(prompt: str, default: str = "") -> str:
 # ---------------------------------------------------------------------------
 # Tables
 # ---------------------------------------------------------------------------
+
 
 def status_table(title: str, checks: list[tuple[str, bool, str]]) -> None:
     """Print a diagnostic checklist table.
@@ -155,6 +159,7 @@ def file_table(title: str, rows: list[tuple[str, str, str]]) -> None:
 # Progress bars
 # ---------------------------------------------------------------------------
 
+
 def download_progress() -> Progress:
     """Create a progress bar suitable for file downloads."""
     return Progress(
@@ -180,6 +185,7 @@ def step_progress(total: int, description: str = "Progress") -> Progress:
 # ---------------------------------------------------------------------------
 # Report
 # ---------------------------------------------------------------------------
+
 
 def install_report(
     *,

@@ -15,9 +15,7 @@ from aioncode.utils.console import (
     info,
     muted,
     success,
-    warning,
 )
-
 
 # Files older than this many days are considered expired
 ARCHIVE_MAX_AGE_DAYS = 30
@@ -122,11 +120,13 @@ def run_clean(args: argparse.Namespace) -> None:
         size = oversized_events.stat().st_size
         freed = size - EVENTS_KEEP_BYTES
         total_freed += freed
-        rows.append((
-            str(oversized_events.relative_to(cwd)),
-            "truncate",
-            f"{_format_size(size)} → {_format_size(EVENTS_KEEP_BYTES)}",
-        ))
+        rows.append(
+            (
+                str(oversized_events.relative_to(cwd)),
+                "truncate",
+                f"{_format_size(size)} → {_format_size(EVENTS_KEEP_BYTES)}",
+            )
+        )
 
     for f in temp_files:
         size = f.stat().st_size

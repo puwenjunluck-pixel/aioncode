@@ -2,6 +2,11 @@
 
 Extract reusable rules from recent work, reviews, or specific topics. This is the core differentiator — making AI smarter with every iteration.
 
+> **Note**: In the standard workflow, rule extraction runs **automatically** as part of `/project:aion-review` (Step 4). You do NOT need to run `/aion-learn` separately after every review. Use this command only for:
+> - Manual deep-dive on a specific topic
+> - Bulk import of rules from an external project
+> - Full-scan style pattern extraction after major refactors
+
 $ARGUMENTS — Optional context for rule extraction:
 - Empty: analyze recent git diff + conversation context
 - `from last review`: extract from the most recent `.aion/reviews/` file
