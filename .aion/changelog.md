@@ -2,6 +2,19 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-22 03:00 | feat: CI/CD pipeline + quality gates + test framework
+- 完整 CI/CD：ci.yml (ruff + pytest 3 版本矩阵 + 熔断 smoke test) + release.yml (CI 前置 + 版本铁律)
+- 50 个测试（integrity 18 + main 10 + platform 11 + version 3 + cli_init 3 + conftest fixtures）
+- 屎山防治 5 缺口全覆盖：复用扫描、复杂度门禁、TDD、Review Gate、技术债台账
+- learn 吸收进 review，工作流 8→7 节点
+- commit 前必须 review（docs-only 可豁免）
+- 修复 init.py 逻辑错误 + 测试硬编码
+- pyproject.toml：requests→packaging，+ruff/pytest 配置
+- Review: approved (78/100)
+- Commit: 6c8aa46
+
+---
+
 ## 2026-03-22 01:00 | feat: AionCode v0.4 — Python unified CLI rewrite
 - 将 install.sh/uninstall.sh/dashboard.py 合并为统一 Python CLI 包
 - 8 个子命令：init, install, upgrade, uninstall, dashboard, doctor, version, clean
