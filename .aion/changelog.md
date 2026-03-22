@@ -2,6 +2,18 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-22 | chore: auto 模式权限扩展 + loop 报告持久化
+
+### Summary
+- settings 模板新增 11 个 auto 模式常用权限（python3、kill、lsof、curl、find、sleep 等）
+- aion-loop 新增 Step 4.5：执行报告持久化到 `.aion/monitor/loop-{timestamp}.md`
+- 分析了 auto 模式下高频拦截 TOP 3：python3 命令、链式命令、进程管理
+
+### Key Conclusions
+- 权限越大审计越重要，loop 报告持久化是必要的安全审计手段
+
+---
+
 ## 2026-03-22 | fix: dashboard 版本号动态显示 + 关于页命令补全
 
 ### Summary

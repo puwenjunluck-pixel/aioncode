@@ -114,9 +114,42 @@ After all phases complete (or the pipeline stops):
    - **WAIT for explicit user confirmation before committing**
    - NEVER auto-commit
 
+### Step 4.5: Persist Report（执行报告持久化）
+
+Write the pipeline execution report to `.aion/monitor/loop-{YYYY-MM-DD-HHMMSS}.md`:
+
+```markdown
+# Pipeline Report — {YYYY-MM-DD HH:MM:SS}
+
+## Environment
+- Branch: {branch}
+- Mode: {pipeline mode}
+- Max rounds: {N}
+
+## Phase Results
+| # | Phase | Result | Duration | Notes |
+|---|-------|--------|----------|-------|
+| 1 | {name} | PASS/FAIL | — | {brief note if failed} |
+| 2 | {name} | PASS/FAIL | — | |
+
+## Fix Loop (if triggered)
+- Rounds: {used}/{max}
+- Issues fixed: {N}
+- Issues remaining: {N}
+
+## Files Changed
+{git diff --stat output}
+
+## Result
+**{DONE / DONE_WITH_CONCERNS / BLOCKED}**
+{remaining concerns if any}
+```
+
+This ensures every automated pipeline run has a persistent audit trail, especially important when running with `--auto` flag and broad permissions.
+
 ## Next Steps
 
-Pipeline complete. Review the summary above.
+Pipeline complete. Report saved to `.aion/monitor/`. Review the summary above.
 
 ## Checklist
 
@@ -128,6 +161,7 @@ Pipeline complete. Review the summary above.
 - Commit ALWAYS requires user confirmation
 - Phase status reported after each phase
 - Final summary includes all phases and any remaining concerns
+- Execution report persisted to `.aion/monitor/loop-{timestamp}.md`
 
 ## Anti-Patterns
 
