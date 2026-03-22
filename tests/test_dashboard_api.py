@@ -30,13 +30,9 @@ def project_dir(tmp_path: Path) -> Path:
     aion = tmp_path / ".aion"
     aion.mkdir()
     (aion / "config.yml").write_text('version: "0.5.0"\n')
-    (aion / "changelog.md").write_text(
-        "## 2026-03-22 10:00 | Test\n\n### Summary\n- test\n"
-    )
+    (aion / "changelog.md").write_text("## 2026-03-22 10:00 | Test\n\n### Summary\n- test\n")
     (aion / "rules").mkdir()
-    (aion / "rules" / "pitfalls.md").write_text(
-        "---\ncategory: pitfalls\nrule_count: 1\n---\n\n- **test rule**\n"
-    )
+    (aion / "rules" / "pitfalls.md").write_text("---\ncategory: pitfalls\nrule_count: 1\n---\n\n- **test rule**\n")
     (aion / "specs").mkdir()
     (aion / "plans").mkdir()
     (aion / "bugs").mkdir()
@@ -45,9 +41,7 @@ def project_dir(tmp_path: Path) -> Path:
         json.dumps({"ts": "2026-03-22T10:00:00Z", "tool_name": "Read"}) + "\n"
     )
     # sessions.jsonl
-    (aion / "sessions.jsonl").write_text(
-        json.dumps({"ts": "2026-03-22", "tools": ["Read"], "files": 3}) + "\n"
-    )
+    (aion / "sessions.jsonl").write_text(json.dumps({"ts": "2026-03-22", "tools": ["Read"], "files": 3}) + "\n")
     (tmp_path / ".git").mkdir()
     return tmp_path
 
@@ -94,9 +88,7 @@ class TestFilesAPI:
         assert resp.status_code == 200
 
     def test_read_file(self, client, encoded):
-        resp = client.get(
-            f"/api/projects/{encoded}/file", params={"path": "config.yml"}
-        )
+        resp = client.get(f"/api/projects/{encoded}/file", params={"path": "config.yml"})
         assert resp.status_code == 200
         data = resp.json()
         assert data.get("ok") is True
@@ -112,15 +104,11 @@ class TestFilesAPI:
         assert resp.json().get("ok") is True
 
         # Read back
-        resp = client.get(
-            f"/api/projects/{encoded}/file", params={"path": "specs/test.md"}
-        )
+        resp = client.get(f"/api/projects/{encoded}/file", params={"path": "specs/test.md"})
         assert resp.json().get("content") == "# Test spec\n"
 
         # Delete
-        resp = client.delete(
-            f"/api/projects/{encoded}/file", params={"path": "specs/test.md"}
-        )
+        resp = client.delete(f"/api/projects/{encoded}/file", params={"path": "specs/test.md"})
         assert resp.status_code == 200
 
     def test_write_file(self, client, encoded):
@@ -153,9 +141,7 @@ class TestMonitorAPI:
         assert resp.json().get("ok") is True
 
     def test_recent_events(self, client, encoded):
-        resp = client.get(
-            f"/api/projects/{encoded}/events/recent", params={"limit": 5}
-        )
+        resp = client.get(f"/api/projects/{encoded}/events/recent", params={"limit": 5})
         assert resp.status_code == 200
         data = resp.json()
         assert data.get("ok") is True

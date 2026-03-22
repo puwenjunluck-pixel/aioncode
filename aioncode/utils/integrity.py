@@ -138,9 +138,7 @@ class MergeResult:
 
     __slots__ = ("action", "content", "warnings")
 
-    def __init__(
-        self, action: str, content: str, warnings: list[str] | None = None
-    ) -> None:
+    def __init__(self, action: str, content: str, warnings: list[str] | None = None) -> None:
         self.action = action  # "created" | "merged" | "appended"
         self.content = content
         self.warnings = warnings or []
@@ -158,8 +156,7 @@ def _check_size(content: str, warnings: list[str]) -> None:
     line_count = content.count("\n") + 1
     if line_count > CLAUDE_MD_MAX_LINES:
         warnings.append(
-            f"CLAUDE.md has {line_count} lines (limit: {CLAUDE_MD_MAX_LINES}). "
-            "Consider moving content to .aion/ files."
+            f"CLAUDE.md has {line_count} lines (limit: {CLAUDE_MD_MAX_LINES}). Consider moving content to .aion/ files."
         )
 
 

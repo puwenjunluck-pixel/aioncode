@@ -93,10 +93,7 @@ class TestMergeClaudeMd:
 
     def test_strips_legacy_learned_section(self):
         """LEARNED sections are fully removed."""
-        existing = (
-            f"{MARKER_START}\ntpl\n{MARKER_END}\n"
-            "<!-- AIONCODE:LEARNED -->\n## Learned\n- item\n"
-        )
+        existing = f"{MARKER_START}\ntpl\n{MARKER_END}\n<!-- AIONCODE:LEARNED -->\n## Learned\n- item\n"
         result = merge_claude_md(existing, "new")
         assert "LEARNED" not in result.content
         assert "item" not in result.content
