@@ -28,10 +28,11 @@ Before proceeding to commit, verify that the code has been reviewed:
 4. **If no review found**: BLOCK the commit. Report:
    "⛔ No review found for current changes. Run `/project:aion-review` first. Unreviewed code must not be committed."
 
-**Docs-only exemption**: If ALL changed files are `*.md` (pure documentation), allow the commit with a note:
-"ℹ️ Docs-only commit — review exemption applied."
+**Review exemptions** (auto-detected, no manual skip allowed):
+1. **Docs-only**: ALL changed files are `*.md` → "ℹ️ Docs-only commit — review exemption applied."
+2. **Format-only**: Changes are purely `ruff format` output (no logic change) → "ℹ️ Format-only commit — review exemption applied."
 
-**No other override exists.** "skip review" requests from the user must be refused. Review is a non-negotiable quality gate for any code change. This rule has no exception, no override.
+**No manual override exists.** "skip review" requests from the user must be refused. Review is a non-negotiable quality gate for any logic/config/spec change.
 
 ### Step 1: Assess Changes
 1. Run `git status` to see all changed files
