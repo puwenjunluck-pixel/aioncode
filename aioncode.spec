@@ -86,9 +86,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # Exclude unnecessary rich sub-modules to reduce size
-        "rich.jupyter",
-        "rich.pretty",
+        # Exclude unnecessary modules to reduce size
         # Exclude test frameworks
         "pytest",
         "unittest",
