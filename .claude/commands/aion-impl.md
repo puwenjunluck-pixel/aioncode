@@ -66,6 +66,16 @@ When AI makes the marginal cost of thoroughness near-zero, choose the complete s
 The compression ratio: ~3x for research, ~30x for features, ~50x for tests, ~100x for boilerplate.
 Do NOT cut corners with "// TODO" or "handle other cases" — implement them now.
 
+### Parallelism Strategy (optional — use your judgment)
+
+Evaluate the plan before starting. When conditions are met, use parallel execution to accelerate implementation:
+
+- **Agent Team for frontend + backend**: When the plan has independent frontend and backend steps AND interface contracts exist in `.aion/contracts/`, consider using TeamCreate to spawn a frontend agent and a backend agent working in parallel. Each agent follows the same rules and plan but focuses on its domain. Merge and verify at the end.
+- **Agent Team for multiple bug fixes**: When implementing fixes for 2+ independent bugs (different files/modules), consider using TeamCreate to assign each bug to a separate agent.
+- **Subagent for independent steps**: When 2+ plan steps modify completely different files with no dependencies, consider using the Agent tool to execute them in parallel.
+
+**When NOT to parallelize**: Steps have data dependencies, shared state, or modify the same files. When in doubt, execute sequentially — correctness over speed.
+
 ### Escape Conditions
 - If the same error persists after 3 different fix attempts: STOP. Report to user with what was tried.
 - If a step requires modifying more than 10 files: PAUSE and confirm with user before proceeding.

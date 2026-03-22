@@ -81,6 +81,7 @@ def _register_routers(app: FastAPI) -> None:
         logs,
         monitor,
         projects,
+        skills,
         team,
     )
 
@@ -90,5 +91,6 @@ def _register_routers(app: FastAPI) -> None:
     app.include_router(bugs.router)
     app.include_router(team.router)
     app.include_router(commands.router)
+    app.include_router(skills.router)
     app.include_router(browse.router)
     app.include_router(logs.router)

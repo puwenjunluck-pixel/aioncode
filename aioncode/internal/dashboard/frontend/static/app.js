@@ -72,6 +72,14 @@ function showViewDetail(view) {
       d.innerHTML = `<div class="detail-welcome"><div class="welcome-icon">⏱</div>
         <div class="welcome-title">选择日志条目查看详情</div>
         <div class="welcome-hint">点击左侧变更日志列表</div></div>`; break;
+    case 'skills':
+      d.innerHTML = `<div class="detail-welcome"><div class="welcome-icon">◆</div>
+        <div class="welcome-title">选择技能查看详情</div>
+        <div class="welcome-hint">点击左侧技能列表中的条目</div></div>`; break;
+    case 'settings':
+      d.innerHTML = `<div class="detail-welcome"><div class="welcome-icon">⚙</div>
+        <div class="welcome-title">设置</div>
+        <div class="welcome-hint">在左侧面板中调整选项</div></div>`; break;
   }
 }
 
@@ -248,57 +256,9 @@ async function loadTeam() {
 }
 
 // ══════════════════════════════════════
-//  Command Palette
+//  Keyboard & Actions
 // ══════════════════════════════════════
-const CMDS = [
-  { ico: '◈', lbl: '概览', fn: () => switchView('overview') },
-  { ico: '◇', lbl: '文件', fn: () => switchView('files') },
-  { ico: '◎', lbl: '监控', fn: () => switchView('monitor') },
-  { ico: '●', lbl: '缺陷', fn: () => switchView('bugs') },
-  { ico: '◉', lbl: '团队', fn: () => switchView('team') },
-  { ico: '☰', lbl: '需求', fn: () => switchView('specs') },
-  { ico: '▤', lbl: '方案', fn: () => switchView('plans') },
-  { ico: '◆', lbl: '规则', fn: () => switchView('rules') },
-  { ico: '☑', lbl: '清单', fn: () => switchView('checklists') },
-  { ico: '⚡', lbl: '测试', fn: () => switchView('test') },
-  { ico: '⏱', lbl: '日志', fn: () => switchView('changelog') },
-  { ico: '↻', lbl: '刷新全部', fn: () => switchProject(curProject) },
-  { ico: '+', lbl: '添加项目', fn: addProject },
-  { ico: '◐', lbl: '切换主题', fn: toggleTheme },
-  { ico: 'ⓘ', lbl: '关于', fn: () => switchView('about') },
-];
-let cmdIdx = 0, cmdF = [...CMDS];
-
-function openPalette() {
-  document.getElementById('pal-bg').classList.add('open');
-  const inp = document.getElementById('pal-in');
-  inp.value = ''; inp.focus(); cmdF = [...CMDS]; cmdIdx = 0; renderCmds();
-}
-function closePalette(e) {
-  if (e && e.target !== document.getElementById('pal-bg')) return;
-  document.getElementById('pal-bg').classList.remove('open');
-}
-function filterCmd(q) { const l = q.toLowerCase(); cmdF = CMDS.filter(c => c.lbl.includes(l)); cmdIdx = 0; renderCmds(); }
-function renderCmds() {
-  document.getElementById('pal-list').innerHTML = cmdF.map((c,i) =>
-    `<div class="palette-opt${i===cmdIdx?' sel':''}" onclick="runCmd(${i})" onmouseenter="cmdIdx=${i};renderCmds()">
-      <span class="ico">${c.ico}</span><span class="lbl">${c.lbl}</span>${c.key?`<span class="key">${c.key}</span>`:''}
-    </div>`
-  ).join('');
-}
-function palKey(e) {
-  if (e.key==='Escape') { closePalette({}); return; }
-  if (e.key==='ArrowDown') { cmdIdx=Math.min(cmdIdx+1,cmdF.length-1); renderCmds(); e.preventDefault(); }
-  if (e.key==='ArrowUp') { cmdIdx=Math.max(cmdIdx-1,0); renderCmds(); e.preventDefault(); }
-  if (e.key==='Enter'&&cmdF[cmdIdx]) runCmd(cmdIdx);
-}
-function runCmd(i) { closePalette({}); cmdF[i]?.fn(); }
-function setupKeys() {
-  document.addEventListener('keydown', e => {
-    if ((e.metaKey||e.ctrlKey) && e.key==='k') { e.preventDefault(); openPalette(); }
-    if (e.key==='Escape') closePalette({});
-  });
-}
+function setupKeys() {}
 async function addProject() {
   const p = prompt('输入项目路径:');
   if (!p) return;
@@ -309,20 +269,19 @@ async function addProject() {
 // ══════════════════════════════════════
 //  Theme
 // ══════════════════════════════════════
-function toggleTheme() {
-  const html = document.documentElement;
-  const cur = html.getAttribute('data-theme') || 'dark';
-  const next = cur === 'dark' ? 'light' : 'dark';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('aioncode-theme', next);
-  document.getElementById('theme-btn').textContent = next === 'dark' ? '☀' : '☾';
+function toggleThemeSwitch() {
+  const sw = document.getElementById('theme-switch');
+  const theme = sw.checked ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('aioncode-theme', theme);
+}
+function _syncThemeSwitch(theme) {
+  const sw = document.getElementById('theme-switch');
+  if (sw) sw.checked = theme === 'dark';
 }
 
 (function() {
-  const saved = localStorage.getItem('aioncode-theme');
-  if (saved) {
-    document.documentElement.setAttribute('data-theme', saved);
-    const btn = document.getElementById('theme-btn');
-    if (btn) btn.textContent = saved === 'dark' ? '☀' : '☾';
-  }
+  const saved = localStorage.getItem('aioncode-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', () => _syncThemeSwitch(saved));
 })();

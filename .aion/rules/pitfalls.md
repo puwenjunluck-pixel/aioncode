@@ -27,7 +27,7 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 - **NEVER 反向同步 .aion/ → templates/** (discussion, 2026-03-21) [cite_count: 0, last_cited: 2026-03-22]
   禁止将 `.aion/` 下的任何文件复制回 `templates/`。`templates/` 是产品模板（给所有用户的），`.aion/` 是本项目运行时数据（仅给自己的），数据流只能单向：`templates/` → `.aion/`。违反会导致所有新安装的用户继承 AionCode 自身的项目规则。**此规则无例外，无豁免，无 override。**
 
-- **NEVER 同步 commands/ → .claude/commands/** (discussion, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
+- **NEVER 同步 commands/ → .claude/commands/** (discussion, 2026-03-22) [cite_count: 1, last_cited: 2026-03-22]
   禁止执行任何将 `commands/*.md` 复制到 `.claude/commands/` 的操作（包括 `cp`、`rsync`、`shutil.copy` 等一切形式）。`commands/` 是源码，`.claude/commands/` 是运行版，二者必须隔离。违反此规则会导致 AI 工作流立刻失效。同步只能由用户自行执行。**此规则无例外，无豁免，无 override。**
 
 - **NEVER 手动编辑 embedded.py** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]

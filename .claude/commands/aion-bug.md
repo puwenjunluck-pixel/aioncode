@@ -287,6 +287,7 @@ ONE question at a time. Never batch multiple decisions.
 
 After filing a bug: `git push` to share with the team.
 For engineers: use `/project:aion-impl {BUG-ID}` to fix an assigned bug.
+When fixing multiple independent bugs at once, `/project:aion-impl` supports Agent Team — it can assign each bug to a separate agent for parallel fixing.
 
 ## Checklist
 - [ ] team.yml loaded and current user identified

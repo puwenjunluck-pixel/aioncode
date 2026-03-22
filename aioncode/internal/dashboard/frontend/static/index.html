@@ -58,6 +58,10 @@
   </button>
   <!-- Bottom -->
   <div class="rail-sep"></div>
+  <button class="rail-btn" data-view="skills" onclick="switchView('skills')" aria-label="技能">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 0h-11A2.5 2.5 0 000 2.5v6A2.5 2.5 0 002.5 11H5v3.5a1.5 1.5 0 002.56 1.06L11.12 12H13.5A2.5 2.5 0 0016 9.5v-7A2.5 2.5 0 0013.5 0zM5 5.5a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+    <span class="tip">技能</span>
+  </button>
   <button class="rail-btn" data-view="team" onclick="switchView('team')" aria-label="团队">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6 8a3 3 0 100-6 3 3 0 000 6zm-5 6s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H1zm9-1.5a.5.5 0 01.5-.5H12V10a.5.5 0 011 0v2h1.5a.5.5 0 010 1H13v2a.5.5 0 01-1 0v-2h-1.5a.5.5 0 01-.5-.5z"/></svg>
     <span class="tip">团队</span>
@@ -66,9 +70,9 @@
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 118 1a7 7 0 010 14zm0 1A8 8 0 108 0a8 8 0 000 16z"/><path d="M8.93 6.588l-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
     <span class="tip">关于</span>
   </button>
-  <button class="rail-btn" onclick="openPalette()" aria-label="命令面板">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 110-10 5 5 0 010 10z"/></svg>
-    <span class="tip">⌘K</span>
+  <button class="rail-btn" data-view="settings" onclick="switchView('settings')" aria-label="设置">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M7.07 0l-.26 1.63a5.97 5.97 0 00-1.64.68L3.72 1.4 1.4 3.72l.91 1.45a5.97 5.97 0 00-.68 1.64L0 7.07v3.27l1.63.26c.15.58.38 1.13.68 1.64l-.91 1.45 2.32 2.32 1.45-.91c.51.3 1.06.53 1.64.68L7.07 16h3.27l.26-1.63a5.97 5.97 0 001.64-.68l1.45.91 2.32-2.32-.91-1.45c.3-.51.53-1.06.68-1.64L16 8.93V5.66l-1.63-.26a5.97 5.97 0 00-.68-1.64l.91-1.45L12.28 0l-1.45.91A5.97 5.97 0 009.19.23L8.93 0H7.07zM8 5a3 3 0 110 6 3 3 0 010-6z"/></svg>
+    <span class="tip">设置</span>
   </button>
 </nav>
 
@@ -78,8 +82,7 @@
     <select id="proj-sel" onchange="switchProject(this.value)"><option>加载中...</option></select>
     <span class="path" id="proj-path"></span>
     <span class="spacer"></span>
-    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题" id="theme-btn">☀</button>
-    <span class="kbd-hint"><kbd>⌘</kbd><kbd>K</kbd> 命令面板</span>
+    <span class="brand">aioncode</span>
   </div>
 
   <div class="content">
@@ -137,6 +140,30 @@
         <div class="sw-title">变更日志 <span class="sw-badge" id="b-changelog">—</span></div>
         <div class="sw-body" id="changelog-list"></div>
       </div>
+      <!-- Skills sidebar -->
+      <div class="view-sidebar hidden" id="vs-skills">
+        <div class="sw-title">技能管理 <span class="sw-badge" id="b-skills">--</span></div>
+        <div class="skill-tabs" id="skill-tabs">
+          <button class="skill-tab active" onclick="switchSkillTab('installed')">已安装</button>
+          <button class="skill-tab" onclick="switchSkillTab('marketplace')">官方市场</button>
+        </div>
+        <div class="sw-body" id="skills-list"></div>
+      </div>
+      <!-- Settings sidebar -->
+      <div class="view-sidebar hidden" id="vs-settings">
+        <div class="sw-title">设置</div>
+        <div class="sw-body" id="settings-list">
+          <div class="settings-item">
+            <div class="settings-row">
+              <span class="settings-label">深色模式</span>
+              <label class="toggle-switch" onclick="toggleThemeSwitch()">
+                <input type="checkbox" id="theme-switch">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- About sidebar (TOC) -->
       <div class="view-sidebar hidden" id="vs-about">
         <div class="sw-title">使用指南</div>
@@ -154,14 +181,6 @@
     <span class="sep">·</span>
     <span id="s-last">—</span>
     <span style="margin-left:auto">AionCode</span>
-  </div>
-</div>
-
-<!-- Command Palette -->
-<div class="palette-bg" id="pal-bg" onclick="closePalette(event)">
-  <div class="palette" onclick="event.stopPropagation()">
-    <input id="pal-in" type="text" placeholder="搜索命令..." autocomplete="off" oninput="filterCmd(this.value)" onkeydown="palKey(event)">
-    <div class="palette-list" id="pal-list"></div>
   </div>
 </div>
 

@@ -113,6 +113,7 @@ function ensureViewData(view) {
     case 'checklists': loadChecklists(); break;
     case 'test': loadTests(); break;
     case 'changelog': loadChangelog(); break;
+    case 'skills': loadSkills(); break;
   }
 }
 function resetViewsCache() {
@@ -120,53 +121,28 @@ function resetViewsCache() {
   window._fileTree = null;
   window._clEntries = null;
 }
-async function loadSpecs() {
-  const files = await loadDirFiles('specs');
-  const el = document.getElementById('specs-list');
-  document.getElementById('b-specs').textContent = files.length || '—';
-  if (!files.length) { el.innerHTML = '<div class="empty">暂无需求文档</div>'; return; }
+async function _loadDataView(dir, listId, badgeId, emptyMsg, renderItem) {
+  const files = await loadDirFiles(dir);
+  const el = document.getElementById(listId);
+  document.getElementById(badgeId).textContent = files.length || '—';
+  if (!files.length) { el.innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
   const items = [];
   for (const f of files) {
     const data = await loadFileContent(f.path);
     const title = data?.meta?.title || data?.body?.match(/^#\s+(.+)/m)?.[1] || f.name.replace('.md','');
-    const status = data?.meta?.status || '';
-    const date = data?.meta?.created_at || '';
-    items.push({ path: f.path, title, status, date });
+    items.push({ path: f.path, title, status: data?.meta?.status||'', meta: data?.meta||{} });
   }
-  el.innerHTML = items.map(it =>
-    `<div class="data-item" onclick="viewDataItem('${esc(it.path)}')" title="${esc(it.path)}">
-      <div class="data-item-title">${esc(it.title)}</div>
-      <div class="data-item-meta">
-        ${it.status ? `<span class="fm-badge ${it.status}">${esc(it.status)}</span>` : ''}
-        ${it.date ? `<span>${esc(it.date)}</span>` : ''}
-      </div>
-    </div>`
-  ).join('');
+  el.innerHTML = items.map(renderItem).join('');
+}
+async function loadSpecs() {
+  await _loadDataView('specs','specs-list','b-specs','暂无需求文档', it =>
+    `<div class="data-item" onclick="viewDataItem('${esc(it.path)}')"><div class="data-item-title">${esc(it.title)}</div><div class="data-item-meta">${it.status?`<span class="fm-badge ${it.status}">${esc(it.status)}</span>`:''}${it.meta.created_at?`<span>${esc(it.meta.created_at)}</span>`:''}</div></div>`);
 }
 async function loadPlans() {
-  const files = await loadDirFiles('plans');
-  const el = document.getElementById('plans-list');
-  document.getElementById('b-plans').textContent = files.length || '—';
-  if (!files.length) { el.innerHTML = '<div class="empty">暂无实施方案</div>'; return; }
-  const items = [];
-  for (const f of files) {
-    const data = await loadFileContent(f.path);
-    const title = data?.meta?.title || data?.body?.match(/^#\s+(.+)/m)?.[1] || f.name.replace('.md','');
-    const status = data?.meta?.status || '';
-    const cur = parseInt(data?.meta?.current_step) || 0;
-    const total = parseInt(data?.meta?.total_steps) || 0;
-    const pct = total > 0 ? Math.round(cur / total * 100) : 0;
-    items.push({ path: f.path, title, status, cur, total, pct });
-  }
-  el.innerHTML = items.map(it =>
-    `<div class="data-item" onclick="viewDataItem('${esc(it.path)}')">
-      <div class="data-item-title">${esc(it.title)}</div>
-      <div class="data-item-meta">
-        ${it.status ? `<span class="fm-badge ${it.status}">${esc(it.status)}</span>` : ''}
-        ${it.total ? `<span>${it.cur}/${it.total}</span><div class="check-progress"><div class="check-progress-fill" style="width:${it.pct}%"></div></div>` : ''}
-      </div>
-    </div>`
-  ).join('');
+  await _loadDataView('plans','plans-list','b-plans','暂无实施方案', it => {
+    const cur=parseInt(it.meta.current_step)||0, total=parseInt(it.meta.total_steps)||0, pct=total?Math.round(cur/total*100):0;
+    return `<div class="data-item" onclick="viewDataItem('${esc(it.path)}')"><div class="data-item-title">${esc(it.title)}</div><div class="data-item-meta">${it.status?`<span class="fm-badge ${it.status}">${esc(it.status)}</span>`:''}${total?`<span>${cur}/${total}</span><div class="check-progress"><div class="check-progress-fill" style="width:${pct}%"></div></div>`:''}</div></div>`;
+  });
 }
 async function loadRules() {
   const files = await loadDirFiles('rules');
@@ -189,110 +165,51 @@ async function loadRules() {
   el.innerHTML = html;
 }
 async function loadChecklists() {
-  const files = await loadDirFiles('checklists');
-  const el = document.getElementById('checklists-list');
+  const files = await loadDirFiles('checklists'), el = document.getElementById('checklists-list');
   document.getElementById('b-checklists').textContent = files.length || '—';
   if (!files.length) { el.innerHTML = '<div class="empty">暂无清单</div>'; return; }
   const items = [];
   for (const f of files) {
-    const data = await loadFileContent(f.path);
-    const body = data?.body || data?.raw || '';
-    const total = (body.match(/- \[[ x]\]/g) || []).length;
-    const done = (body.match(/- \[x\]/g) || []).length;
-    const pct = total > 0 ? Math.round(done / total * 100) : 0;
-    items.push({ path: f.path, name: f.name.replace('.md',''), done, total, pct });
+    const data = await loadFileContent(f.path), body = data?.body||data?.raw||'';
+    const total = (body.match(/- \[[ x]\]/g)||[]).length, done = (body.match(/- \[x\]/g)||[]).length;
+    items.push({ path: f.path, name: f.name.replace('.md',''), done, total, pct: total?Math.round(done/total*100):0 });
   }
-  el.innerHTML = items.map(it =>
-    `<div class="data-item" onclick="viewDataItem('${esc(it.path)}')">
-      <div class="data-item-title">${esc(it.name)}</div>
-      <div class="data-item-meta">
-        <span>${it.done}/${it.total}</span>
-        <div class="check-progress"><div class="check-progress-fill" style="width:${it.pct}%"></div></div>
-      </div>
-    </div>`
-  ).join('');
+  el.innerHTML = items.map(it => `<div class="data-item" onclick="viewDataItem('${esc(it.path)}')"><div class="data-item-title">${esc(it.name)}</div><div class="data-item-meta"><span>${it.done}/${it.total}</span><div class="check-progress"><div class="check-progress-fill" style="width:${it.pct}%"></div></div></div></div>`).join('');
 }
 async function loadTests() {
-  const files = await loadDirFiles('tests');
   const el = document.getElementById('test-list');
-  if (!window._fileTree) {
-    const d = await api(`/api/projects/${curEncoded}/files`);
-    if (d.ok) window._fileTree = d.tree || [];
+  if (!window._fileTree) { const d = await api(`/api/projects/${curEncoded}/files`); if (d.ok) window._fileTree = d.tree || []; }
+  const dir = (window._fileTree||[]).find(n => n.name === 'tests' && n.type === 'dir');
+  if (!dir?.children?.length) { el.innerHTML = '<div class="empty">暂无测试报告</div>'; document.getElementById('b-test').textContent = '—'; return; }
+  let total = 0, html = '';
+  for (const c of dir.children) {
+    if (c.type === 'dir') {
+      const sf = c.children||[]; total += sf.length;
+      html += `<div class="rule-group-header">${esc(c.name)}/ (${sf.length})</div>`;
+      sf.forEach(f => { html += `<div class="data-item" onclick="viewDataItem('tests/${esc(c.name)}/${esc(f.name)}')"><div class="data-item-title">${esc(f.name)}</div><div class="data-item-meta"><span>${fmtSz(f.size)}</span></div></div>`; });
+    } else { total++; html += `<div class="data-item" onclick="viewDataItem('tests/${esc(c.name)}')"><div class="data-item-title">${esc(c.name)}</div><div class="data-item-meta"><span>${fmtSz(c.size)}</span></div></div>`; }
   }
-  const testsDir = (window._fileTree || []).find(n => n.name === 'tests' && n.type === 'dir');
-  if (!testsDir || !testsDir.children?.length) {
-    el.innerHTML = '<div class="empty">暂无测试报告</div>';
-    document.getElementById('b-test').textContent = '—';
-    return;
-  }
-  let totalFiles = 0;
-  let html = '';
-  for (const child of testsDir.children) {
-    if (child.type === 'dir') {
-      const subFiles = child.children || [];
-      totalFiles += subFiles.length;
-      html += `<div class="rule-group-header">${esc(child.name)}/ (${subFiles.length})</div>`;
-      subFiles.forEach(f => {
-        html += `<div class="data-item" onclick="viewDataItem('tests/${esc(child.name)}/${esc(f.name)}')">
-          <div class="data-item-title">${esc(f.name)}</div>
-          <div class="data-item-meta"><span>${fmtSz(f.size)}</span></div>
-        </div>`;
-      });
-      if (!subFiles.length) html += '<div class="empty">空目录</div>';
-    } else {
-      totalFiles++;
-      html += `<div class="data-item" onclick="viewDataItem('tests/${esc(child.name)}')">
-        <div class="data-item-title">${esc(child.name)}</div>
-        <div class="data-item-meta"><span>${fmtSz(child.size)}</span></div>
-      </div>`;
-    }
-  }
-  document.getElementById('b-test').textContent = totalFiles || '—';
-  el.innerHTML = html;
+  document.getElementById('b-test').textContent = total || '—'; el.innerHTML = html;
 }
 async function loadChangelog() {
   const d = await api(`/api/projects/${curEncoded}/changelog?limit=50`);
-  window._clEntries = d.entries || [];
-  const el = document.getElementById('changelog-list');
+  window._clEntries = d.entries || []; const el = document.getElementById('changelog-list');
   document.getElementById('b-changelog').textContent = window._clEntries.length || '—';
   if (!window._clEntries.length) { el.innerHTML = '<div class="empty">暂无变更记录</div>'; return; }
-  el.innerHTML = window._clEntries.map((e, i) => {
-    const parts = e.header.split('|');
-    const date = parts[0]?.trim() || '';
-    const title = parts[1]?.trim() || e.header;
-    return `<div class="cl-entry" onclick="viewChangelogEntry(${i})">
-      <div class="cl-entry-date">${esc(date)}</div>
-      <div class="cl-entry-title">${esc(title)}</div>
-    </div>`;
-  }).join('');
+  el.innerHTML = window._clEntries.map((e, i) => { const p=e.header.split('|'); return `<div class="cl-entry" onclick="viewChangelogEntry(${i})"><div class="cl-entry-date">${esc(p[0]?.trim()||'')}</div><div class="cl-entry-title">${esc(p[1]?.trim()||e.header)}</div></div>`; }).join('');
 }
 function viewChangelogEntry(idx) {
-  const e = window._clEntries?.[idx];
-  if (!e) return;
-  document.querySelectorAll('.cl-entry').forEach((el, i) => el.classList.toggle('active', i === idx));
-  const parts = e.header.split('|');
-  const date = parts[0]?.trim() || '';
-  const title = parts[1]?.trim() || e.header;
-  document.getElementById('detail').innerHTML = `<div class="md-content">
-    <h1>${esc(title)}</h1>
-    <p style="color:var(--text-tertiary);font-size:11px;margin-bottom:16px">${esc(date)}</p>
-    ${renderMarkdown(e.body)}
-  </div>`;
+  const e = window._clEntries?.[idx]; if (!e) return;
+  document.querySelectorAll('.cl-entry').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  const p=e.header.split('|'), date=p[0]?.trim()||'', title=p[1]?.trim()||e.header;
+  document.getElementById('detail').innerHTML = `<div class="md-content"><h1>${esc(title)}</h1><p style="color:var(--text-tertiary);font-size:11px;margin-bottom:16px">${esc(date)}</p>${renderMarkdown(e.body)}</div>`;
 }
 async function viewDataItem(path) {
   document.querySelectorAll('.data-item').forEach(el => el.classList.remove('active'));
   event?.target?.closest('.data-item')?.classList.add('active');
   const data = await loadFileContent(path);
   if (!data) { document.getElementById('detail').innerHTML = '<div class="detail-welcome"><div class="welcome-title">文件加载失败</div></div>'; return; }
-  const fname = path.split('/').pop();
-  document.getElementById('detail').innerHTML = `<div class="md-content">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-      <h1 style="margin:0;flex:1">${esc(fname)}</h1>
-      <button class="close-btn" onclick="switchView(curView)" style="border:none;background:transparent;color:var(--text-tertiary);cursor:pointer;padding:2px 6px;border-radius:3px;font-size:14px">✕</button>
-    </div>
-    ${renderFrontmatterTable(data.meta)}
-    ${renderMarkdown(data.body)}
-  </div>`;
+  document.getElementById('detail').innerHTML = `<div class="md-content"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><h1 style="margin:0;flex:1">${esc(path.split('/').pop())}</h1></div>${renderFrontmatterTable(data.meta)}${renderMarkdown(data.body)}</div>`;
 }
 const ABOUT_SECTIONS = [
   { id:'what',      title:'什么是 AionCode' },
@@ -301,7 +218,6 @@ const ABOUT_SECTIONS = [
   { id:'commands',  title:'命令速查' },
   { id:'scenarios', title:'常见场景' },
   { id:'dashboard', title:'副驾驶面板' },
-  { id:'shortcuts', title:'快捷操作' },
   { id:'faq',       title:'常见问题' },
   { id:'roadmap',   title:'版本路线图' },
 ];
@@ -316,13 +232,9 @@ function scrollAbout(id) {
   const el = document.getElementById('about-' + id);
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-function _tbl(hdrs, rows) {
-  return `<table class="key-table"><tr>${hdrs.map(h=>'<th>'+h+'</th>').join('')}</tr>${rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')}</table>`;
-}
-function _flow(steps) {
-  return `<div class="flow">${steps.map(s=>`<span class="flow-step">${s}</span>`).join('<span class="flow-arrow">→</span>')}</div>`;
-}
-function _faq(q, a) { return `<p><strong>Q：${q}</strong></p><p>${a}</p>`; }
+function _tbl(h,r){return `<table class="key-table"><tr>${h.map(x=>'<th>'+x+'</th>').join('')}</tr>${r.map(x=>'<tr>'+x.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')}</table>`}
+function _flow(s){return `<div class="flow">${s.map(x=>`<span class="flow-step">${x}</span>`).join('<span class="flow-arrow">→</span>')}</div>`}
+function _faq(q,a){return `<p><strong>Q：${q}</strong></p><p>${a}</p>`}
 function renderAboutPage() {
   setTimeout(renderAboutToc, 0);
   const cmds = [
@@ -345,13 +257,12 @@ function renderAboutPage() {
     <h1>AionCode 使用指南</h1>
     <p class="subtitle">AI 原生开发智能框架 · 让 AI 编程有章可循</p>
     <h2 id="about-what">什么是 AionCode</h2>
-    <p>AionCode 是一个 <strong>AI 辅助开发的智能框架</strong>。它为你的项目建立一套结构化的知识体系（规则、规格、计划），让 AI（Claude Code）在编码时有据可循。</p>
+    <p>AionCode 是成都奕贝科技公司开发的一个 <strong>AI 辅助开发的智能框架</strong>。它为你的项目建立一套结构化的知识体系（规则、规格、计划），让 AI（Claude Code）在编码时有据可循。</p>
     <p style="margin-top:8px">核心理念：<strong>知识沉淀 → 规则驱动 → 质量可控</strong></p>
     ${_tbl(['组成','作用'],[['<code>.aion/</code> 目录','项目智能数据：规则、规格、计划、日志、Bug'],['<code>commands/</code>','18 个 AI 工作流命令'],['<code>aioncode</code> CLI','命令行工具：初始化、升级、副驾驶'],['副驾驶面板','Web 可视化界面（你正在看的这个）']])}
     <h2 id="about-install">安装与初始化</h2>
-    <p><strong>第一步：</strong>在项目根目录执行 <code>aioncode init</code>。初始化后你会得到：</p>
-    ${_tbl(['目录/文件','用途'],[['<code>.aion/rules/</code>','项目编码规则（风格、陷阱、性能）'],['<code>.aion/specs/</code>','需求规格文档'],['<code>.aion/plans/</code>','实施计划'],['<code>.aion/changelog.md</code>','工作变更历史'],['<code>.aion/bugs/</code>','Bug 报告'],['<code>.claude/CLAUDE.md</code>','项目索引（每次启动自动加载）'],['<code>.claude/commands/</code>','AI 工作流命令']])}
-    <p><strong>第二步：</strong>（可选）在 Claude Code 中运行 <code>/project:aion-scan</code>，AI 自动分析项目并提取初始规则。</p>
+    <p>在项目根目录执行 <code>aioncode init</code>，然后（可选）运行 <code>/project:aion-scan</code> 自动提取规则。</p>
+    ${_tbl(['目录','用途'],[['<code>.aion/rules/</code>','编码规则'],['<code>.aion/specs/</code>','需求文档'],['<code>.aion/plans/</code>','实施计划'],['<code>.aion/bugs/</code>','Bug 报告'],['<code>.claude/commands/</code>','AI 工作流命令']])}
     <h2 id="about-workflow">工作流指南</h2>
     <p><strong>新项目：</strong></p>${_flow(['think','design','plan','impl','verify','review','commit'])}
     <p style="margin-top:12px"><strong>已有项目：</strong></p>${_flow(['scan','impl/design','verify','review','commit'])}
@@ -360,25 +271,12 @@ function renderAboutPage() {
     <h2 id="about-commands">命令速查</h2>
     <table class="key-table"><tr><th>阶段</th><th>命令</th><th>说明</th></tr>${cmds.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')}</table>
     <h2 id="about-scenarios">常见场景</h2>
-    <p><strong>场景 1：给项目加新功能</strong></p>
-    <ol><li>运行 <code>/project:aion-design</code> 描述需求</li><li>运行 <code>/project:aion-plan</code> 生成实施计划</li><li>运行 <code>/project:aion-impl</code> AI 按计划写代码</li><li><code>verify</code> → <code>review</code> → <code>commit</code></li></ol>
-    <p style="margin-top:12px"><strong>场景 2：让 AI 修 Bug</strong></p>
-    <ol><li><code>/project:aion-bug report</code> 描述 Bug → AI 创建报告（如 B-0322-1）</li><li><code>/project:aion-impl B-0322-1</code> → verify → review → commit</li></ol>
-    <p style="margin-top:12px"><strong>场景 3：交叉验证</strong> — 运行 <code>/project:aion-crosscheck --model gemini</code>，发现的问题自动生成 Bug 报告。</p>
-    <p style="margin-top:12px"><strong>场景 4：接手别人的项目</strong> — <code>aioncode init</code> → <code>/project:aion-scan</code> → AI 自动建立项目智能数据。</p>
+    ${_tbl(['场景','操作流程'],[['加新功能','design → plan → impl → verify → review → commit'],['修 Bug','bug report → impl {BUG-ID} → verify → commit'],['交叉验证','crosscheck --model gemini → 自动生成 Bug 报告'],['接手项目','aioncode init → aion-scan → 自动建立智能数据']])}
     <h2 id="about-dashboard">副驾驶面板</h2>
-    <p>副驾驶是 <strong>CLI 的可视化外壳</strong>。CLI 是手，副驾驶是眼。</p>
-    ${_tbl(['视图','用途','使用时机'],[['◈ 概览','项目统计 + 变更历史','开始工作前了解状态'],['◇ 文件','浏览 .aion/ 配置文件','查看 rules、specs、plans'],['◎ 监控','SSE 实时事件流','Claude Code 会话进行中'],['● 缺陷','Bug 列表与详情','crosscheck/review 后'],['◉ 团队','成员、模型、风险配置','团队协作配置时']])}
-    <p style="margin-top:8px"><strong>启动：</strong><code>aioncode dashboard</code>（生产）/ <code>--dev</code>（开发）/ <code>--port 8080</code>（自定义端口）</p>
-    ${_tbl(['CLI 操作','副驾驶显示'],[['<code>/aion-impl</code> 写代码','监控视图：实时工具调用'],['<code>/aion-review</code> 审查','文件视图：review 结果'],['<code>/aion-bug report</code>','缺陷视图：新 Bug'],['<code>/aion-crosscheck</code>','缺陷视图：交叉验证问题']])}
-    <h2 id="about-shortcuts">快捷操作</h2>
-    ${_tbl(['快捷键','操作'],[['<kbd>⌘</kbd><kbd>K</kbd> / <kbd>Ctrl</kbd><kbd>K</kbd>','打开命令面板'],['<kbd>Esc</kbd>','关闭命令面板'],['顶部下拉框','切换项目'],['☀ / ☾ 按钮','切换深色/浅色主题']])}
+    <p>副驾驶是 <strong>CLI 的可视化外壳</strong>。启动：<code>aioncode dashboard</code></p>
+    ${_tbl(['视图','用途'],[['◈ 概览','项目统计 + 变更历史'],['◇ 文件','浏览 .aion/ 配置文件'],['◎ 监控','SSE 实时事件流'],['● 缺陷','Bug 列表与详情'],['⚡ 技能','Skill 管理与市场']])}
     <h2 id="about-faq">常见问题</h2>
-    ${_faq('AionCode 支持哪些 AI 模型？','目前命令仅在 Claude Code 环境中执行。crosscheck 可调用其他模型（如 Gemini）做交叉验证。')}
-    ${_faq('.aion/ 目录要提交到 Git 吗？','建议提交。<code>rules/</code>、<code>specs/</code>、<code>plans/</code> 是团队共享知识。<code>sessions.jsonl</code> 和 <code>monitor/</code> 已被 .gitignore 排除。')}
-    ${_faq('如何升级？','运行 <code>aioncode upgrade</code> 或 <code>/project:aion-upgrade</code>。升级只更新命令和工具，不覆盖项目数据。')}
-    ${_faq('review 不通过能提交吗？','不能。<code>aion-commit</code> 要求通过 review（docs-only 可豁免）。')}
-    ${_faq('如何自定义规则？','直接编辑 <code>.aion/rules/</code> 下的文件，或运行 <code>/project:aion-scan</code> 自动提取。')}
+    ${[['支持哪些 AI 模型？','命令在 Claude Code 中执行。crosscheck 可调用 Gemini 等做交叉验证。'],['.aion/ 要提交 Git 吗？','建议提交。rules/specs/plans 是团队共享知识。sessions.jsonl 和 monitor/ 已排除。'],['如何升级？','运行 <code>aioncode upgrade</code>，只更新命令和工具，不覆盖数据。'],['review 不通过能提交吗？','不能。aion-commit 要求 review 通过（docs-only 可豁免）。']].map(([q,a])=>_faq(q,a)).join('')}
     <h2 id="about-roadmap">版本路线图</h2>
     <ul>
       <li><strong>v0.5</strong>（当前）— FastAPI 重构 + 副驾驶 UI + Core 层统一</li>
@@ -399,24 +297,7 @@ async function loadOverviewDetail() {
     <div class="do-section">
       <h3 class="do-title">项目统计</h3>
       <div class="do-grid">
-        <div class="do-card">
-          <div class="do-card-val">${s.rules?.style??0}</div><div class="do-card-lbl">代码风格</div>
-        </div>
-        <div class="do-card">
-          <div class="do-card-val">${s.rules?.pitfalls??0}</div><div class="do-card-lbl">已知陷阱</div>
-        </div>
-        <div class="do-card">
-          <div class="do-card-val">${s.rules?.perf??0}</div><div class="do-card-lbl">性能规则</div>
-        </div>
-        <div class="do-card">
-          <div class="do-card-val">${s.commands??0}</div><div class="do-card-lbl">命令数</div>
-        </div>
-        <div class="do-card">
-          <div class="do-card-val">${s.specs??0}</div><div class="do-card-lbl">需求文档</div>
-        </div>
-        <div class="do-card">
-          <div class="do-card-val">${s.plans??0}</div><div class="do-card-lbl">实施方案</div>
-        </div>
+        ${[['style','代码风格',s.rules?.style],['pitfalls','已知陷阱',s.rules?.pitfalls],['perf','性能规则',s.rules?.perf],['cmds','命令数',s.commands],['specs','需求文档',s.specs],['plans','实施方案',s.plans]].map(([,l,v])=>`<div class="do-card"><div class="do-card-val">${v??0}</div><div class="do-card-lbl">${l}</div></div>`).join('')}
       </div>
     </div>
     <div class="do-section">
@@ -449,10 +330,7 @@ async function loadMonitorDetail() {
     <div class="do-section">
       <h3 class="do-title">会话状态</h3>
       <div class="do-grid">
-        <div class="do-card"><div class="do-card-val">${state.total_events}</div><div class="do-card-lbl">总事件</div></div>
-        <div class="do-card"><div class="do-card-val">${toolEntries.length}</div><div class="do-card-lbl">工具种类</div></div>
-        <div class="do-card"><div class="do-card-val">${files.length}</div><div class="do-card-lbl">文件变更</div></div>
-        <div class="do-card"><div class="do-card-val">${(state.agents||[]).length}</div><div class="do-card-lbl">子代理</div></div>
+        ${[['总事件',state.total_events],['工具种类',toolEntries.length],['文件变更',files.length],['子代理',(state.agents||[]).length]].map(([l,v])=>`<div class="do-card"><div class="do-card-val">${v}</div><div class="do-card-lbl">${l}</div></div>`).join('')}
       </div>
     </div>
     <div class="do-section">
@@ -504,16 +382,116 @@ async function loadTeamDetail() {
           </div>
         </div>`).join('') : '<div class="empty">未配置成员</div>'}
     </div>
-    <div class="do-section">
-      <h3 class="do-title">模型配置</h3>
-      ${Object.keys(models).length ? Object.entries(models).map(([k,v]) => `
-        <div class="do-kv"><span class="do-kv-k">${esc(k)}</span><span class="do-kv-v">${esc(v)}</span></div>
-      `).join('') : '<div class="empty">未配置</div>'}
+    ${[['模型配置',models],['风险关键词',risk]].map(([t,d])=>`<div class="do-section"><h3 class="do-title">${t}</h3>${Object.keys(d).length?Object.entries(d).map(([k,v])=>`<div class="do-kv"><span class="do-kv-k">${esc(k)}</span><span class="do-kv-v">${esc(v)}</span></div>`).join(''):'<div class="empty">未配置</div>'}</div>`).join('')}`;
+}
+
+// ══════════════════════════════════════
+//  Skills
+// ══════════════════════════════════════
+async function loadSkills() {
+  const d = await api('/api/skills');
+  if (!d.ok) return;
+  window._skills = d.skills || [];
+  document.getElementById('b-skills').textContent = window._skills.length || '--';
+  renderSkillsSidebar(window._skills);
+}
+
+function renderSkillsSidebar(skills) {
+  const el = document.getElementById('skills-list');
+  if (!skills.length) { el.innerHTML = '<div class="empty">暂无已安装技能</div><div class="skill-hint">运行 <code>/find-skills</code> 搜索技能</div>'; return; }
+  const groups = { user: [], agent: [] }, labels = { user: '用户技能', agent: '代理技能' };
+  skills.forEach(s => (groups[s.source] || groups.user).push(s));
+  let html = '';
+  for (const [type, items] of Object.entries(groups)) {
+    if (!items.length) continue;
+    html += `<div class="rule-group-header">${labels[type]||type} (${items.length})</div>`;
+    items.forEach(s => {
+      const desc = (s.description||'').substring(0, 60);
+      html += `<div class="data-item" onclick="viewSkill('${esc(s.dir_name)}')"><div class="data-item-title">${esc(s.name)}</div><div class="data-item-meta"><span class="tag">${esc(type)}</span><span>${esc(desc)}${desc.length>=60?'...':''}</span></div></div>`;
+    });
+  }
+  el.innerHTML = html;
+}
+
+async function switchSkillTab(tab) {
+  document.querySelectorAll('.skill-tab').forEach(b =>
+    b.classList.toggle('active', (tab === 'installed' && b.textContent === '已安装') || (tab === 'marketplace' && b.textContent === '官方市场')));
+  if (tab === 'installed') {
+    renderSkillsSidebar(window._skills || []);
+  } else {
+    const el = document.getElementById('skills-list');
+    el.innerHTML = '<div class="empty">加载中...</div>';
+    const d = await api('/api/skills/marketplace');
+    if (!d.ok) { el.innerHTML = '<div class="empty">加载失败</div>'; return; }
+    window._marketplacePlugins = d.plugins || [];
+    renderMarketplaceSidebar(window._marketplacePlugins);
+  }
+}
+
+function renderMarketplaceSidebar(plugins) {
+  const el = document.getElementById('skills-list');
+  if (!plugins.length) {
+    el.innerHTML = '<div class="empty">暂无可用插件</div>';
+    return;
+  }
+  el.innerHTML = plugins.map(p =>
+    `<div class="data-item" onclick="viewMarketplacePlugin('${esc(p.name)}')">
+      <div class="data-item-title">${esc(p.name)} ${p.installed ? '<span class="fm-badge completed">已安装</span>' : ''}</div>
+      <div class="data-item-meta"><span>${esc((p.description || '').substring(0, 80))}</span></div>
+    </div>`
+  ).join('');
+}
+
+async function viewSkill(dirName) {
+  document.querySelectorAll('#skills-list .data-item').forEach(el => el.classList.remove('active'));
+  if (event?.target) event.target.closest('.data-item')?.classList.add('active');
+  const d = await api(`/api/skills/${encodeURIComponent(dirName)}`);
+  if (!d.ok) {
+    document.getElementById('detail').innerHTML = '<div class="detail-welcome"><div class="welcome-title">技能加载失败</div></div>';
+    return;
+  }
+  const meta = d.meta || {};
+  const files = d.files || [];
+  document.getElementById('detail').innerHTML = `<div class="md-content">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <h1 style="margin:0;flex:1">${esc(meta.name || dirName)}</h1>
+      <button class="skill-action-btn danger" onclick="uninstallSkill('${esc(dirName)}')">卸载</button>
     </div>
-    <div class="do-section">
-      <h3 class="do-title">风险关键词</h3>
-      ${Object.keys(risk).length ? Object.entries(risk).map(([k,v]) => `
-        <div class="do-kv"><span class="do-kv-k">${esc(k)}</span><span class="do-kv-v">${esc(v)}</span></div>
-      `).join('') : '<div class="empty">未配置</div>'}
-    </div>`;
+    ${renderFrontmatterTable(meta)}
+    ${files.length ? `<div style="margin:12px 0"><strong>文件结构:</strong><div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">${files.map(f => '<code style="font-size:11px;padding:1px 6px;background:var(--bg);border-radius:3px">' + esc(f) + '</code>').join('')}</div></div>` : ''}
+    ${renderMarkdown(d.body || '')}
+  </div>`;
+}
+
+function viewMarketplacePlugin(name) {
+  document.querySelectorAll('#skills-list .data-item').forEach(el => el.classList.remove('active'));
+  if (event?.target) event.target.closest('.data-item')?.classList.add('active');
+  const plugin = (window._marketplacePlugins || []).find(p => p.name === name) || {};
+  const authorStr = plugin.author ? (typeof plugin.author === 'object' ? (plugin.author.name || '') : plugin.author) : '';
+  document.getElementById('detail').innerHTML = `<div class="md-content">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <h1 style="margin:0;flex:1">${esc(name)}</h1>
+      ${plugin.installed
+        ? '<span class="fm-badge completed">已安装</span>'
+        : `<button class="skill-action-btn primary" onclick="installPlugin('${esc(name)}')">安装</button>`}
+    </div>
+    ${plugin.description ? `<p>${esc(typeof plugin.description === 'object' ? JSON.stringify(plugin.description) : plugin.description)}</p>` : ''}
+    ${authorStr ? `<p style="font-size:12px;color:var(--text-tertiary)">作者: ${esc(authorStr)}</p>` : ''}
+  </div>`;
+}
+
+async function uninstallSkill(dirName) {
+  if (!confirm(`确定卸载技能 "${dirName}"？`)) return;
+  const btn = document.querySelector('.skill-action-btn.danger');
+  if (btn) { btn.disabled = true; btn.textContent = '卸载中...'; }
+  const d = await api(`/api/skills/${encodeURIComponent(dirName)}`, { method: 'DELETE' });
+  if (d.ok) { viewsLoaded.delete('skills'); loadSkills(); showViewDetail('skills'); }
+  else { alert('卸载失败: ' + (d.message||'')); if (btn) { btn.disabled = false; btn.textContent = '卸载'; } }
+}
+async function installPlugin(name) {
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = '安装中...'; }
+  const d = await api('/api/skills/marketplace/install', { method: 'POST', body: { name } });
+  if (d.ok) { if (btn) { btn.textContent = '已安装'; btn.className = 'skill-action-btn'; } const md = await api('/api/skills/marketplace'); if (md.ok) window._marketplacePlugins = md.plugins || []; }
+  else { alert('安装失败: ' + (d.message||'')); if (btn) { btn.disabled = false; btn.textContent = '安装'; } }
 }

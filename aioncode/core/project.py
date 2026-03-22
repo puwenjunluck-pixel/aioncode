@@ -245,6 +245,9 @@ def init_project(
         if not dir_path.is_dir():
             dir_path.mkdir(parents=True, exist_ok=True)
 
+    # 2.5. Install bundled skills to ~/.claude/skills/ (never overwrite)
+    _install_bundled_skills(templates_dir, result)
+
     # 3. Install hooks & settings (only if not existing)
     claude_dir = target / ".claude"
     claude_dir.mkdir(parents=True, exist_ok=True)
@@ -324,3 +327,26 @@ def _check_gitignore(gitignore_path: Path) -> list[str]:
         content = gitignore_path.read_text(encoding="utf-8")
         return [e for e in GITIGNORE_ENTRIES if e not in content]
     return list(GITIGNORE_ENTRIES)
+
+
+def _install_bundled_skills(templates_dir: Path, result: InitResult) -> None:
+    """Install bundled skills to ~/.claude/skills/ (never overwrite existing)."""
+    skills_src = templates_dir / "skills"
+    if not skills_src.is_dir():
+        return
+    user_skills_dir = Path.home() / ".claude" / "skills"
+    for skill_dir in sorted(skills_src.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        dst = user_skills_dir / skill_dir.name
+        if dst.exists():
+            result.skipped.append(f"~/.claude/skills/{skill_dir.name}/")
+            continue
+        dst.mkdir(parents=True, exist_ok=True)
+        for f in sorted(skill_dir.rglob("*")):
+            if not f.is_file():
+                continue
+            dst_file = dst / f.relative_to(skill_dir)
+            dst_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(f, dst_file)
+        result.created.append(f"~/.claude/skills/{skill_dir.name}/")

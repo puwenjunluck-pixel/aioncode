@@ -1,6 +1,6 @@
 # /project:aion-save — 上下文保存
 
-Save important information from the current conversation to two persistence layers: `.aion/` documents and Claude memory.
+Save important information from the current conversation to three persistence layers: `.aion/` documents, `.claude/CLAUDE.md` (first-layer memory), and Claude memory.
 
 $ARGUMENTS — Optional: what to save.
 - Empty: analyze the full conversation and save all relevant information to all layers
@@ -11,16 +11,17 @@ $ARGUMENTS — Optional: what to save.
 
 ## Role
 
-You are a **context preservation engine**. Your job is to ensure no important information is lost when a conversation ends. You extract structured knowledge from unstructured conversation and persist it to two layers:
+You are a **context preservation engine**. Your job is to ensure no important information is lost when a conversation ends. You extract structured knowledge from both conversation AND actual code changes, and persist it to three layers:
 
 1. **`.aion/` 文件** — 项目文档（规格、计划、规则、日志）
-2. **Claude memory** — 用户/项目记忆（跨会话持久化）
+2. **`.claude/CLAUDE.md`** — 第一层记忆（每次对话最先加载的项目索引）
+3. **Claude memory** — 用户/项目记忆（跨会话持久化）
 
 You append, never overwrite. You deduplicate, never repeat. You filter — only substance, never noise.
 
 > ⚠️ **CRITICAL**: NEVER overwrite existing content. Always APPEND. Destroying previous work is unrecoverable. Violating this is the #1 cause of failure for this command.
 
-> ⚠️ **CRITICAL**: NEVER write to `.claude/CLAUDE.md`. CLAUDE.md is a boot-loader index managed exclusively by `init`/`upgrade` code. Learned knowledge belongs in `.aion/rules/` or Claude memory, NOT in CLAUDE.md. Violating this causes unbounded file growth and content duplication.
+> ⚠️ **CRITICAL**: `.claude/CLAUDE.md` 是项目第一层记忆。save 可以在 `<!-- AIONCODE:END -->` 标记之后追加或更新项目级上下文，但 NEVER 修改标记区域内的内容（由 init/upgrade 管理）。保持简约索引风格——一行一条，不写详细说明。标记外 Project Notes 区域不超过 10 行。
 
 ## Steps
 
@@ -61,6 +62,17 @@ Scan for information that should persist **across conversations and potentially 
 **判断标准**：这条信息在下次新对话中是否有价值？如果只对当前对话有用，不保存到 memory。
 
 If `$ARGUMENTS` specifies a type (spec/plan/rules/changelog), only save that type to `.aion/`. But **always** check and save to memory regardless.
+
+### Step 1.5: Code Change Audit（代码变更审计）
+
+Run `git diff --stat` and `git diff --name-only` to detect actual code changes in this session.
+
+1. **分类变更文件**：commands/ (命令), aioncode/ (核心代码), templates/ (模板), .aion/ (文档)
+2. **对比现有文档**：对每个重要功能变更，检查 `.aion/specs/` 和 `.aion/plans/` 是否有对应文档
+3. **Gap 处理**：
+   - 功能已实现但无 spec → Step 3a 中创建追溯性 spec，frontmatter 加 `source: retroactive-save`
+   - 功能已实现但无 plan → Step 3a 中创建追溯性 plan summary
+   - 追溯文档基于实际代码变更（读 diff），不是对话文本
 
 ### Step 2: Read Existing Documents
 Before writing anything:
@@ -121,10 +133,30 @@ If Step 1 identified memory-worthy information:
 4. **Check existing memories first** — update rather than duplicate
 5. Only save genuinely cross-session information — not ephemeral task details
 
+#### 3c: CLAUDE.md 智能更新（第一层记忆）
+
+读取 `.claude/CLAUDE.md`，检查是否有本次变更需要反映：
+
+1. **标记区域内**（`<!-- AIONCODE:START/END -->` 之间）：
+   - NEVER 直接修改
+   - 如内容过时（如新增命令未列出），在报告中提示用户运行 `aioncode init --upgrade`
+
+2. **标记区域外**（`<!-- AIONCODE:END -->` 之后）：
+   - 使用 `## Project Notes` 区域
+   - 每条一行，索引风格
+   - 总量不超过 10 行，超过时合并或删除过时条目
+   - 只放通过"删掉这条，Claude 会犯错吗？"测试的信息
+   - 先去重：已存在则跳过
+
 ### Step 4: Report
 ```
 Context Saved
 ───────────────────────────────────────
+
+Layer 0 — CLAUDE.md (第一层记忆):
+  + Project Notes: {N} entries added/updated
+  (或: no updates needed)
+  (或: ⚠ marker section outdated — run `aioncode init --upgrade`)
 
 Layer 1 — .aion/ 文件:
   .aion/specs/{name}.md — {what was added}
@@ -154,14 +186,19 @@ Read and apply `.aion/checklists/save.md` if it exists. If not, use the built-in
 - [ ] Casual chat and meta-discussion filtered out — only substance saved
 - [ ] Changelog entry appended (always, even if other types have nothing)
 - [ ] File format matches existing conventions in each target file
-- [ ] NEVER touched .claude/CLAUDE.md — confirmed
+- [ ] Code changes audited via git diff
+- [ ] Spec/plan gaps identified and retroactively documented
+- [ ] CLAUDE.md: only wrote OUTSIDE markers, kept index style, ≤10 lines
 - [ ] Memory checked for existing entries before creating
 - [ ] Memory items are cross-session insights, not ephemeral task data
 
 ## Anti-Patterns
 | Violation | Why it fails | Severity |
 |-----------|-------------|----------|
-| Writing to .claude/CLAUDE.md | CLAUDE.md is a code-managed index, not a notebook. Writing causes duplication and unbounded growth | **CRITICAL** |
+| Modifying CLAUDE.md marker section (AIONCODE:START/END 之间) | 标记区域由 init/upgrade 管理，手动修改会被覆盖 | **CRITICAL** |
+| Writing detailed content to CLAUDE.md | CLAUDE.md 是索引不是文档，详细内容属于 .aion/ | HIGH |
+| Skipping git diff audit | 遗漏已实现但未文档化的功能 | HIGH |
+| Only analyzing conversation without checking code changes | 跳过 design/plan 直接实现时，对话文本中没有需求/方案信息 | HIGH |
 | Saving trivial chat or greetings | Noise in project documents makes them useless | HIGH |
 | Overwriting existing file content | Destroys previously saved work — always append | CRITICAL |
 | Not reading existing files before writing | Guaranteed duplicates that clutter documents | HIGH |

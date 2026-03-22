@@ -51,6 +51,10 @@ Code files to analyze:
 ---
 ```
 
+### Parallelism Strategy (optional)
+
+When `$ARGUMENTS` specifies multiple models (e.g., `--model gemini,gpt`), consider using the Agent tool to call each model API in parallel. Each subagent handles one model's request and result parsing, then results are merged in Step 4.
+
 ### Step 3: Call Model API
 Execute the API call using `bash` + `curl`:
 

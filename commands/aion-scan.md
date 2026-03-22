@@ -24,7 +24,7 @@ You are a **senior architect onboarding onto an existing codebase**. Your job is
 
 ### Step 1: Deep Scan
 
-Scan the project systematically. Run these in parallel where possible:
+Scan the project systematically. For medium-to-large projects, consider using the Agent tool (subagent_type=Explore) to parallelize independent scan dimensions — e.g., one agent for code structure + conventions, another for test landscape + CI/CD. For small projects, sequential scanning is fine.
 
 #### 1a. Project Identity
 - Read `README.md`, `CONTRIBUTING.md`, `ARCHITECTURE.md` (if they exist)

@@ -38,6 +38,10 @@ If multiple markers exist (e.g., monorepo with `package.json` + `requirements.tx
 
 If no marker is found, report `SKIP` for all phases and exit with `NEEDS_CONTEXT`.
 
+### Parallelism Strategy (optional)
+
+When running `full` mode with multiple independent checks (build, types, lint, tests), consider using the Agent tool to run non-dependent checks in parallel — e.g., lint and type checks can run simultaneously since they don't affect each other. Build must complete before tests if tests depend on build artifacts.
+
 ### Step 1: Build Check
 
 1. Run the build command for the detected stack

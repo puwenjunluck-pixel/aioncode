@@ -2,6 +2,46 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-22 | feat: Skills 管理视图 + CLAUDE.md 强制化 + 命令并行策略
+
+### Summary
+- Dashboard 新增「技能」视图：已安装 skill 列表 + 官方市场浏览 + 详情查看 + 一键卸载/安装
+- Dashboard UI 改进：右上角 AIONCODE 品牌暗刻（深色蓝色/浅色灰色）、设置面板（主题 toggle switch）、命令面板移除
+- 内置 2 个基础 skill：find-skills（原样复制）+ aion-skill-creator（自研轻量版 skill 创建引导）
+- `aioncode init` 新增步骤 2.5：自动安装内置 skill 到 ~/.claude/skills/（绝不覆盖已有）
+- CLAUDE.md 模板从信息性措辞强化为强制性措辞（NEVER/ALWAYS），新增 3 条 key rules
+- 分析发现 18 个 aion 命令均未引用 subagent/Agent Team，导致并行能力从未触发
+- 6 个命令新增可选并行策略：aion-impl（Agent Team 前后端分工/多 bug 并行）、aion-scan（Explore subagent）、aion-verify/review（subagent 并行检查）、aion-crosscheck（多模型并行）、aion-bug（提示 impl 的 Team 能力）
+- 关于页公司信息更新：成都奕贝科技公司
+
+### Key Decisions
+- 不内置特定第三方 skill，而是提供 skill 管理平台（浏览 + 搜索引导 + 创建引导）
+- skill-creator 自研轻量版：只做脚手架生成和编写指南，不含 eval/benchmark 重量级功能
+- 并行策略用 "consider using" 措辞，Claude 根据复杂度自行判断，不强制
+- Agent Team 适合 impl 前后端分工和多 bug 并行，Subagent 适合 scan/verify/review/crosscheck
+- 讨论了 Opus plan + Sonnet execute 模型路由方案，暂不实现，需要时可加到 aion 命令
+
+### Files Changed
+- 新增: services/skills.py, routers/skills.py（backend）
+- 新增: templates/skills/find-skills/SKILL.md, templates/skills/aion-skill-creator/SKILL.md
+- 修改: app.py, index.html, app.js, views.js, views.css, style.css（frontend）
+- 修改: core/project.py（init 步骤 2.5）
+- 修改: CLAUDE.md.tpl + .claude/CLAUDE.md（强制措辞）
+- 修改: commands/aion-impl.md, aion-scan.md, aion-verify.md, aion-review.md, aion-crosscheck.md, aion-bug.md（并行策略）
+- 重建: embedded.py
+
+### 后续补充（同一会话）
+- aion-save 增强：新增 git diff 代码变更审计 + CLAUDE.md 标记外 Project Notes 智能更新 + 追溯性 spec/plan 生成
+- 注释规则：5 条新规则写入 .aion/rules/style.md（Python docstring + JS 函数说明 + 注释只解释 why）
+- 发现并修正 aion 命令的 subagent/Agent Team 从未触发问题（18 个命令均未引用）
+
+### Pending
+- 未提交，待用户确认后提交
+- MCP 可视化是否纳入 dashboard 待讨论
+- 模型路由（Opus plan / Sonnet execute）待需要时实现
+
+---
+
 ## 2026-03-22 23:30 | feat: v0.5 收尾 — 数据视图 + CLAUDE.md 重塑 + 发布准备
 
 ### Summary

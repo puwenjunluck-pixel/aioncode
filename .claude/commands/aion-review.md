@@ -47,6 +47,10 @@ Every claim must cite evidence. Use format: `filename:line_number` or specific t
 - BAD: "There might be security issues" or "This probably works"
 Never use "likely", "probably", "should be fine" — verify and cite, or mark as `[UNVERIFIED]`.
 
+### Parallelism Strategy (optional)
+
+When reviewing changes across 5+ files in unrelated modules, consider using the Agent tool to review independent file groups in parallel — e.g., one subagent reviews frontend changes, another reviews backend changes. Each subagent must still read the full file (not just diffs) and check against `.aion/rules/`.
+
 ### Step 2: Review Each Changed File
 For each changed file:
 1. Read the COMPLETE file (not just the diff) to understand full context

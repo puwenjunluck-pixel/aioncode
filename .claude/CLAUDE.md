@@ -2,19 +2,31 @@
 # AionCode — Project Intelligence
 
 ## Rules (MANDATORY)
-Before making ANY code changes, read and strictly follow all rules in `.aion/rules/`.
+NEVER write or edit any code file without first reading ALL rules in `.aion/rules/`. This is non-negotiable.
 
 ## Context
-Check `.aion/` for project context: changelog, specs, plans, contracts, refs, prototypes, checklists, team.yml, bugs/, sessions.jsonl.
+ALWAYS check `.aion/` for project context before starting work: changelog, specs, plans, contracts, refs, prototypes, checklists, team.yml, bugs/, sessions.jsonl.
 
 ## Commands
 Run `/project:aion-help` for full command list. Key workflow commands:
 scan | think | design | demo | plan | impl | test | verify | review | commit | save | bug | crosscheck | upgrade | loop
 
-## Workflow
-New:      think → design → (demo) → plan → impl → (test) → verify → review → commit
-Existing: scan → impl/design → verify → review → commit
-Bug:      bug report → impl {BUG-ID} → verify → review → commit
-Note: review includes auto-learning. commit requires review approval.
+## Workflow (MANDATORY)
+NEVER skip the workflow. For ANY task involving code changes, follow the appropriate flow:
+
+New feature:  think → design → (demo) → plan → impl → (test) → verify → review → commit
+Existing code: scan → impl/design → verify → review → commit
+Bug fix:       bug report → impl {BUG-ID} → verify → review → commit
+
+Key rules:
+- For tasks involving 3+ file changes, ALWAYS run `/project:aion-plan` first and get user approval before implementing.
+- NEVER commit without running `/project:aion-review` first. commit requires review approval.
+- When a task can be broken into independent subtasks, use the Agent tool to parallelize work with subagents.
+- review includes auto-learning via `/project:aion-learn`.
 
 <!-- AIONCODE:END -->
+
+## Project Notes
+- 本项目是 AionCode 自身（dogfooding）— NEVER 同步 commands/ → .claude/commands/
+- 公司：成都奕贝科技
+- Dashboard dev 模式：`python3.11 -c "from aioncode.internal.dashboard.app import create_app; import uvicorn; uvicorn.run(create_app(dev=True), host='127.0.0.1', port=19200)"`

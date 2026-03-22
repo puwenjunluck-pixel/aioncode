@@ -168,3 +168,17 @@
 /* === Rule specific === */
 .rule-group-header { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); padding: 8px 8px 4px; margin-top: 4px; }
 .rule-cite { font-size: 9px; font-family: var(--font-mono); color: var(--text-tertiary); background: var(--bg-deep); padding: 0 4px; border-radius: 3px; line-height: 14px; }
+
+/* === Skills view === */
+.skill-tabs { display: flex; gap: 2px; padding: 4px 8px; }
+.skill-tab { flex: 1; border: none; background: var(--bg-deep); color: var(--text-tertiary); font-size: 11px; font-weight: 500; padding: 5px 0; border-radius: 4px; cursor: pointer; transition: all var(--dur-fast); }
+.skill-tab:hover { color: var(--text-secondary); background: var(--bg-hover); }
+.skill-tab.active { background: var(--accent-dim); color: var(--accent-text); }
+.skill-hint { text-align: center; padding: 12px 8px; font-size: 11px; color: var(--text-tertiary); line-height: 1.6; }
+.skill-hint code { font-family: var(--font-mono); font-size: 10px; background: var(--bg-deep); padding: 1px 4px; border-radius: 3px; color: var(--accent-text); }
+.skill-action-btn { border: none; padding: 6px 14px; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all var(--dur-fast); }
+.skill-action-btn.primary { background: var(--accent); color: #fff; }
+.skill-action-btn.primary:hover { filter: brightness(1.1); }
+.skill-action-btn.danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+.skill-action-btn.danger:hover { background: var(--danger); color: #fff; }
+.skill-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
