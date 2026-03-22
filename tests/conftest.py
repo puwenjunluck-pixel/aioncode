@@ -38,8 +38,18 @@ def mock_aion_env(tmp_path: Path) -> Path:
     (aion_dir / "config.yml").write_text(f'version: "{__version__}"\n', encoding="utf-8")
 
     for subdir in [
-        "rules", "refs", "specs", "plans", "reviews", "contracts",
-        "prototypes", "monitor", "tests", "bugs", "checklists", "hooks",
+        "rules",
+        "refs",
+        "specs",
+        "plans",
+        "reviews",
+        "contracts",
+        "prototypes",
+        "monitor",
+        "tests",
+        "bugs",
+        "checklists",
+        "hooks",
     ]:
         (aion_dir / subdir).mkdir(parents=True, exist_ok=True)
 
