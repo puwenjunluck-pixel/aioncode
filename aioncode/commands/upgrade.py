@@ -22,6 +22,7 @@ from aioncode.utils.console import (
     warning,
 )
 from aioncode.utils.network import (
+    _build_headers,
     download_file,
     get_latest_release,
 )
@@ -87,7 +88,11 @@ def run_upgrade(args: argparse.Namespace) -> None:
         return
 
     header("Checking for Updates")
-    release = get_latest_release()
+    try:
+        release = get_latest_release()
+    except PermissionError as e:
+        error(str(e))
+        raise SystemExit(1) from e
 
     if release is None:
         error("Failed to check for updates. Check your internet connection.")
@@ -104,8 +109,8 @@ def run_upgrade(args: argparse.Namespace) -> None:
     info(f"Release: {release.url}")
 
     # Find binary for this platform
-    binary_url = release.get_binary_url()
-    if binary_url is None:
+    binary_result = release.get_binary_url()
+    if binary_result is None:
         tag = get_platform_tag()
         error(f"No binary found for platform: {tag}")
         info("Available assets:")
@@ -113,7 +118,8 @@ def run_upgrade(args: argparse.Namespace) -> None:
             muted(f"  {name}")
         raise SystemExit(1)
 
-    info(f"Binary: {binary_url.split('/')[-1]}")
+    binary_url, is_api, asset_name = binary_result
+    info(f"Binary: {asset_name}")
 
     if not confirm(f"Upgrade to v{latest_version}?", default=True):
         info("Cancelled.")
@@ -128,7 +134,10 @@ def run_upgrade(args: argparse.Namespace) -> None:
             if total > 0:
                 progress.update(task, total=total, completed=downloaded)
 
-        tmp_path = download_file(binary_url, progress_callback=on_progress)
+        dl_headers: dict[str, str] | None = None
+        if is_api:
+            dl_headers = _build_headers(accept="application/octet-stream")
+        tmp_path = download_file(binary_url, progress_callback=on_progress, headers=dl_headers)
 
     # Replace
     header("Installing")

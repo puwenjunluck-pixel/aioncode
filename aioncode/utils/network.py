@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 from pathlib import Path
 from typing import Any
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from aioncode import __version__
@@ -22,6 +23,28 @@ USER_AGENT = f"aioncode/{__version__}"
 
 
 # ---------------------------------------------------------------------------
+# Auth helpers
+# ---------------------------------------------------------------------------
+
+
+def _get_token() -> str | None:
+    """Read GitHub token from GITHUB_TOKEN environment variable."""
+    return os.environ.get("GITHUB_TOKEN") or None
+
+
+def _build_headers(accept: str = "application/vnd.github.v3+json") -> dict[str, str]:
+    """Build HTTP headers with optional Authorization."""
+    headers: dict[str, str] = {
+        "Accept": accept,
+        "User-Agent": USER_AGENT,
+    }
+    token = _get_token()
+    if token:
+        headers["Authorization"] = f"token {token}"
+    return headers
+
+
+# ---------------------------------------------------------------------------
 # GitHub API helpers (using stdlib urllib to avoid requests at import time)
 # ---------------------------------------------------------------------------
 
@@ -29,13 +52,7 @@ USER_AGENT = f"aioncode/{__version__}"
 def _github_get(endpoint: str, timeout: int = 10) -> Any:
     """Make a GET request to the GitHub API."""
     url = f"{GITHUB_API}/{endpoint}"
-    req = Request(
-        url,
-        headers={
-            "Accept": "application/vnd.github.v3+json",
-            "User-Agent": USER_AGENT,
-        },
-    )
+    req = Request(url, headers=_build_headers())
     with urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
@@ -48,7 +65,7 @@ def _github_get(endpoint: str, timeout: int = 10) -> Any:
 class ReleaseInfo:
     """Information about a GitHub release."""
 
-    __slots__ = ("tag", "version", "url", "assets", "published_at")
+    __slots__ = ("tag", "version", "url", "assets", "api_urls", "published_at")
 
     def __init__(self, data: dict[str, Any]) -> None:
         self.tag: str = data.get("tag_name", "")
@@ -56,18 +73,30 @@ class ReleaseInfo:
         self.url: str = data.get("html_url", "")
         self.published_at: str = data.get("published_at", "")
         self.assets: dict[str, str] = {}
+        self.api_urls: dict[str, str] = {}
         for asset in data.get("assets", []):
             name = asset.get("name", "")
             download_url = asset.get("browser_download_url", "")
+            api_url = asset.get("url", "")
             if name and download_url:
                 self.assets[name] = download_url
+            if name and api_url:
+                self.api_urls[name] = api_url
 
-    def get_binary_url(self) -> str | None:
-        """Find the download URL for the current platform's binary."""
+    def get_binary_url(self) -> tuple[str, bool, str] | None:
+        """Find the download URL for the current platform's binary.
+
+        Returns:
+            (url, is_api, asset_name) tuple — is_api=True means use API URL with octet-stream Accept header.
+            None if no matching binary found.
+        """
         tag = get_platform_tag()
-        for name, url in self.assets.items():
+        token = _get_token()
+        for name in self.assets:
             if tag in name:
-                return url
+                if token and name in self.api_urls:
+                    return self.api_urls[name], True, name
+                return self.assets[name], False, name
         return None
 
 
@@ -76,6 +105,12 @@ def get_latest_release() -> ReleaseInfo | None:
     try:
         data = _github_get("releases/latest")
         return ReleaseInfo(data)
+    except HTTPError as e:
+        if e.code in (401, 403):
+            raise PermissionError("GitHub API 认证失败，请检查 GITHUB_TOKEN 是否有效") from e
+        if e.code == 404 and not _get_token():
+            raise PermissionError("无法访问仓库，私有仓库需设置 GITHUB_TOKEN 环境变量") from e
+        return None
     except (URLError, OSError, json.JSONDecodeError, KeyError):
         return None
 
@@ -86,7 +121,10 @@ def check_for_update() -> tuple[bool, str | None]:
     Returns:
         (has_update, latest_version) tuple.
     """
-    release = get_latest_release()
+    try:
+        release = get_latest_release()
+    except PermissionError:
+        return False, None
     if release is None:
         return False, None
 
@@ -124,6 +162,7 @@ def download_file(
     dest: Path | None = None,
     progress_callback: Any | None = None,
     timeout: int = 60,
+    headers: dict[str, str] | None = None,
 ) -> Path:
     """Download a file from URL.
 
@@ -132,6 +171,7 @@ def download_file(
         dest: Destination path. If None, uses a temp file.
         progress_callback: Callable(bytes_downloaded, total_bytes) for progress updates.
         timeout: Request timeout in seconds.
+        headers: Additional HTTP headers to include in the request.
 
     Returns:
         Path to the downloaded file.
@@ -139,7 +179,10 @@ def download_file(
     Raises:
         URLError: On download failure.
     """
-    req = Request(url, headers={"User-Agent": USER_AGENT})
+    req_headers = {"User-Agent": USER_AGENT}
+    if headers:
+        req_headers.update(headers)
+    req = Request(url, headers=req_headers)
 
     with urlopen(req, timeout=timeout) as resp:
         total = int(resp.headers.get("Content-Length", 0))

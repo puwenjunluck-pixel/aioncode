@@ -1,7 +1,7 @@
 # AionCode Project Configuration
 # Docs: https://github.com/user/aioncode
 
-version: "0.5.0"
+version: "0.6.2"
 
 rules:
   # Maximum rules per category before suggesting consolidation

@@ -1,7 +1,7 @@
 ---
 category: style
 rule_count: 11
-last_updated: 2026-03-22
+last_updated: 2026-03-23
 ---
 
 # Style — Project code conventions
@@ -24,22 +24,22 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 - **命令文件结构规范** (scan, 2026-03-21) [cite_count: 0, last_cited: 2026-03-21]
   18 个 `commands/aion-*.md` 命令文件遵循统一结构：Header → `$ARGUMENTS` → Role → `⚠️ CRITICAL` 断言 → Steps（Step 0 = 上下文加载）→ Next Steps → Checklist → Anti-Patterns 表 → Output Format → Exit Status。新命令必须遵循此结构。
 
-- **单文件行数上限 500 行** (design, 2026-03-22) [cite_count: 1, last_cited: 2026-03-22]
+- **单文件行数上限 500 行** (design, 2026-03-22) [cite_count: 2, last_cited: 2026-03-23]
   单个源码文件不得超过 500 行（不含空行和注释）。超过时必须拆分为多个模块。已知豁免：`frontend/embedded.py`（自动生成文件）。
 
-- **单函数行数上限 50 行** (design, 2026-03-22) [cite_count: 1, last_cited: 2026-03-22]
+- **单函数行数上限 50 行** (design, 2026-03-22) [cite_count: 2, last_cited: 2026-03-23]
   单个函数/方法不得超过 50 行（逻辑行，不含空行和注释）。超过时必须提取子函数。例：`aioncode/commands/init.py` 的 `_init_project()` 应控制在 50 行以内，复杂逻辑拆分为 `_copy_commands()`、`_scaffold_aion()` 等子函数。
 
 - **嵌套深度上限 4 层** (design, 2026-03-22) [cite_count: 1, last_cited: 2026-03-22]
   if/for/while/try 嵌套不得超过 4 层。使用 early return、guard clause 或提取函数来降低嵌套。
 
-- **参数个数上限 5 个** (design, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
+- **参数个数上限 5 个** (design, 2026-03-22) [cite_count: 1, last_cited: 2026-03-23]
   函数参数不得超过 5 个（不含 self/cls）。超过时使用 dataclass 或 TypedDict 封装。例外：`__init__` 方法在必要时可放宽至 7 个。
 
 - **Python: 模块必须有 module docstring** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
   每个 .py 文件顶部必须有一行 module docstring 说明用途。例：`"""Bug management — list, filter, statistics."""`
 
-- **Python: 公开函数必须有 docstring** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
+- **Python: 公开函数必须有 docstring** (save, 2026-03-22) [cite_count: 1, last_cited: 2026-03-23]
   所有不以 `_` 开头的函数必须有 docstring（说明 what + returns）。复杂函数加 Args 段。私有函数可选。
 
 - **JavaScript: 文件顶部必须有模块说明** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
