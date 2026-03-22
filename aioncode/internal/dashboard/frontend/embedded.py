@@ -642,7 +642,7 @@ body {
     <span id="s-proj">—</span>
     <span class="sep">·</span>
     <span id="s-last">—</span>
-    <span style="margin-left:auto">AionCode</span>
+    <span style="margin-left:auto" id="s-version">AionCode</span>
   </div>
 </div>
 
@@ -766,6 +766,7 @@ async function loadStats() {
   const d = await api(`/api/projects/${curEncoded}/stats`);
   if (!d.ok) return;
   window._stats = d;
+  if (d.aioncode_version) document.getElementById('s-version').textContent = `AionCode v${d.aioncode_version}`;
   const items = [
     { v: d.rules?.total??0, l: '规则' }, { v: d.specs??0, l: '需求' },
     { v: d.plans??0, l: '方案' }, { v: d.reviews??0, l: '审查' },
@@ -1191,6 +1192,8 @@ function renderAboutPage() {
     ['','<code>aion-save</code>','保存对话上下文到 .aion/ 和 memory'],
     ['','<code>aion-bug</code>','Bug 管理：报告/列表/分配/关闭'],
     ['','<code>aion-crosscheck</code>','用其他 AI 模型交叉验证代码'],
+    ['运维','<code>aion-loop</code>','自动化流水线（设计→实现→验证→审查）'],
+    ['','<code>aion-status</code>','项目状态总览'],['','<code>aion-upgrade</code>','版本升级'],['','<code>aion-learn</code>','从审查中提取规则'],
   ];
   return `<div class="about">
     <h1>AionCode 使用指南</h1>

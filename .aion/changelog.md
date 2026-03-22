@@ -2,6 +2,19 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-22 | fix: dashboard 版本号动态显示 + 关于页命令补全
+
+### Summary
+- 底栏右下角 "AionCode" 改为动态 "AionCode v{version}"，从 stats API 读取
+- 关于页命令速查表补全缺失的 4 个命令：aion-loop、aion-status、aion-upgrade、aion-learn
+- stats API 新增 `aioncode_version` 字段
+
+### Files Changed
+- stats.py（新增 aioncode_version 字段）、app.js、index.html、views.js、embedded.py
+- 新增 spec: .aion/specs/dashboard-polish.md
+
+---
+
 ## 2026-03-22 | feat: Skills 管理视图 + CLAUDE.md 强制化 + 命令并行策略
 
 ### Summary

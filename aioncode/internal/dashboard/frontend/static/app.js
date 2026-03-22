@@ -117,6 +117,7 @@ async function loadStats() {
   const d = await api(`/api/projects/${curEncoded}/stats`);
   if (!d.ok) return;
   window._stats = d;
+  if (d.aioncode_version) document.getElementById('s-version').textContent = `AionCode v${d.aioncode_version}`;
   const items = [
     { v: d.rules?.total??0, l: '规则' }, { v: d.specs??0, l: '需求' },
     { v: d.plans??0, l: '方案' }, { v: d.reviews??0, l: '审查' },

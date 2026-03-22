@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from aioncode import __version__
+
 
 def _count_rules_in_file(filepath: Path) -> int:
     """Count rule entries (lines starting with '- **') in a markdown file."""
@@ -80,4 +82,5 @@ def get_project_stats(project_path: str) -> dict:
         "commands": cmd_count,
         "version": version,
         "last_activity": last,
+        "aioncode_version": __version__,
     }
