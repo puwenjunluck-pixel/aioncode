@@ -1,158 +1,205 @@
 # AionCode
 
-**AI-native development system for Claude Code** — structured workflow + auto-learning rules that make AI smarter with every iteration.
+**AI 原生开发智能框架** — 让 Claude Code 有章可循、越用越聪明。
 
-> AionCode is NOT another AI coding tool. It's a skill pack that runs inside Claude Code, adding methodology, project memory, and team collaboration on top of Claude's native capabilities.
+> AionCode 不是另一个 AI 编码工具。它是运行在 Claude Code 内部的技能包，为 AI 编程添加方法论、项目记忆和团队协作能力。
 
-## Why AionCode?
+## 核心理念
 
-Every AI coding session starts from zero. Claude doesn't remember the pitfalls you hit last week, the code conventions your team agreed on, or the performance lessons you learned the hard way.
+每次 AI 编码都从零开始。Claude 不记得你上周踩过的坑、团队约定的代码规范、还是性能优化的经验教训。
 
-**AionCode fixes this with a learning flywheel:**
+**AionCode 用学习飞轮解决这个问题：**
 
 ```
-Write Code → Review → Extract Rules → Rules Loaded Next Time
-     ↑                                        ↓
-     └──── AI avoids past mistakes ←──────────┘
+编写代码 → 审查 → 提取规则 → 下次自动加载规则
+    ↑                                    ↓
+    └──── AI 自动避免过去的错误 ←────────┘
 ```
 
-Your `.aion/rules/` directory accumulates project intelligence over time. Every review, every bugfix, every refactoring teaches the AI something new. After a few weeks, Claude knows your project's quirks better than a new team member.
+## 前提条件
 
-## Quick Start
+- [Claude Code CLI](https://claude.ai/download) — AionCode 的 18 个命令在 Claude Code 中运行
+- Git — 项目需要是 Git 仓库
 
-### Install
+## 安装
+
+### macOS (Apple Silicon)
 
 ```bash
-# Clone AionCode
-git clone https://github.com/user/aioncode.git
+# 1. 下载
+curl -L -o aioncode https://github.com/puwenjunluck-pixel/aioncode/releases/latest/download/aioncode-macos-arm64
 
-# Install into your project
-bash aioncode/install.sh /path/to/your/project
+# 2. 添加执行权限
+chmod +x aioncode
+
+# 3. 移到系统 PATH
+sudo mv aioncode /usr/local/bin/
+
+# 4. 解除 macOS 安全限制（首次需要）
+xattr -d com.apple.quarantine /usr/local/bin/aioncode
+
+# 5. 验证
+aioncode version
 ```
 
-This creates:
-- `.claude/commands/` — 18 slash commands
-- `.aion/` — project intelligence directory (commit this to git!)
-- `.aion/bin/` — tools (dashboard.py, uninstall.sh)
-- `CLAUDE.md` — rules auto-loading (Claude reads this automatically)
+**如果 curl 下载到 HTML 而非二进制**，改用浏览器直接下载：
+1. 打开 [Releases 页面](https://github.com/puwenjunluck-pixel/aioncode/releases/latest)
+2. 下载 `aioncode-macos-arm64`
+3. 终端执行步骤 2-5
 
-### Use
+### Windows
 
-Open Claude Code in your project and use the commands:
+```powershell
+# 1. 下载（PowerShell）
+Invoke-WebRequest -Uri "https://github.com/puwenjunluck-pixel/aioncode/releases/latest/download/aioncode-windows-x64.exe" -OutFile "$env:USERPROFILE\aioncode.exe"
 
-```
-/project:aion-design    Design a new feature
-/project:aion-demo      Generate interactive HTML prototype (optional)
-/project:aion-plan      Create an implementation plan
-/project:aion-impl      Execute the plan step by step
-/project:aion-test      Generate tests, coverage analysis, perf scripts
-/project:aion-review    Review changes + auto-extract rules
-/project:aion-learn     Deep-dive rule extraction
-/project:aion-save      Save conversation context before it's lost
-/project:aion-commit    Safe commit with changelog
-/project:aion-status    See your project intelligence stats
-/project:aion-help      Show commands, workflows, and usage guide
+# 2. 移到 PATH 目录（需要管理员权限）
+Move-Item "$env:USERPROFILE\aioncode.exe" "C:\Windows\aioncode.exe"
+
+# 3. 验证
+aioncode version
 ```
 
-**The recommended flow** (not enforced):
-```
-design → (demo) → plan → impl → (test) → verify → review → learn → commit
-```
+**或者手动安装：**
+1. 打开 [Releases 页面](https://github.com/puwenjunluck-pixel/aioncode/releases/latest)
+2. 下载 `aioncode-windows-x64.exe`
+3. 重命名为 `aioncode.exe`
+4. 放到任意在 PATH 中的目录（如 `C:\Windows\` 或自定义目录）
+5. 打开命令提示符，运行 `aioncode version`
 
-But each command works independently — use what you need.
-
-### Dashboard
+### Linux
 
 ```bash
-python3 .aion/bin/dashboard.py
-# Opens http://localhost:19200
+# 1. 下载
+curl -L -o aioncode https://github.com/puwenjunluck-pixel/aioncode/releases/latest/download/aioncode-linux-x64
+
+# 2. 添加执行权限并移到 PATH
+chmod +x aioncode
+sudo mv aioncode /usr/local/bin/
+
+# 3. 验证
+aioncode version
 ```
 
-### Uninstall
+### 从源码安装（开发者）
 
 ```bash
-bash .aion/bin/uninstall.sh /path/to/your/project
+git clone https://github.com/puwenjunluck-pixel/aioncode.git
+cd aioncode
+pip install -e .
+aioncode version
 ```
 
-This removes commands and CLAUDE.md section but preserves `.aion/` (your rules are valuable!).
+## 快速开始
 
-## Three Pillars
+### 初始化项目
 
-### 1. Development Methodology
-Structured workflow: requirements → planning → implementation → review → commit. Each phase has a dedicated command with best practices baked in.
-
-### 2. Project Intelligence (Core Differentiator)
-Auto-learning rules in `.aion/rules/`:
-- **pitfalls.md** — Gotchas and traps specific to your project
-- **style.md** — Code conventions your team follows
-- **perf.md** — Performance guidelines learned from experience
-
-Rules are auto-extracted during reviews and can be manually extracted with `/aion-learn`. They're loaded into EVERY Claude session via `CLAUDE.md` — even without slash commands.
-
-### 3. Team Collaboration
-File-driven collaboration through `.aion/`:
-
-```
-Designer: places prototypes in .aion/prototypes/ → git push
-Developer: /aion-impl reads prototypes automatically
-
-Backend: writes .aion/contracts/api-v2.md → git push
-Frontend: /aion-impl reads contracts automatically
-
-Anyone: /aion-save before ending conversation → git push
-Next person: Claude loads all context automatically
+```bash
+cd /path/to/your/project
+aioncode init
 ```
 
-## Project Structure
+这会创建：
+- `.claude/commands/` — 18 个 AI 工作流命令
+- `.claude/CLAUDE.md` — 项目索引（Claude 每次启动自动加载）
+- `.aion/` — 项目智能数据目录（建议提交到 Git）
+
+### 使用命令
+
+在 Claude Code 中打开你的项目，输入命令：
+
+```
+/project:aion-scan      扫描现有项目，建立初始规则
+/project:aion-design    需求分析 → .aion/specs/
+/project:aion-plan      技术方案 → .aion/plans/
+/project:aion-impl      按计划编写代码
+/project:aion-verify    运行构建、测试、lint
+/project:aion-review    代码审查 + 自动提取规则
+/project:aion-commit    安全提交（需 review 通过）
+/project:aion-help      查看所有命令和工作流
+```
+
+**推荐工作流：**
+```
+design → plan → impl → verify → review → commit
+```
+
+### 副驾驶面板
+
+```bash
+aioncode dashboard
+# 打开 http://localhost:19200
+```
+
+12 个可视化视图：概览、文件、监控、缺陷、团队、需求、方案、规则、清单、测试、日志、关于。
+
+## 三大支柱
+
+### 1. 开发方法论
+18 个命令覆盖完整生命周期：需求 → 设计 → 实现 → 测试 → 审查 → 提交。每个阶段有最佳实践内置。
+
+### 2. 项目智能（核心差异化）
+`.aion/rules/` 自动积累项目知识：
+- **pitfalls.md** — 项目特有的坑和陷阱
+- **style.md** — 团队约定的编码规范
+- **perf.md** — 从实践中学到的性能经验
+
+规则在审查时自动提取，每次 Claude 会话自动加载。
+
+### 3. 团队协作
+通过 `.aion/` 文件驱动协作：
+- 设计师放原型到 `.aion/prototypes/` → 开发者自动读取
+- 后端写接口契约到 `.aion/contracts/` → 前端自动遵循
+- `/project:aion-save` 保存上下文 → 下一个人自动继承
+
+## 项目结构
 
 ```
 your-project/
-├── .claude/commands/         # 8 AionCode slash commands
-├── .aion/                    # Project intelligence (git tracked)
-│   ├── rules/                # Auto-learned rules
-│   │   ├── pitfalls.md
-│   │   ├── style.md
-│   │   └── perf.md
-│   ├── refs/                 # External docs (client requirements, etc.)
-│   ├── prototypes/           # UI prototypes (HTML/JS demos)
-│   ├── specs/                # Requirement specs (/aion-design output)
-│   ├── plans/                # Implementation plans (/aion-plan output)
-│   ├── reviews/              # Review results (/aion-review output)
-│   ├── contracts/            # Interface contracts (cross-team)
-│   ├── config.yml            # AionCode configuration
-│   └── changelog.md          # Auto-maintained work log
-└── CLAUDE.md                 # Rules auto-loading
+├── .claude/
+│   ├── commands/        # 18 个 AionCode 命令
+│   └── CLAUDE.md        # 项目索引（自动加载）
+├── .aion/               # 项目智能数据（建议 git tracked）
+│   ├── rules/           # 自动学习的规则
+│   ├── specs/           # 需求规格
+│   ├── plans/           # 实施方案
+│   ├── reviews/         # 审查结果
+│   ├── bugs/            # Bug 报告
+│   ├── changelog.md     # 工作日志
+│   └── team.yml         # 团队配置
+└── ...
 ```
 
-## The Learning Flywheel
+## 学习飞轮
 
 ```
-Week 1:  0 rules  → Claude makes common mistakes
-Week 2:  5 rules  → Claude avoids the same mistakes
-Week 4:  15 rules → Claude knows your project's quirks
-Week 8:  25 rules → Claude codes like a senior team member
+第 1 周:  0 条规则  → Claude 犯常见错误
+第 2 周:  5 条规则  → Claude 避免同样的错误
+第 4 周:  15 条规则 → Claude 了解项目的特殊性
+第 8 周:  25 条规则 → Claude 像资深团队成员一样编码
 ```
 
-Every rule is:
-- **Actionable** — tells you what to do or not do
-- **Specific** — references your project's stack and patterns
-- **Evidenced** — comes from a real incident, not theory
-- **Durable** — still relevant months later
-
-## Verification
+## 其他命令
 
 ```bash
-# Check installation
-bash aioncode/install.sh --check /path/to/your/project
-
-# Verify rules are loaded (just ask Claude anything in your project)
-# Claude will mention reading .aion/rules/ files
+aioncode dashboard          # 启动副驾驶面板
+aioncode dashboard --dev    # 开发模式（含 API 文档）
+aioncode upgrade            # 升级到最新版本
+aioncode doctor             # 环境诊断
+aioncode uninstall          # 卸载（保留 .aion/ 数据）
 ```
 
-## Requirements
+## 卸载
 
-- [Claude Code](https://claude.com/claude-code) CLI
-- A git repository
+```bash
+# 从项目移除命令和配置（保留 .aion/ 数据）
+cd /path/to/your/project
+aioncode uninstall
+
+# 从系统移除二进制
+rm /usr/local/bin/aioncode          # macOS/Linux
+del C:\Windows\aioncode.exe         # Windows
+```
 
 ## License
 
