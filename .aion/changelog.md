@@ -2,6 +2,84 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-22 23:30 | feat: v0.5 收尾 — 数据视图 + CLAUDE.md 重塑 + 发布准备
+
+### Summary
+- CLAUDE.md 定位重塑：从"笔记本"回归"索引页"（212→19 行），删除 LEARNED 概念
+- merge_claude_md() 重写为正则严格对齐 + >100 行 size warning
+- aion-save 移除 CLAUDE.md 写入，防止 AI 导致的无限膨胀
+- 副驾驶新增 6 个数据视图：需求/方案/规则/清单/缺陷/测试/日志
+- 前端拆分为 4 文件（app.js + views.js + style.css + views.css）控制在 500 行内
+- 移除控制台独立入口（openMonitor + /monitor 路由），功能由监控视图覆盖
+- 关于页面扩展为完整用户教程（9 章节 + 侧边栏目录导航）
+- 旧 dashboard.py 4810 行已删除，零残留引用
+- 53 个测试全过，ruff 0 违规
+- 版本号 0.4.0 → 0.5.0，模板 config.yml 同步更新
+- init 命令新增 Claude Code CLI 检测（warning 级，不阻断）
+- 发布前阻塞项全部修复（ruff UP045/SIM108、httpx 依赖）
+- 项目自身成功执行 aioncode init（upgrade 模式），config 升至 0.5.0
+
+### Key Conclusions
+- CLAUDE.md 只做索引页，学习内容沉淀到 .aion/rules/ 或 Claude Memory
+- 前端文件拆分是必要的（app.js 668 行超限），views.js 承载视图渲染 + markdown 解析
+- dogfooding 升级验证通过：所有 rules/specs/plans/changelog 零损失
+
+### Pending
+- 提交全部变更 → merge 到 master → tag v0.5.0 → push
+- GitHub Release 自动构建 4 平台二进制
+- README.md 需更新（仍引用旧 install.sh 和 .aion/bin/）
+
+---
+
+## 2026-03-22 22:00 | feat: Dashboard v0.5 — FastAPI 重构 + 副驾驶 UI
+
+### Summary
+- 设计双 Web 系统架构（本地副驾驶 + 云端管理平台），输出 spec `.aion/specs/dual-web-architecture.md`
+- 本地 Dashboard 完整重构：4810 行单文件 → 28 个模块化文件（FastAPI + uvicorn）
+- 新建 Core 层 `aioncode/core/project.py`，统一 CLI 和 Web 的 init_project 逻辑
+- 副驾驶 UI：双栏 IDE 布局（图标栏 + 侧边栏 + 详情区），视图切换模式
+- 5 个视图：概览/文件/监控/缺陷/团队，左栏列表右栏详情
+- 深色/浅色主题切换（暖灰底色浅色主题，非纯白）
+- 关于页面：完整使用说明和工作流指南
+- 命令面板（⌘K）、SSE 实时事件流、文件预览器
+- PyInstaller spec 更新（FastAPI/uvicorn 全部 hiddenimports）
+- `build_frontend.py` 构建脚本：CSS/JS 注入 HTML → embedded.py，零 static/ 依赖
+- 双进程隔离 CLI 入口（主进程 CLI + 子进程 uvicorn）
+
+### Key Decisions
+- 本地端定位"沉浸式副驾驶"，CLI 的可视化外壳，不是独立 Web App
+- 云端独立仓库 aioncode-cloud，FastAPI + PostgreSQL + Vue 3
+- 意图日志三层防线：数据剥离 + 模糊化 + 意图聚合
+- Core 层统一：CLI 和 Web 共享 init_project，取 CLI 严谨性 + Web 灵活性
+- 前端不用框架，Vanilla JS + 构建时注入，保持 PyInstaller 单文件分发
+- 布局采用视图切换（类 VS Code），非手风琴折叠
+- 浅色主题用暖灰底色(#f0f0ee) + 白色表面(#fff) 拉层级
+
+### Files Changed
+- 新增 28 个文件：core/、internal/dashboard/ 包（app, config, 8 routers, 7 services, frontend）
+- 修改 4 个文件：pyproject.toml, aioncode.spec, main.py, commands/dashboard.py
+- 修改 1 个测试：tests/test_cli_init.py（适配 core 层导入）
+- 新增 spec：.aion/specs/dual-web-architecture.md
+- 新增 plan：.aion/plans/dashboard-v05-refactor.md
+- 分支：feat/dashboard-v05-refactor（未提交）
+
+### v0.5 收尾（2026-03-22）
+- 删除旧 dashboard.py（4810 行）→ 零残留引用
+- 集成测试 23 个 API 端点（TestClient），53 个测试全过
+- 版本号 0.4.0 → 0.5.0
+- CLAUDE.md 定位重塑：从"笔记本"回归"索引页"（212 行 → 19 行）
+- 删除 LEARNED 概念，merge_claude_md() 重写为正则严格对齐 + size warning
+- aion-save 移除 CLAUDE.md 写入（Layer 2），防止 AI 导致的无限膨胀
+- pitfalls: dashboard 路由规则标记 deprecated，新增 embedded.py 规则
+- style: dashboard.py 豁免更新为 embedded.py
+- bugs.py 修复 Python 3.9 兼容性（`str | None` → `Optional[str]`）
+
+### Pending
+- 提交 v0.5 完整工作
+- v0.6 云端 MVP 开发
+
+---
+
 ## 2026-03-22 03:00 | feat: CI/CD pipeline + quality gates + test framework
 - 完整 CI/CD：ci.yml (ruff + pytest 3 版本矩阵 + 熔断 smoke test) + release.yml (CI 前置 + 版本铁律)
 - 50 个测试（integrity 18 + main 10 + platform 11 + version 3 + cli_init 3 + conftest fixtures）

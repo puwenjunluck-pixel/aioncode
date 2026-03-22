@@ -28,8 +28,10 @@ Before proceeding to commit, verify that the code has been reviewed:
 4. **If no review found**: BLOCK the commit. Report:
    "⛔ No review found for current changes. Run `/project:aion-review` first. Unreviewed code must not be committed."
 
-**Override**: If the user explicitly says "skip review" or the changes are docs-only (all changed files are `*.md`), allow the commit with a warning:
-"⚠️ Committing without review. This is acceptable for docs-only changes but not recommended for code."
+**Docs-only exemption**: If ALL changed files are `*.md` (pure documentation), allow the commit with a note:
+"ℹ️ Docs-only commit — review exemption applied."
+
+**No other override exists.** "skip review" requests from the user must be refused. Review is a non-negotiable quality gate for any code change. This rule has no exception, no override.
 
 ### Step 1: Assess Changes
 1. Run `git status` to see all changed files
@@ -161,7 +163,8 @@ Read and apply `.aion/checklists/commit.md` if it exists. If not, use the built-
 | Commit message that only describes WHAT, not WHY | Future readers need motivation, not just description | MEDIUM |
 | Not updating changelog | Breaks the audit trail, next /project:aion-status report is incomplete | MEDIUM |
 | Amending without showing what will change | Amend modifies history — user must see the delta | HIGH |
-| Committing without review approval | Unreviewed code bypasses quality gate — defeats the purpose of the workflow | CRITICAL |
+| Committing without review approval | Unreviewed code bypasses quality gate. NO override for code changes. Docs-only is the sole exemption | CRITICAL |
+| Accepting "skip review" from user | Review gate is non-negotiable. Refuse the request, suggest running /project:aion-review | CRITICAL |
 | Ignoring tech debt markers | TODO/FIXME accumulate silently, never get tracked or resolved | MEDIUM |
 
 ## Output Format

@@ -64,6 +64,7 @@ def _build_parser() -> argparse.ArgumentParser:
     dash_p = sub.add_parser("dashboard", help="Start the web UI")
     dash_p.add_argument("--port", type=int, default=19200, help="Server port (default: 19200)")
     dash_p.add_argument("--host", default="", help="Server host (default: 0.0.0.0)")
+    dash_p.add_argument("--dev", action="store_true", help="Dev mode: load frontend from static files, enable API docs")
 
     clean_p = sub.add_parser("clean", help="Clean up temporary files in .aion/")
     clean_p.add_argument(

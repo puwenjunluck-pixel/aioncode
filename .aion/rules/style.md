@@ -25,7 +25,7 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
   18 个 `commands/aion-*.md` 命令文件遵循统一结构：Header → `$ARGUMENTS` → Role → `⚠️ CRITICAL` 断言 → Steps（Step 0 = 上下文加载）→ Next Steps → Checklist → Anti-Patterns 表 → Output Format → Exit Status。新命令必须遵循此结构。
 
 - **单文件行数上限 500 行** (design, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
-  单个源码文件不得超过 500 行（不含空行和注释）。超过时必须拆分为多个模块。已知豁免：`internal/dashboard.py`（历史遗留，v0.5 重构目标）。
+  单个源码文件不得超过 500 行（不含空行和注释）。超过时必须拆分为多个模块。已知豁免：`frontend/embedded.py`（自动生成文件）。
 
 - **单函数行数上限 50 行** (design, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
   单个函数/方法不得超过 50 行（逻辑行，不含空行和注释）。超过时必须提取子函数。例：`aioncode/commands/init.py` 的 `_init_project()` 应控制在 50 行以内，复杂逻辑拆分为 `_copy_commands()`、`_scaffold_aion()` 等子函数。

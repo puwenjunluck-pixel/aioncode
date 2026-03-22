@@ -6,7 +6,8 @@ import hashlib
 from pathlib import Path
 from unittest.mock import patch
 
-from aioncode.commands.init import _get_templates_dir, _init_project
+from aioncode.commands.init import _init_project
+from aioncode.core.project import _get_templates_dir
 
 
 def _hash_dir(directory: Path) -> dict[str, str]:

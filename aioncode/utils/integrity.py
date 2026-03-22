@@ -116,56 +116,90 @@ def compare_template(template_path: Path, target_path: Path) -> TemplateComparis
 
 
 # ---------------------------------------------------------------------------
-# CLAUDE.md marker merge (ported from install.sh L346-384)
+# CLAUDE.md strict marker merge
 # ---------------------------------------------------------------------------
+
+# Regex: match <!-- AIONCODE:START -->...<!-- AIONCODE:END --> blocks (greedy per block)
+_MARKER_BLOCK_RE = re.compile(
+    r"\s*<!-- AIONCODE:START -->.*?<!-- AIONCODE:END -->\s*",
+    re.DOTALL,
+)
+# Regex: match legacy <!-- AIONCODE:LEARNED --> sections (to next marker or EOF)
+_LEARNED_BLOCK_RE = re.compile(
+    r"\s*<!-- AIONCODE:LEARNED -->.*?(?=<!-- AIONCODE:|$)",
+    re.DOTALL,
+)
+
+CLAUDE_MD_MAX_LINES = 100
 
 
 class MergeResult:
     """Result of a CLAUDE.md merge operation."""
 
-    __slots__ = ("action", "content")
+    __slots__ = ("action", "content", "warnings")
 
-    def __init__(self, action: str, content: str) -> None:
+    def __init__(
+        self, action: str, content: str, warnings: list[str] | None = None
+    ) -> None:
         self.action = action  # "created" | "merged" | "appended"
         self.content = content
+        self.warnings = warnings or []
+
+
+def _extract_user_content(text: str) -> str:
+    """Strip all AionCode-managed sections, return only user content."""
+    cleaned = _MARKER_BLOCK_RE.sub("", text)
+    cleaned = _LEARNED_BLOCK_RE.sub("", cleaned)
+    return cleaned.strip()
+
+
+def _check_size(content: str, warnings: list[str]) -> None:
+    """Append a warning if content exceeds CLAUDE_MD_MAX_LINES."""
+    line_count = content.count("\n") + 1
+    if line_count > CLAUDE_MD_MAX_LINES:
+        warnings.append(
+            f"CLAUDE.md has {line_count} lines (limit: {CLAUDE_MD_MAX_LINES}). "
+            "Consider moving content to .aion/ files."
+        )
 
 
 def merge_claude_md(existing: str | None, template: str) -> MergeResult:
-    """Merge template content into CLAUDE.md, preserving user content.
+    """Merge template into CLAUDE.md with strict alignment.
 
-    Three scenarios (matching install.sh behavior):
-    1. File exists with markers → replace content between markers
-    2. File exists without markers → append with markers
-    3. File doesn't exist (existing is None) → create with markers
+    Guarantees exactly one START/END marker pair. Strips any legacy
+    LEARNED sections or duplicate marker blocks. Preserves user content
+    (everything outside AionCode markers).
 
     Args:
         existing: Current CLAUDE.md content, or None if file doesn't exist.
         template: New template content to insert between markers.
 
     Returns:
-        MergeResult with the action taken and the final content.
+        MergeResult with action, final content, and any warnings.
     """
     wrapped = f"{MARKER_START}\n{template}\n{MARKER_END}"
+    warnings: list[str] = []
 
     if existing is None:
-        return MergeResult("created", wrapped + "\n")
+        content = wrapped + "\n"
+        _check_size(content, warnings)
+        return MergeResult("created", content, warnings)
 
-    if MARKER_START in existing:
-        # Has markers → replace content between markers
-        before_marker = existing.split(MARKER_START)[0]
-        after_parts = existing.split(MARKER_END)
-        after_marker = after_parts[-1] if len(after_parts) > 1 else ""
+    if MARKER_START not in existing:
+        content = f"{wrapped}\n\n{existing}"
+        _check_size(content, warnings)
+        return MergeResult("appended", content, warnings)
 
-        content = f"{before_marker}{wrapped}{after_marker}"
-        return MergeResult("merged", content)
+    # Has markers → strip ALL managed sections, rebuild with one clean pair
+    user_content = _extract_user_content(existing)
+    content = f"{wrapped}\n\n{user_content}\n" if user_content else wrapped + "\n"
 
-    # No markers → append
-    content = f"{existing}\n\n{wrapped}\n"
-    return MergeResult("appended", content)
+    _check_size(content, warnings)
+    return MergeResult("merged", content, warnings)
 
 
 def strip_claude_md_markers(content: str) -> tuple[str, str]:
-    """Remove AionCode marker section from CLAUDE.md content.
+    """Remove all AionCode sections from CLAUDE.md content.
 
     Used by uninstall. Returns (cleaned_content, action).
     Action is one of: "stripped", "removed_entirely", "no_markers".
@@ -173,12 +207,7 @@ def strip_claude_md_markers(content: str) -> tuple[str, str]:
     if MARKER_START not in content:
         return content, "no_markers"
 
-    before = content.split(MARKER_START)[0]
-    after_parts = content.split(MARKER_END)
-    after = after_parts[-1] if len(after_parts) > 1 else ""
-
-    cleaned = (before + after).strip()
-
+    cleaned = _extract_user_content(content)
     if not cleaned:
         return "", "removed_entirely"
 

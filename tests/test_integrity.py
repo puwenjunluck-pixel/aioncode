@@ -65,14 +65,52 @@ class TestMergeClaudeMd:
         assert "template content" in result.content
 
     def test_preserves_user_content_before_markers(self):
+        """User content before markers is preserved (moved after template)."""
         existing = f"# My Project Notes\n\n{MARKER_START}\nold\n{MARKER_END}\n"
         result = merge_claude_md(existing, "new")
-        assert result.content.startswith("# My Project Notes")
+        assert "# My Project Notes" in result.content
+        # New design: template always comes first
+        assert result.content.startswith(MARKER_START)
 
     def test_preserves_user_content_after_markers(self):
         existing = f"{MARKER_START}\nold\n{MARKER_END}\n\n# My Custom Section"
         result = merge_claude_md(existing, "new")
         assert "# My Custom Section" in result.content
+
+    def test_strips_duplicate_markers(self):
+        """Critical: the original bug — 3x duplicated markers get collapsed to 1."""
+        existing = (
+            f"{MARKER_START}\nt1\n{MARKER_END}\n"
+            f"<!-- AIONCODE:LEARNED -->\n## Learned\n- i1\n"
+            f"{MARKER_START}\nt2\n{MARKER_END}\n"
+            f"<!-- AIONCODE:LEARNED -->\n## Learned\n- i2\n"
+        )
+        result = merge_claude_md(existing, "clean")
+        assert result.content.count(MARKER_START) == 1
+        assert result.content.count(MARKER_END) == 1
+        assert "LEARNED" not in result.content
+        assert "clean" in result.content
+
+    def test_strips_legacy_learned_section(self):
+        """LEARNED sections are fully removed."""
+        existing = (
+            f"{MARKER_START}\ntpl\n{MARKER_END}\n"
+            "<!-- AIONCODE:LEARNED -->\n## Learned\n- item\n"
+        )
+        result = merge_claude_md(existing, "new")
+        assert "LEARNED" not in result.content
+        assert "item" not in result.content
+
+    def test_size_warning(self):
+        """Files exceeding 100 lines trigger a warning."""
+        big = "\n".join(f"line {i}" for i in range(120))
+        result = merge_claude_md(None, big)
+        assert len(result.warnings) == 1
+        assert "limit" in result.warnings[0]
+
+    def test_no_warning_under_limit(self):
+        result = merge_claude_md(None, "short template")
+        assert len(result.warnings) == 0
 
     def test_emoji_in_template(self):
         """Edge case: template contains emoji characters."""

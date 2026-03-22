@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AionCode — Mission Control</title>
+<style>
+:root {
+  --space-bg: #0a0e14;
+  --surface: #131820;
+  --border: #1e2833;
+  --text: #c5d0de;
+  --blue: #58a6ff;
+  --amber: #d29922;
+  --red: #f85149;
+  --green: #3fb950;
+  --cyan: #56d4dd;
+  --purple: #bc8cff;
+  --font: 'SF Mono', 'Fira Code', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--space-bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.mc-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  gap: 20px;
+}
+
+.mc-title { color: var(--cyan); font-weight: 700; font-size: 14px; letter-spacing: 2px; }
+.mc-met { color: var(--amber); font-size: 20px; font-weight: 700; }
+
+.mc-status {
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+}
+
+.mc-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-width: 80px;
+}
+
+.mc-metric-value { font-size: 18px; font-weight: 700; color: var(--blue); }
+.mc-metric-label { font-size: 9px; color: var(--text); text-transform: uppercase; letter-spacing: 1px; }
+
+/* Main */
+.mc-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.mc-panel {
+  background: var(--space-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mc-panel-title {
+  padding: 8px 14px;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  border-bottom: 1px solid var(--border);
+}
+
+.mc-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 14px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* Log entries */
+.log-entry { display: flex; gap: 8px; padding: 2px 0; }
+.log-ts { color: var(--amber); min-width: 80px; }
+.log-tool { color: var(--blue); min-width: 60px; }
+.log-msg { color: var(--text); word-break: break-all; }
+
+/* Agents */
+.agent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.agent-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.agent-type { color: var(--purple); }
+
+/* Files */
+.file-change { padding: 3px 0; color: var(--text); }
+.file-change::before { content: '→ '; color: var(--green); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="mc-header">
+  <span class="mc-title">MISSION CONTROL</span>
+  <span class="mc-met" id="met">T+00:00:00</span>
+  <div class="mc-status">
+    <div class="mc-metric">
+      <span class="mc-metric-value" id="m-events">0</span>
+      <span class="mc-metric-label">Events</span>
+    </div>
+    <div class="mc-metric">
+      <span class="mc-metric-value" id="m-tools">0</span>
+      <span class="mc-metric-label">Tools</span>
+    </div>
+    <div class="mc-metric">
+      <span class="mc-metric-value" id="m-files">0</span>
+      <span class="mc-metric-label">Files</span>
+    </div>
+    <div class="mc-metric">
+      <span class="mc-metric-value" id="m-agents">0</span>
+      <span class="mc-metric-label">Agents</span>
+    </div>
+  </div>
+</div>
+
+<div class="mc-main">
+  <div class="mc-panel">
+    <div class="mc-panel-title">Event Log</div>
+    <div class="mc-panel-body" id="log-panel"></div>
+  </div>
+  <div class="mc-panel">
+    <div class="mc-panel-title">Active Agents</div>
+    <div class="mc-panel-body" id="agent-panel">
+      <div style="color:var(--text);opacity:0.4;padding:20px;text-align:center">Waiting for agents...</div>
+    </div>
+  </div>
+  <div class="mc-panel" style="grid-column: 1 / -1;">
+    <div class="mc-panel-title">Files Changed</div>
+    <div class="mc-panel-body" id="files-panel" style="display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;">
+      <div style="color:var(--text);opacity:0.4;padding:20px">No file changes detected</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Extract project encoded from URL: /monitor/{encoded}
+const pathParts = window.location.pathname.split('/');
+const encoded = pathParts[pathParts.length - 1];
+let sessionStart = null;
+let eventCount = 0;
+const toolSet = new Set();
+const fileSet = new Set();
+const agents = [];
+
+// MET clock
+function updateMET() {
+  if (!sessionStart) { document.getElementById('met').textContent = 'T+00:00:00'; return; }
+  const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+  const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+  const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('met').textContent = `T+${h}:${m}:${s}`;
+}
+setInterval(updateMET, 1000);
+
+// Load initial state
+fetch(`/api/monitor/${encoded}/state`).then(r => r.json()).then(state => {
+  if (!state.ok) return;
+  if (state.session?.start) sessionStart = new Date(state.session.start).getTime();
+  eventCount = state.total_events || 0;
+  document.getElementById('m-events').textContent = eventCount;
+
+  if (state.tools) {
+    Object.keys(state.tools).forEach(t => toolSet.add(t));
+    document.getElementById('m-tools').textContent = toolSet.size;
+  }
+  if (state.files_changed) {
+    state.files_changed.forEach(f => fileSet.add(f));
+    document.getElementById('m-files').textContent = fileSet.size;
+    renderFiles();
+  }
+  if (state.agents) {
+    state.agents.forEach(a => agents.push(a));
+    document.getElementById('m-agents').textContent = agents.length;
+    renderAgents();
+  }
+});
+
+// SSE
+const sse = new EventSource(`/api/projects/${encoded}/events/stream`);
+sse.onmessage = (e) => {
+  try {
+    const evt = JSON.parse(e.data);
+    const data = evt.data || evt;
+    if (!sessionStart) sessionStart = Date.now();
+
+    eventCount++;
+    document.getElementById('m-events').textContent = eventCount;
+
+    const tool = data.tool_name || data.tool || '';
+    if (tool) { toolSet.add(tool); document.getElementById('m-tools').textContent = toolSet.size; }
+
+    const fp = data.tool_input?.file_path;
+    if (fp && (tool === 'Edit' || tool === 'Write')) {
+      fileSet.add(fp);
+      document.getElementById('m-files').textContent = fileSet.size;
+      renderFiles();
+    }
+
+    const hook = data.hook_event_name || '';
+    if (hook.startsWith('Subagent')) {
+      agents.push({ type: data.subagent_type || 'unknown', ts: new Date().toISOString() });
+      document.getElementById('m-agents').textContent = agents.length;
+      renderAgents();
+    }
+
+    // Add log entry
+    addLog(evt.ts || new Date().toISOString(), tool || hook, fp || data.tool_input?.command?.substring(0, 80) || '');
+  } catch (_) {}
+};
+
+function addLog(ts, tool, msg) {
+  const panel = document.getElementById('log-panel');
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  const time = new Date(ts).toLocaleTimeString();
+  div.innerHTML = `<span class="log-ts">${time}</span><span class="log-tool">${esc(tool)}</span><span class="log-msg">${esc(msg)}</span>`;
+  panel.prepend(div);
+  while (panel.children.length > 200) panel.lastChild.remove();
+}
+
+function renderAgents() {
+  const panel = document.getElementById('agent-panel');
+  panel.innerHTML = agents.slice(-20).reverse().map(a =>
+    `<div class="agent-item"><span class="agent-dot"></span><span class="agent-type">${esc(a.type)}</span></div>`
+  ).join('');
+}
+
+function renderFiles() {
+  const panel = document.getElementById('files-panel');
+  const sorted = [...fileSet].sort();
+  panel.innerHTML = sorted.map(f => {
+    const name = f.split('/').pop();
+    return `<div class="file-change" title="${esc(f)}">${esc(name)}</div>`;
+  }).join('');
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

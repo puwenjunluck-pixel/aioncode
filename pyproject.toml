@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aioncode"
-version = "0.4.0"
+version = "0.5.0"
 description = "AI-powered development intelligence framework"
 readme = "README.md"
 license = {text = "MIT"}
@@ -28,6 +28,8 @@ classifiers = [
 dependencies = [
     "rich>=13.0",
     "packaging>=23.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
 ]
 
 [project.scripts]
@@ -48,12 +50,14 @@ include = ["aioncode*"]
 dev = [
     "pytest>=7.0",
     "ruff>=0.4",
+    "httpx>=0.25.0",
 ]
 
 # ── Ruff ──────────────────────────────────────────────────────
 [tool.ruff]
 target-version = "py310"
 line-length = 120
+extend-exclude = ["aioncode/internal/dashboard/frontend/embedded.py"]
 
 [tool.ruff.lint]
 select = [
