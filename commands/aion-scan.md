@@ -2,7 +2,7 @@
 
 Scan an existing project to bootstrap AionCode intelligence. Analyze codebase structure, conventions, and test coverage, then generate tailored artifacts based on user intent.
 
-$ARGUMENTS — Optional: intent keyword(s) to skip the interactive question. E.g., "test", "frontend", "backend", "feature", "refactor". If empty, scan first then ask.
+$ARGUMENTS — Optional: intent keyword(s) to skip the interactive question. E.g., "test", "frontend", "backend", "feature", "refactor". If empty, scan first then ask. Options: `--file {path}` import external documents (.docx/.pdf/.md/.txt/.pptx/.xlsx) as supplementary context for the scan. `--url {target_url}` specify the running application URL for browser exploration (requires Playwright MCP).
 
 ## Role
 
@@ -59,6 +59,84 @@ Scan the project systematically. For medium-to-large projects, consider using th
 - Search for API route definitions: `@app.route`, `router.get`, `@Get()`, `http.HandleFunc`
 - Search for database models/schemas: `@Entity`, `class.*Model`, `CREATE TABLE`, migration files
 - Check for API docs: `swagger`, `openapi`, GraphQL schema files
+
+### Step 1.5: File Import (conditional — when `--file` is specified)
+
+When `$ARGUMENTS` contains `--file {path}`:
+
+1. **Convert to markdown**: Use markitdown skill to convert external documents (.docx/.pdf/.md/.txt/.pptx/.xlsx → markdown). If directory, batch convert all supported files.
+2. **Classify content**: Identify document type:
+   - Requirements / PRD → extract features, user stories, constraints
+   - Architecture / Design → extract modules, tech stack, dependencies
+   - API documentation / Swagger → extract endpoints, schemas, error codes
+   - Mixed → classify by sections
+3. **Merge with scan data**: Use extracted information to supplement the Deep Scan findings. Mark supplemented items `[from:file]`.
+4. **Report**: "从 {N} 个文件中导入了补充上下文：{N} 项需求, {N} 个模块, {N} 个 API 端点"
+
+### Step 1.7: Browser Exploration (conditional — Playwright MCP + running service)
+
+Explore the running application through a browser to discover UI structure, navigation flows, and dynamic content that static code analysis cannot reveal.
+
+**Prerequisites check**:
+1. Check for Playwright MCP availability (look for browser-control MCP tools: `playwright_navigate`, `playwright_click`, `playwright_screenshot`)
+2. Determine target URL:
+   - If `--url` specified in `$ARGUMENTS` → use that
+   - If not → try to detect from code: `package.json` scripts (dev/start), Docker config, Python server config
+   - If cannot determine → ask user: "检测到 Playwright MCP，是否有可访问的开发环境？请提供 URL（如 http://localhost:3000）"
+3. Verify URL is reachable (HTTP GET, check for 200/301/302)
+
+**If Playwright MCP available AND URL reachable** → Live Exploration:
+
+1. **Navigate to home page**, take full-page screenshot
+2. **Map navigation structure**:
+   - Identify all navigation elements (nav bars, sidebars, menus, tabs)
+   - Click each navigation item, record: label, target URL/view, page title
+   - Screenshot each view
+3. **Explore key pages** (up to 15 pages):
+   - Record: page title, key UI elements (buttons, forms, tables, lists)
+   - Identify form fields: labels, types, required status, validation hints
+   - Check states: empty state, loading indicator, error display
+4. **Check responsive behavior**: Switch to mobile viewport (375×667), screenshot home page and one content page
+5. **Handle login** (if encountered):
+   - Detect login page (form with password field)
+   - Ask user: "系统需要登录。请提供测试账号，或在弹出的浏览器中手动登录后告知我继续。"
+   - After login, continue exploration
+6. **Save screenshots** to `.aion/refs/screenshots/` (create directory if needed)
+7. **Output**: UI Discovery Report
+
+```markdown
+# UI Discovery Report
+
+## Navigation Structure
+| Label | URL/View | Type | Notes |
+|-------|---------|------|-------|
+| {nav label} | {path} | {page|modal|tab} | {key elements} |
+
+## Pages Discovered ({N} total)
+| Page | Key Elements | Forms | States Observed |
+|------|-------------|-------|-----------------|
+| {page name} | {buttons, tables, lists} | {form fields} | {empty/loading/error} |
+
+## Forms & Inputs
+| Page | Field | Type | Required | Validation |
+|------|-------|------|----------|-----------|
+
+## Responsive Notes
+- {observations about mobile layout}
+
+## Screenshots
+- {path to each screenshot with description}
+```
+
+**If NO Playwright MCP OR URL not reachable** → Static UI Analysis:
+
+1. Read HTML templates / JSX / Vue / Svelte files → extract page structure
+2. Read frontend router config → extract navigation/URL map
+3. Read CSS/SCSS → identify responsive breakpoints, theme variables
+4. Read API call patterns in frontend code → infer data fetching
+5. Output: Static UI Analysis Report (same structure, marked `[from:static]`)
+
+> Note: Static analysis misses dynamic content, JS-rendered elements, and actual runtime states. Suggest user provides `--url` for better results.
 
 ### Step 2: Determine Intent
 
@@ -117,6 +195,50 @@ Architecture file format:
 - Test: {command}
 - Build: {command}
 - Lint: {command}
+```
+
+### Step 3.5: Generate _product.md (Product Design Document)
+
+Cross-reference all scan data (code scan + file import + browser exploration) to generate the product design document.
+
+**Source fusion**:
+- **Code scan** (Step 1) → tech stack, modules, API endpoints, database models
+- **File import** (Step 1.5, if used) → business requirements, user stories, architecture decisions
+- **Browser exploration** (Step 1.7, if performed) → UI pages, navigation flows, forms, states
+- **Cross-analysis**: Map code modules ↔ UI pages, API routes ↔ frontend calls, DB models ↔ business entities
+
+**Write `.aion/specs/_product.md`**:
+
+Follow Write Protocol category: **Versioned**.
+
+1. **If FIRST_SCAN or `_product.md` does not exist** → Create full document:
+   - 产品定位: Infer from README, package description, UI title. Mark `[INFERRED]` if uncertain.
+   - 功能地图: One row per discovered module/feature. Sources tagged `[from:code]` / `[from:explore]` / `[from:file]`.
+   - 核心业务流程: Infer from navigation flows (browser) or route structure (code). Mark `[INFERRED]`.
+   - 模块架构: From directory structure + import analysis. Tag `[from:code]`.
+   - 技术栈: From manifest files. Tag `[CONFIRMED]` (these are factual).
+   - 数据模型: From DB models/migrations if found. Tag `[from:code]`.
+   - Set `generation_method` in frontmatter based on which sources were used.
+   - Set `confidence`: `high` (all 3 sources), `medium` (2 sources), `low` (code only).
+
+2. **If RE_SCAN and `_product.md` exists** → Incremental update:
+   - Read existing document, preserve all `[CONFIRMED]` entries
+   - Add newly discovered modules/pages/endpoints
+   - Update tech stack if versions changed
+   - Mark new entries with source tags
+
+**Frontmatter**:
+```yaml
+---
+product: {project name}
+updated_at: {YYYY-MM-DD}
+generation_method: {scan | scan+file | scan+explore | scan+file+explore}
+confidence: {high | medium | low}
+sources:
+  - code-scan
+  - file-import (if used)
+  - browser-explore (if performed)
+---
 ```
 
 ### Step 4: Generate Rules
@@ -395,6 +517,36 @@ Skipped (protected):
 Suggested follow-up:
   - {e.g., "Run /aion-learn to update potentially stale rules"}
 ```
+
+### Step 6.5: AI Q&A — Confirm Product Design (always, when _product.md was generated/updated)
+
+After the scan report, present the `_product.md` content to the user for confirmation:
+
+1. **Show all `[INFERRED]` items** grouped by section:
+   ```
+   我从扫描中推断了以下产品信息，请确认或纠正：
+
+   产品定位：
+   - 目标用户：{推断} [INFERRED]
+   - 核心价值：{推断} [INFERRED]
+
+   功能地图中不确定的项：
+   - {模块}: {推断的功能描述} [INFERRED]
+
+   业务流程中不确定的项：
+   - {流程}: {推断的步骤} [INFERRED]
+
+   请回复需要修正的项，或回复"确认"接受所有推断。
+   ```
+
+2. **Process user response**:
+   - User confirms → update all `[INFERRED]` → `[CONFIRMED]`
+   - User corrects → apply corrections, mark corrected items `[CONFIRMED]`
+   - User adds new info → append to relevant sections, mark `[from:user]` `[CONFIRMED]`
+
+3. **Update `_product.md`** with confirmed content, update `confidence` level
+
+> This step ensures the product design document is not just AI guesswork but validated knowledge. Every scan produces a Q&A round — the more the user confirms, the higher the confidence.
 
 ## Next Steps
 

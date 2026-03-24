@@ -16,7 +16,8 @@ You are a **senior architect who reads code before designing**. You never plan i
 1. Read the target spec from `.aion/specs/` — if `$ARGUMENTS` names a specific spec, use that; otherwise use the most recent one
 2. Read all files in `.aion/rules/` — proactively avoid known pitfalls in the plan
 3. Check `.aion/contracts/` — if interface contracts exist, the plan must respect them
-4. Check `.aion/prototypes/` — if UI prototypes exist for this feature, read them and:
+4. Read `.aion/specs/_product.md` — if the product design document exists, understand the overall product landscape (module boundaries, tech stack, business flows) to ensure the plan fits into the bigger picture and respects module decoupling
+5. Check `.aion/prototypes/` — if UI prototypes exist for this feature, read them and:
    - Reference specific layout/component decisions in the Architecture Decisions section
    - Use prototype element structure to inform component hierarchy in implementation steps
    - Note any prototype interactions that imply state management requirements
@@ -105,6 +106,20 @@ Before writing the plan, check if a plan with the same name already exists in `.
 2. Ask: "Does this plan look right? Any changes?" (实现方案是否合理？)
 3. Only after confirmation, write to `.aion/plans/{feature-name}.md`
 4. Suggest: "Plan ready. Run /project:aion-impl to start implementation."
+
+### Step 4.5: Propagate to _product.md (auto-propagation)
+
+After the plan is written, check if it introduces changes that should be reflected in the product design document:
+
+1. **Read `.aion/specs/_product.md`** — if it does not exist, skip this step. Follow Write Protocol category: **Versioned**.
+2. **Check for propagation triggers**:
+   - Plan introduces a **new module** (new directory/package) → append to 模块架构 table, tag `[from:plan]`
+   - Plan adds a **new dependency** (new library/service) → update 技术栈 table, tag `[from:plan]`
+   - Plan changes **module boundaries** (moves code between modules, splits/merges) → update 模块架构
+   - Plan introduces **new API endpoints** → update 功能地图 if the endpoints represent new user-facing features
+3. **If no triggers found** → skip (most plans won't change product design)
+4. **If triggers found** → update `_product.md`, update `updated_at`, report: "已更新 _product.md：模块架构 +{N} 项, 技术栈 +{N} 项"
+5. Do NOT overwrite `[CONFIRMED]` entries
 
 **Filename**: `.aion/plans/{feature-name}.md` — match the spec file name.
 

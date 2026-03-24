@@ -1,7 +1,7 @@
 ---
 category: style
 rule_count: 11
-last_updated: 2026-03-23
+last_updated: 2026-03-24
 ---
 
 # Style — Project code conventions
@@ -21,13 +21,13 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 - **分发物必须单文件自包含** (design, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
   开发态允许引入成熟第三方库（如 rich, requests），但 PyInstaller 打包后的分发物必须是单文件自包含二进制，用户无需预装 Python 或任何库。`internal/dashboard.py` 保持零外部依赖（历史遗留，v0.5 重构时再统一）。
 
-- **命令文件结构规范** (scan, 2026-03-21) [cite_count: 0, last_cited: 2026-03-21]
+- **命令文件结构规范** (scan, 2026-03-21) [cite_count: 1, last_cited: 2026-03-24]
   18 个 `commands/aion-*.md` 命令文件遵循统一结构：Header → `$ARGUMENTS` → Role → `⚠️ CRITICAL` 断言 → Steps（Step 0 = 上下文加载）→ Next Steps → Checklist → Anti-Patterns 表 → Output Format → Exit Status。新命令必须遵循此结构。
 
-- **单文件行数上限 500 行** (design, 2026-03-22) [cite_count: 2, last_cited: 2026-03-23]
+- **单文件行数上限 500 行** (design, 2026-03-22) [cite_count: 3, last_cited: 2026-03-24]
   单个源码文件不得超过 500 行（不含空行和注释）。超过时必须拆分为多个模块。已知豁免：`frontend/embedded.py`（自动生成文件）。
 
-- **单函数行数上限 50 行** (design, 2026-03-22) [cite_count: 2, last_cited: 2026-03-23]
+- **单函数行数上限 50 行** (design, 2026-03-22) [cite_count: 3, last_cited: 2026-03-24]
   单个函数/方法不得超过 50 行（逻辑行，不含空行和注释）。超过时必须提取子函数。例：`aioncode/commands/init.py` 的 `_init_project()` 应控制在 50 行以内，复杂逻辑拆分为 `_copy_commands()`、`_scaffold_aion()` 等子函数。
 
 - **嵌套深度上限 4 层** (design, 2026-03-22) [cite_count: 1, last_cited: 2026-03-22]
@@ -42,10 +42,10 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 - **Python: 公开函数必须有 docstring** (save, 2026-03-22) [cite_count: 1, last_cited: 2026-03-23]
   所有不以 `_` 开头的函数必须有 docstring（说明 what + returns）。复杂函数加 Args 段。私有函数可选。
 
-- **JavaScript: 文件顶部必须有模块说明** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
+- **JavaScript: 文件顶部必须有模块说明** (save, 2026-03-22) [cite_count: 1, last_cited: 2026-03-24]
   每个 .js 文件必须有 `/* ... */` 格式的模块说明注释。
 
-- **JavaScript: 公开函数加一行说明** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
+- **JavaScript: 公开函数加一行说明** (save, 2026-03-22) [cite_count: 1, last_cited: 2026-03-24]
   公开函数前加 `/** 一行说明 */`，不需要完整 JSDoc。section 分隔线模式（`// ══════`）保持。
 
 - **注释只解释 why，不解释 what** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]

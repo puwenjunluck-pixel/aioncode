@@ -30,3 +30,7 @@ Key rules:
 - 本项目是 AionCode 自身（dogfooding）— NEVER 同步 commands/ → .claude/commands/
 - 公司：成都奕贝科技
 - Dashboard dev 模式：`python3.11 -c "from aioncode.internal.dashboard.app import create_app; import uvicorn; uvicorn.run(create_app(dev=True), host='127.0.0.1', port=19200)"`
+- E2E 测试定义：`.aion/tests/e2e/*.md`（Given/When/Then 格式，AI 多源自动生成）
+- Playwright MCP 仅限 `aion-test e2e` 和 `aion-scan --url` 模式（见 pitfalls 规则）
+- 产品设计文档：`.aion/specs/_product.md`（全局产品全景，design/plan/scan 自动维护）
+- `--file` 参数：aion-design / aion-scan 支持导入 .docx/.pdf/.pptx 外部文档

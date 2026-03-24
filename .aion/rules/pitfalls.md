@@ -1,7 +1,7 @@
 ---
 category: pitfalls
-rule_count: 6
-last_updated: 2026-03-22
+rule_count: 7
+last_updated: 2026-03-24
 ---
 
 # Pitfalls — Known gotchas and traps
@@ -30,8 +30,11 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 - **NEVER 同步 commands/ → .claude/commands/** (discussion, 2026-03-22) [cite_count: 1, last_cited: 2026-03-22]
   禁止执行任何将 `commands/*.md` 复制到 `.claude/commands/` 的操作（包括 `cp`、`rsync`、`shutil.copy` 等一切形式）。`commands/` 是源码，`.claude/commands/` 是运行版，二者必须隔离。违反此规则会导致 AI 工作流立刻失效。同步只能由用户自行执行。**此规则无例外，无豁免，无 override。**
 
-- **NEVER 手动编辑 embedded.py** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
+- **NEVER 手动编辑 embedded.py** (save, 2026-03-22) [cite_count: 1, last_cited: 2026-03-24]
   `aioncode/internal/dashboard/embedded.py` 是由 `build_frontend.py` 从 `static/` 目录自动生成的文件。手动编辑会在下次构建时被覆盖。`ruff` 配置已 exclude 此文件。前端修改必须在 `static/` 目录中进行，然后运行构建脚本。
 
 - **NEVER 忘记同步模板 config.yml 版本号** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
   `aioncode/internal/templates/aion/config.yml` 和 `templates/aion/config.yml` 的 `version` 字段必须与 `pyproject.toml` 和 `__init__.py` 同步更新。遗漏会导致新用户安装时拿到旧版本号，且 upgrade 逻辑无法正确检测版本差异。v0.5 曾因此遗留 version: "0.3"。
+
+- **NEVER 在非 e2e/scan-url 模式下调用 Playwright 浏览器自动化** (design, 2026-03-23) [cite_count: 1, last_cited: 2026-03-24]
+  Playwright 浏览器自动化仅允许在 `aion-test e2e` 和 `aion-scan --url` 两种模式下使用，且必须通过 Playwright MCP 控制（非直接 subprocess 调用）。在其他模式（unit/coverage/perf/ui）中触发浏览器操作会消耗大量 token 且超出作用域。MCP 提供安全代理层和超时保护。**此规则无例外。**

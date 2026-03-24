@@ -1,6 +1,6 @@
 # /project:aion-test — Test Generation & Analysis
 
-Generate comprehensive tests, analyze coverage gaps, create performance scripts, and validate UI structure.
+Generate comprehensive tests, analyze coverage gaps, create performance scripts, validate UI structure, run E2E browser tests, and self-heal failing tests.
 
 $ARGUMENTS — Test mode and options:
 - Empty: auto-generate unit + integration tests for the most recent plan's scope
@@ -9,13 +9,21 @@ $ARGUMENTS — Test mode and options:
 - `coverage`: run coverage analysis and generate tests for uncovered paths
 - `perf`: generate performance/load test scripts from API contracts
 - `ui`: generate UI test checklist + accessibility audit + structure validation
-- `full`: run all four modes sequentially
+- `e2e`: generate or execute E2E browser tests (auto-detects Playwright MCP → live mode; otherwise → gen mode). Feature target can be: exact spec name (`e2e github-token-auth`), Chinese description (`e2e "登录功能"`), module path (`e2e src/auth/`), or empty (interactive selection)
+- `pipeline`: run multi-agent test pipeline (analyst → planner → engineer → sentinel → healer)
+- `full`: run all modes sequentially (unit → coverage → perf → ui → e2e)
 - `--incremental` (default): only for new/changed code from the plan
 - `--comprehensive`: generate tests for the full module/feature
+- `--heal`: after generating tests, execute them and auto-fix failures (max 3 rounds)
+- `--now`: (e2e mode) skip test case review — auto-generate and immediately execute without waiting for human review
 
 ## Role
 
 You are a **senior test engineer who reads code before writing tests**. You design tests that verify behavior, not implementation. You understand that good tests are documentation — they explain what the code is supposed to do. You never write tests in a vacuum — you read the spec for acceptance criteria, the plan for intended behavior, and the existing tests for framework and style conventions.
+
+When `--heal` is active, you also act as a **test healer** — you diagnose failures by comparing tracebacks against specs, determine whether the bug is in the code or the test, and apply targeted fixes.
+
+When `e2e` mode is active, you act as a **QA automation engineer** — you parse natural language test definitions and either generate Playwright scripts or execute tests live via Playwright MCP.
 
 > **CRITICAL**: NEVER write tests without reading existing test files first. NEVER invent test frameworks — detect and use whatever the project already uses. Violating this is the #1 cause of failure for this command.
 
@@ -23,23 +31,29 @@ You are a **senior test engineer who reads code before writing tests**. You desi
 
 ### Step 0: Context Loading
 
-1. Read the target spec from `.aion/specs/` — these define the acceptance criteria that tests must verify
-2. Read the target plan from `.aion/plans/` — these define which files were changed and what behavior was intended
+1. **Resolve target spec and plan**:
+   - If `$ARGUMENTS` is a feature name → read `.aion/specs/{feature}.md` and `.aion/plans/{feature}.md` directly
+   - If `$ARGUMENTS` is a module path (e.g., `src/utils/auth.py`) → search `.aion/plans/*.md` for plans that reference this file path. Use the matching plan's `spec` frontmatter to find the associated spec. If multiple plans match, use the most recent one.
+   - If `$ARGUMENTS` is empty → use the most recent plan in `.aion/plans/`
+   - If no spec/plan found → enter cold-start mode (see below)
+2. Read the target plan — these define which files were changed and what behavior was intended
 3. Read ALL files in `.aion/rules/` — especially test-related conventions
-4. Check `.aion/contracts/` — API contracts define the interface tests should exercise
-5. Check `.aion/prototypes/` — if UI mode, prototypes define the expected structure
-6. Check `.aion/tests/reports/` — if previous test reports exist for this feature:
+4. Check `.aion/contracts/` — if the directory exists, API contracts define the interface tests should exercise. If directory does not exist, skip (this is normal for projects without API contracts).
+5. Check `.aion/prototypes/` — if UI mode and directory exists, prototypes define the expected structure. If not exists, skip.
+6. Check `.aion/tests/reports/` — if directory exists and previous test reports exist for this feature:
    - Read the report and extract its `generated_at` date and `modes_run`
    - Check fingerprint (per Write Protocol, category: Regenerable)
    - If spec/plan have NOT changed since the report date AND fingerprint matches → inform user: "Test report from {date} exists. Re-generate? [Y/n]"
    - If spec/plan have changed OR user requests → proceed with regeneration
-7. Read `.aion/refs/write-protocol.md` — load Write Protocol for Step 5
+   - If directory does not exist, skip (first run — no previous reports).
+7. Read `.aion/refs/write-protocol.md` — load Write Protocol for Step 7
+8. **E2E context** (if `e2e` or `full` mode): Read `.aion/tests/e2e/*.md` — natural language test definitions. Parse frontmatter (feature, target_url, viewport, preconditions) and Given/When/Then test cases.
 
-**Cold-start mode (no spec/plan)**: When no spec or plan exists (e.g., after `aion-scan` on an existing project):
+**Cold-start mode (no spec/plan)**: When no spec or plan is found by the resolution logic above:
 - Read `.aion/refs/architecture.md` (generated by `aion-scan`) for module structure and key paths
 - Scan the project source directory (`src/`, `app/`, `lib/`, or project root) to discover modules
 - Prioritize test generation: core business logic first, then utility functions, then configuration
-- If `$ARGUMENTS` is a directory path, scope to that module only
+- If `$ARGUMENTS` is a directory/file path, scope to that module only
 
 ### Step 0.5: Detect Test Infrastructure (MUST — do not skip)
 
@@ -64,6 +78,17 @@ Detection steps:
    - Assertion style (expect, assert, should)
    - File naming convention and directory structure
 4. If NO existing tests are found, use sensible defaults for the detected stack but note this in the report
+
+**Playwright MCP detection** (if `e2e` or `full` mode):
+1. Check for Playwright MCP availability by looking for browser-control MCP tools (e.g., `playwright_navigate`, `playwright_click`, `playwright_screenshot`)
+2. If Playwright MCP tools are available → set `E2E_MODE = live`
+3. If NOT available → set `E2E_MODE = gen`, output installation guide:
+   ```
+   E2E live 模式需要 Playwright MCP。安装方式：
+   npx @anthropic-ai/playwright-mcp
+   然后在 Claude Code 设置中添加 MCP server 配置。
+   当前已切换为 e2e-gen 模式（仅生成测试脚本，不执行）。
+   ```
 
 ### How to Ask Questions
 When you need user input, follow this structure:
@@ -175,7 +200,7 @@ For each source file in scope:
 
 ### Step 4: UI/UE Testing (mode: `ui`)
 
-Lightweight static analysis only — no browser automation, no Playwright.
+Lightweight static analysis only — no browser automation.
 
 #### 4a. UI Test Checklist
 
@@ -229,7 +254,335 @@ Scan source files (HTML, JSX, Vue, Svelte templates) for:
 
 Write results to `.aion/tests/ui/{feature-name}-a11y.md`.
 
-### Step 5: Write Test Report
+### Step 5: E2E Testing (mode: `e2e`)
+
+E2E testing follows a 3-phase architecture: **勘察 → 生成 → 执行**. Test case generation uses multi-source analysis (spec + code + live UI + contracts + bugs) to maximize coverage.
+
+#### Step 5.0: Resolve E2E Target (smart feature matching)
+
+The user may specify the feature in multiple ways. Resolve to a concrete spec:
+
+1. **Exact spec name** (e.g., `e2e github-token-auth`):
+   - Check `.aion/specs/{name}.md` exists → use it
+   - If not found → check `.aion/tests/e2e/{name}.md` exists → use existing TC definitions directly
+
+2. **Chinese description** (e.g., `e2e "登录功能"` or `e2e 支付流程`):
+   - Read all `.aion/specs/*.md` file names and their `# {Title}` heading
+   - Fuzzy match the user's description against spec titles and Goal sections
+   - If one match → use it. If multiple → present choices:
+     ```
+     找到多个匹配的需求规格：
+       A) user-auth.md — 用户认证与权限管理
+       B) login-flow.md — 登录流程优化
+     请选择，或输入更具体的描述：
+     ```
+   - If no match → ask: "未找到匹配的 spec。请选择：A) 列出所有可用 spec  B) 直接输入 target_url 开始勘察"
+
+3. **Module path** (e.g., `e2e src/auth/` or `e2e aioncode/internal/dashboard`):
+   - Search `.aion/plans/*.md` for plans referencing this path → find associated spec
+   - If found → use that spec
+   - If not → use cold-start: scan the module directly, no spec context
+
+4. **Empty** (`e2e` with no feature specified):
+   - List all available specs with one-line descriptions:
+     ```
+     可用的需求规格：
+       1) github-token-auth — GitHub Token 认证支持
+       2) e2e-testing-upgrade — 测试体系升级
+       3) dashboard-polish — Dashboard UI 优化
+       4) [全部] — 为所有 spec 生成 E2E 测试
+     请选择编号或输入功能名称：
+     ```
+   - If `.aion/tests/e2e/*.md` already exists but no spec specified → ask:
+     ```
+     发现已有 E2E 测试定义：
+       - _example.md (AionCode Dashboard, 6 个 TC)
+     直接执行这些测试？[Y] 或选择其他 spec [N]
+     ```
+
+5. **Resolution output**: After matching, report:
+   ```
+   E2E 目标：{spec title} (spec: {filename})
+   Target URL: {from spec or to be discovered}
+   ```
+
+#### Phase 0: 实地勘察（Reconnaissance）
+
+Before generating test cases, explore the target system to discover real UI elements, states, and interaction flows that static analysis cannot reveal.
+
+**If Playwright MCP available (live reconnaissance):**
+
+1. **Navigate to `target_url`** (from spec, plan, or user input). Take a full-page screenshot.
+2. **Explore navigation**: Click each navigation item / menu entry. For each view:
+   - Screenshot the view
+   - Record: view name, URL path, key UI elements (buttons, forms, lists, tables)
+   - Record: sidebar content, header text, status indicators
+3. **Discover states**: For each key view, check:
+   - **Empty state**: What shows when there is no data?
+   - **Loading state**: Is there a spinner/skeleton during data fetch?
+   - **Error state**: What happens on network failure? (if testable)
+4. **Test responsiveness**: Switch to mobile viewport (375×667), repeat key navigation
+5. **Inspect forms**: Find all input fields, buttons, dropdowns. Record their labels, placeholders, required status
+6. **Output**: Reconnaissance report — structured list of pages, elements, states discovered
+
+```markdown
+# Reconnaissance Report: {feature}
+## Pages Discovered
+| Page | URL | Key Elements | States Observed |
+|------|-----|-------------|-----------------|
+| 概览 | / | stats, changelog, nav buttons | loaded, empty |
+## Forms
+| Form | Fields | Buttons | Validation Observed |
+## Interactive Elements
+| Element | Type | Behavior When Clicked |
+```
+
+**If NO Playwright MCP (static reconnaissance):**
+
+Fall back to deep static analysis:
+1. Read HTML templates / JSX / Vue files — extract all interactive elements, navigation links, form fields
+2. Read frontend JS/TS — extract route definitions, API calls, state management patterns
+3. Read CSS — identify responsive breakpoints, hidden/visible states
+4. Read API routes — identify available endpoints and error responses
+5. Output: Static reconnaissance report (same format, but marked `[from:static]`)
+
+> Coverage impact: Live reconnaissance adds ~10% coverage over static analysis (discovers dynamic content, JS-rendered elements, actual API responses).
+
+#### Phase 1: 多源分析生成测试用例（Multi-Source Analysis）
+
+Check if `.aion/tests/e2e/{feature}.md` already exists:
+- **Exists** → Parse it (see parsing rules below), skip to Phase 2
+- **Not exists** → Auto-generate from multiple sources:
+
+**Source 0: _product.md → Global context [from:product]**
+1. Read `.aion/specs/_product.md` if exists
+2. Extract: 功能地图 (feature map), 核心业务流程 (business flows), 模块架构 (module dependencies)
+3. This does NOT directly generate TCs — it provides global context for all subsequent sources:
+   - Know which modules the current feature interacts with → cross-module integration TCs
+   - Know the target users → user-perspective test scenarios
+   - Know the business flows → end-to-end flow coverage
+
+**Source 1: Spec → Happy path [from:spec]**
+1. Read `.aion/specs/{feature}.md`
+2. Extract each acceptance criterion
+3. Convert each criterion to a TC with Given/When/Then
+4. These form the P0 (must-test) cases
+
+**Source 2: Source code → Error paths [from:code]**
+1. Read source files referenced in the plan (or the module path from `$ARGUMENTS`)
+2. Scan for: try/catch blocks, error returns, status code checks, validation logic
+3. For each error path, generate a TC that triggers it from the user's perspective
+4. These form the P1 (should-test) cases
+
+**Source 3: Reconnaissance report → UI details [from:explore]**
+1. Read the Phase 0 reconnaissance report
+2. For each discovered page/view: generate a "view loads correctly" TC
+3. For each discovered form: generate validation TCs (empty submit, invalid input)
+4. For each discovered state (empty/loading/error): generate a state verification TC
+5. For responsive findings: generate viewport-specific TCs
+6. These fill gaps that spec and code analysis miss
+
+**Source 4: Contracts → API assertions [from:api]**
+1. Read `.aion/contracts/` if exists
+2. For each API endpoint: generate TCs that verify the UI correctly handles each response code
+3. Focus on error responses (4xx, 5xx) and edge cases (empty array, paginated results)
+
+**Source 5: Bug history → Regression tests [from:regression]**
+1. Read `.aion/bugs/*.md` if any relate to this feature
+2. For each resolved bug: generate a TC that verifies the fix still holds
+3. These are P0 regression cases
+
+**Merge and deduplicate:**
+1. Combine all TCs from all sources
+2. Remove semantic duplicates (same user flow, different wording)
+3. Assign TC-IDs: `TC-001`, `TC-002`, ...
+4. Tag each TC with its source: `<!-- from:spec -->`, `<!-- from:code -->`, `<!-- from:explore -->`, etc.
+5. Write to `.aion/tests/e2e/{feature}.md` with proper frontmatter
+
+**Output to user:**
+```
+已从多源分析生成 {N} 个 E2E 测试用例：
+  - {N} 个来自 spec（验收标准）   [from:spec]
+  - {N} 个来自源码（错误路径）    [from:code]
+  - {N} 个来自实地勘察（UI 细节） [from:explore]
+  - {N} 个来自 API 契约          [from:api]
+  - {N} 个来自 Bug 回归          [from:regression]
+
+已写入 .aion/tests/e2e/{feature}.md
+请审核后再次运行 /project:aion-test e2e 执行测试。
+或直接运行 /project:aion-test e2e --now 跳过审核立即执行。
+```
+
+**Parsing existing test definitions:**
+
+When `.aion/tests/e2e/{feature}.md` already exists, parse it:
+1. Parse YAML frontmatter: `feature`, `target_url`, `viewport`, `preconditions`
+2. Parse test cases by `## TC-{NNN}:` headers
+3. For each test case, extract:
+   - **Given** — precondition state
+   - **When** — sequential user actions (split by `→`)
+   - **Then** — expected outcomes (bulleted list)
+   - **Edge Cases** — boundary scenarios (optional section)
+4. If `$ARGUMENTS` specifies a feature name, filter to matching file
+
+#### Phase 2: 执行测试（Test Execution）
+
+Execution mode depends on Playwright MCP availability:
+
+**E2E-Gen Mode (no Playwright MCP):**
+
+Generate executable Playwright test scripts without running them:
+
+1. **Create Page Object Model** structure:
+   ```
+   tests/e2e/
+   ├── pages/
+   │   ├── {PageName}Page.{ts|py}     # POM classes
+   │   └── ...
+   ├── {feature-name}.spec.{ts|py}    # Test specs
+   └── playwright.config.{ts|py}      # Config (if not exists)
+   ```
+
+2. **For each test case (TC-NNN)**:
+   - Convert **Given** to setup/beforeEach logic
+   - Convert **When** actions to Playwright calls (`page.click()`, `page.fill()`, `page.goto()`)
+   - Convert **Then** assertions to `expect()` calls
+   - Convert **Edge Cases** to additional parameterized tests
+   - Use semantic locators (`getByRole`, `getByText`, `getByLabel`) over CSS selectors
+
+3. **Script requirements**:
+   - Parameterized base URL via environment variable
+   - Multi-viewport support from frontmatter `viewport` field
+   - Screenshot on failure (`screenshot: 'only-on-failure'`)
+   - No hardcoded wait times — use `waitForSelector` or `waitForResponse`
+
+4. Output: test files in project's `tests/e2e/` directory
+
+5. **Running instructions** (output after generation):
+   ```
+   E2E 测试脚本已生成到 tests/e2e/。运行方式：
+
+   # Python (pytest-playwright)
+   pip install pytest-playwright && playwright install
+   pytest tests/e2e/ --headed       # 有头模式（可观察）
+   pytest tests/e2e/                # 无头模式
+
+   # TypeScript (Playwright Test)
+   npx playwright install
+   npx playwright test tests/e2e/   # 运行所有 E2E 测试
+   npx playwright test --ui         # 交互式 UI 模式
+
+   或安装 Playwright MCP 后使用 aion-test e2e 的 live 模式实时执行。
+   ```
+
+**E2E-Live Mode (Playwright MCP available):**
+
+Execute E2E tests in real-time via Playwright MCP tools:
+
+1. **For each test case (TC-NNN)**, execute sequentially:
+   - Navigate to `target_url` from frontmatter
+   - Set viewport from frontmatter
+   - Execute **Given** preconditions (login, navigate to starting page)
+   - Execute **When** actions step by step:
+     - Use Playwright MCP `navigate`, `click`, `fill`, `select` tools
+     - After each action, take a screenshot for evidence
+     - Wait for network idle or specific element before next action
+   - Verify **Then** assertions:
+     - Use `snapshot` or `screenshot` to capture current state
+     - Check text content, element visibility, URL changes
+   - Execute **Edge Cases** as additional test runs
+
+2. **Adaptive execution**:
+   - If an element is not found by text, try alternative locators (role, label, placeholder)
+   - If a page is loading, wait for network idle before proceeding
+   - If an action fails, retry once with a 2-second delay before marking as FAIL
+
+3. **Report generation**:
+   - For each TC: PASS/FAIL with screenshots
+   - Failed assertions include: expected vs actual, screenshot at failure point
+   - Write to `.aion/tests/reports/{feature-name}-e2e.md`
+
+### Step 6: Execute & Self-Heal (mode: `--heal`)
+
+When `--heal` is specified, execute generated tests and auto-fix failures. This step runs AFTER test generation (Steps 1-5) and BEFORE the report (Step 7).
+
+> **CRITICAL**: NEVER auto-fix **source code** without spec confirmation. If no spec exists and source code fix is needed, report `[NEEDS_HUMAN]`. However, **test-only fixes** (stale imports, self-contradictory assertions, outdated selectors) ARE allowed without spec — the test itself provides enough evidence to diagnose.
+
+#### 6a. Execute Test Suite
+
+Run all tests (existing + newly generated) using the detected framework:
+- Python: `python -m pytest -x --tb=long` (stop on first failure for focused diagnosis)
+- Node/TS: `npx vitest run` or `npx jest --verbose`
+- Go: `go test -v ./...`
+
+Capture: exit code, stdout, stderr (full output).
+
+If all tests pass → skip to Step 7 (report).
+
+#### 6b. Self-Healing Loop (max 3 rounds)
+
+```
+round = 1
+while round <= 3 AND tests are failing:
+    1. Parse failure output
+    2. Diagnose root cause
+    3. Apply fix
+    4. Re-run tests
+    round += 1
+```
+
+**Diagnosis logic** — for each failing test, read the traceback and determine:
+
+| Signal | Diagnosis | Action | Tag |
+|--------|-----------|--------|-----|
+| `AssertionError` + spec has matching acceptance criterion | Source code does not satisfy spec | Fix source code to match spec | `[CODE_FIX]` |
+| `AttributeError` / `NameError` on tested code | Code was refactored, test references stale API | Update test imports, method names, signatures | `[TEST_FIX]` |
+| `ImportError` for module declared in project dependencies | Package not installed in environment | STOP healing, report `[ENV_ISSUE]` with install hint | — |
+| `ImportError` for undeclared/renamed module | Code refactored, import path changed | Update test import path | `[TEST_FIX]` |
+| `AssertionError` + no spec BUT test is self-contradictory (docstring vs assertion, obvious typo) | Test was written incorrectly | Fix the test assertion | `[TEST_FIX]` |
+| `AssertionError` + no spec AND cannot determine correctness | Ambiguous — need human judgment | Report `[NEEDS_HUMAN]`, do NOT auto-fix source code | — |
+| `ConnectionRefusedError` / `TimeoutError` / `OSError` | Environment or infrastructure issue | STOP healing, report `[ENV_ISSUE]` | — |
+| Selector not found (E2E) | UI changed, locator stale | Update locator using current page structure | `[TEST_FIX]` |
+| pytest collection error (`ModuleNotFoundError` at import time) | Module import fails before test runs | Run remaining tests with `--ignore=<failing_file>`, report `[ENV_ISSUE]` | — |
+
+**Fix application**:
+1. Read the failing source/test file completely
+2. Identify the exact lines to fix
+3. Apply minimal targeted edit (not broad refactoring)
+4. Log: `[HEAL round {N}] {TAG}: {file}:{line} — {one-line description}`
+
+**Safety guardrails**:
+- Max 3 rounds total (hard limit, no exceptions)
+- Max 3 files modified per round
+- NEVER modify source code unless spec explicitly supports the intended behavior
+- NEVER delete or skip a failing test — fix it or mark `[NEEDS_HUMAN]`
+- If a round fixes 0 issues → EXIT immediately (no progress = stop)
+- All fixes tagged with `[HEAL]` prefix for traceability
+
+#### 6c. Self-Heal Report
+
+After the loop completes (pass or exhaust rounds), compile:
+
+```markdown
+## Self-Healing Summary
+
+| Round | Fixes Applied | Files Modified | Tests Fixed |
+|-------|--------------|----------------|-------------|
+| 1 | {description} | {files} | {N} |
+| 2 | {description} | {files} | {N} |
+| 3 | {description} | {files} | {N} |
+
+### Final Status
+- Tests: {passed}/{total} ({N} still failing)
+- Source fixes: {N} [CODE_FIX]
+- Test fixes: {N} [TEST_FIX]
+- Unresolved: {N} [NEEDS_HUMAN] / [ENV_ISSUE]
+
+### Unresolved Issues (if any)
+- {test_name}: {failure reason} — requires human review
+```
+
+### Step 7: Write Test Report
 
 Follow Write Protocol (`.aion/refs/write-protocol.md`, category: **Regenerable**).
 
@@ -241,9 +594,10 @@ Compile all results into `.aion/tests/reports/{feature-name}.md`:
 ---
 feature: {feature-name}
 generated_at: {YYYY-MM-DD}
-modes_run: [unit, coverage, perf, ui]
+modes_run: [unit, coverage, perf, ui, e2e, heal]
 spec: {spec filename or "code-first (no spec)"}
 test_framework: {detected framework}
+heal_rounds: {N or null}
 ---
 
 # Test Report: {Feature Name}
@@ -254,6 +608,8 @@ test_framework: {detected framework}
 - Coverage: {before%} → {after%} (estimated)
 - Performance scripts: {k6 | locust | both}
 - UI checks: {N} checklist items, {N} a11y issues
+- E2E tests: {N} test cases ({e2e-gen | e2e-live})
+- Self-healing: {N} rounds, {N} fixes applied
 
 ## Tests Generated
 | File | Tests | Type | Source |
@@ -271,19 +627,179 @@ test_framework: {detected framework}
 - Accessibility: {N} issues ({N} HIGH, {N} MEDIUM, {N} LOW)
 - Structure: {N} mismatches vs prototype
 
+## E2E Results
+| TC | Name | Mode | Viewport | Result | Screenshot |
+|---|---|---|---|---|---|
+| TC-001 | {name} | {gen\|live} | desktop | PASS/FAIL | {path} |
+
+## Self-Healing Log
+{Include Step 6c summary if --heal was used}
+
 ## Recommendations
 - {actionable suggestions}
 ```
+
+### Step 8: Multi-Agent Pipeline (mode: `pipeline`)
+
+Orchestrate 5 specialized sub-agents for comprehensive test generation. Each agent runs as an independent Claude Code sub-agent via the `Agent` tool, with context chained from previous stages.
+
+> **CRITICAL**: NEVER run pipeline mode for trivial features. Pipeline is for complex features with 5+ user flows or cross-module dependencies. For simpler cases, use default mode + `--heal`.
+
+#### Stage 1: Analyst (分析师)
+
+```
+Agent(subagent_type="Explore", prompt="""
+You are a test analyst. Your job is to analyze the feature and produce a test point inventory.
+
+Inputs:
+- Spec: {spec content}
+- Source files: {file list from plan}
+- Prototypes: {prototype paths if any}
+
+Tasks:
+1. Read all source files and specs completely
+2. Map every user-facing behavior to a test point
+3. Identify boundary conditions and edge cases
+4. List all error paths that need verification
+5. Map data flow across modules (integration points)
+
+Output a structured Markdown report with:
+- Test Point Inventory (table: ID, description, type, priority P0/P1/P2)
+- User Flow Diagrams (text-based)
+- Integration Points (which modules talk to which)
+- Edge Case Inventory
+""")
+```
+
+Output: `.aion/tests/pipeline/{feature}/01-analysis.md`
+
+#### Stage 2: Planner (规划师)
+
+```
+Agent(subagent_type="general-purpose", prompt="""
+You are a test architect. Design a prioritized test plan.
+
+Inputs:
+- Analysis report: {Stage 1 output}
+- Existing test patterns: {from Step 0.5}
+
+Tasks:
+1. Prioritize test points: P0 (must-have), P1 (should-have), P2 (nice-to-have)
+2. Group tests into logical suites
+3. Define execution order (dependencies between tests)
+4. Estimate: total tests, files, complexity
+
+Output a structured test plan with suite breakdown.
+""")
+```
+
+Output: `.aion/tests/pipeline/{feature}/02-plan.md`
+
+#### Stage 3: Engineer (工程师)
+
+```
+Agent(subagent_type="general-purpose", prompt="""
+You are a test engineer. Write production-quality test code.
+
+Inputs:
+- Analysis: {Stage 1 output}
+- Test plan: {Stage 2 output}
+- Test infrastructure: {framework, conventions from Step 0.5}
+- Source files: {actual source code}
+
+Tasks:
+1. Write test files following project conventions exactly
+2. Implement ALL P0 and P1 test cases from the plan
+3. Use Page Object Model for E2E tests
+4. Use semantic locators, never hardcoded selectors
+5. Run tests to verify they execute (use Bash tool)
+
+Output: test files written to the project's test directory
+""")
+```
+
+Output: test files + `.aion/tests/pipeline/{feature}/03-engineer.md` (summary)
+
+#### Stage 4: Sentinel (哨兵)
+
+```
+Agent(subagent_type="Explore", prompt="""
+You are a test quality sentinel. Audit the generated tests for quality.
+
+Inputs:
+- Analysis: {Stage 1 output}
+- Test plan: {Stage 2 output}
+- Generated test files: {Stage 3 output files}
+
+Audit checklist:
+- [ ] Tests follow project naming conventions
+- [ ] No hardcoded URLs, paths, tokens, or environment values
+- [ ] Tests verify behavior, not implementation details
+- [ ] All P0 acceptance criteria have corresponding tests
+- [ ] Edge cases from analysis are covered
+- [ ] No flaky patterns (sleep(), fixed timeouts, order-dependent tests)
+- [ ] Mocks are at service boundaries only
+
+For each violation, report: file, line, violation type, severity (BLOCK/WARN).
+BLOCK violations MUST be fixed before proceeding.
+
+Output: audit report with PASS (no BLOCKs) or BLOCK (has critical issues)
+""")
+```
+
+Output: `.aion/tests/pipeline/{feature}/04-sentinel.md`
+
+**If Sentinel returns BLOCK**: Send the audit report back to the Engineer (Stage 3) for fixes. Max 2 retry rounds. If still BLOCK after 2 retries → exit pipeline with `DONE_WITH_CONCERNS`.
+
+#### Stage 5: Healer (治疗师)
+
+```
+Agent(subagent_type="general-purpose", prompt="""
+You are a test healer. Run the test suite and fix any failures.
+
+Inputs:
+- All previous stage outputs
+- Test files from Stage 3 (possibly fixed by Stage 4 retries)
+
+Tasks:
+1. Run the full test suite
+2. For each failure, diagnose: code bug vs test bug vs environment issue
+3. Apply fixes (follow the Self-Healing diagnosis table from Step 6b)
+4. Re-run and verify
+5. Max 3 healing rounds
+
+Output: healing report with final pass/fail status
+""")
+```
+
+Output: `.aion/tests/pipeline/{feature}/05-healer.md`
+
+#### Pipeline Orchestration
+
+The main agent orchestrates all stages sequentially:
+
+1. Run Analyst → wait for output
+2. Run Planner with Analyst output → wait for output
+3. Run Engineer with all prior outputs → wait for output
+4. Run Sentinel with all prior outputs → check for BLOCK
+   - If BLOCK: re-run Engineer with Sentinel feedback (max 2 retries)
+   - If PASS: proceed
+5. Run Healer with all prior outputs → final result
+6. Compile pipeline report to `.aion/tests/pipeline/{feature}/report.md`
 
 ### Escape Conditions
 - No source files in scope and no plan → ask user to specify scope or use `--comprehensive`
 - Test framework cannot be detected → STOP, report `NEEDS_CONTEXT`, ask user to specify
 - Coverage tool not installed → skip coverage mode, report `SKIP`
 - Generating more than 500 lines of test code for a single file → pause and confirm with user
+- `--heal` with no spec and test failures → report `[NEEDS_HUMAN]`, do not auto-fix source code
+- `e2e` with no `.aion/tests/e2e/*.md` and no spec → STOP, report `NEEDS_CONTEXT`
+- `pipeline` for a feature with < 3 test points → suggest using default mode instead
 
 ## Next Steps
 
 Run /project:aion-verify to execute the generated tests.
+If `--heal` was used and all tests pass, proceed directly to /project:aion-verify.
 
 ## Checklist
 Read and apply `.aion/checklists/test.md` if it exists. If not, use the built-in checklist:
@@ -299,6 +815,15 @@ Read and apply `.aion/checklists/test.md` if it exists. If not, use the built-in
 - [ ] Performance scripts use realistic data from contracts (if perf mode)
 - [ ] UI checklist derived from spec and prototype (if ui mode)
 - [ ] Accessibility audit covers WCAG basics (if ui mode)
+- [ ] E2E Phase 0: Reconnaissance completed (live or static) (if e2e mode)
+- [ ] E2E Phase 1: Multi-source analysis — all available sources consulted (spec, code, explore, api, bugs)
+- [ ] E2E Phase 1: Test definitions auto-generated OR existing definitions parsed (if e2e mode)
+- [ ] E2E Phase 1: Each TC tagged with source [from:spec/code/explore/api/regression]
+- [ ] E2E Phase 2: All TC executed (live) or scripted (gen) (if e2e mode)
+- [ ] Playwright MCP detected and mode set correctly (if e2e mode)
+- [ ] Self-healing loop completed within 3 rounds (if --heal)
+- [ ] All [NEEDS_HUMAN] issues clearly reported (if --heal)
+- [ ] Pipeline stages completed with sentinel approval (if pipeline mode)
 - [ ] Report written to `.aion/tests/reports/` with fingerprint appended
 - [ ] Existing reports checked — fingerprint verified before overwriting (Write Protocol)
 
@@ -310,10 +835,15 @@ Read and apply `.aion/checklists/test.md` if it exists. If not, use the built-in
 | Using a different test framework than the project uses | Creates a second test system nobody maintains | HIGH |
 | Not reading the spec before generating tests | Tests verify random behavior instead of acceptance criteria | HIGH |
 | Generating perf scripts without reading contracts | Scripts hit wrong endpoints with wrong data | HIGH |
-| Running Playwright or full browser automation | Too heavy, too many tokens, breaks constraints | HIGH |
+| Running Playwright browser automation WITHOUT MCP or outside `e2e` mode | Browser automation only allowed in `aion-test e2e` mode with Playwright MCP | HIGH |
 | Writing tests with hardcoded paths or environment values | Tests fail on any machine other than the generator | MEDIUM |
 | Generating tests for third-party library code | Wastes effort testing code you do not own | MEDIUM |
 | Skipping edge cases ("happy path is enough") | Most bugs live in edge cases | HIGH |
+| Self-healing source code without spec confirmation | May "fix" correct code to match wrong tests | CRITICAL |
+| Healing loop exceeding 3 rounds | Wastes tokens without progress, likely a design issue | HIGH |
+| Running pipeline for trivial features | Overkill for simple tests, wastes sub-agent resources | MEDIUM |
+| E2E tests with hardcoded selectors | Break on any UI change, use semantic locators instead | HIGH |
+| Self-healing with no exit condition | Infinite loop risk — always check round counter | CRITICAL |
 
 ## Output Format
 
@@ -344,13 +874,32 @@ UI/UE:
   Accessibility: {N} issues
   Structure: {N} mismatches
 
+E2E:
+  Mode: {e2e-gen | e2e-live | skipped}
+  Reconnaissance: {live | static | skipped}
+  TC Sources: {N} [spec] + {N} [code] + {N} [explore] + {N} [api] + {N} [regression]
+  Test Cases: {N} total from {M} sources
+  Auto-generated: {yes — awaiting review | yes — executed (--now) | no — user-provided}
+  Results: {N} pass / {N} fail (live mode only)
+
+Self-Healing:
+  Status: {not requested | all passed | healed | unresolved}
+  Rounds: {N}/{max}
+  Fixes: {N} [CODE_FIX] + {N} [TEST_FIX]
+  Unresolved: {N} [NEEDS_HUMAN]
+
+Pipeline:
+  Status: {not requested | completed | sentinel-blocked}
+  Stages: {completed}/{total}
+  Sentinel: {PASS | BLOCK (retries: N)}
+
 Report: .aion/tests/reports/{feature-name}.md
 -----------------------------------
 Next: Run /project:aion-verify to execute tests
 ```
 
 ## Exit Status
-- **DONE** — Tests generated, report written
-- **DONE_WITH_CONCERNS** — Tests generated but some modes skipped (coverage tool missing, no contracts for perf, no prototype for UI)
-- **BLOCKED** — Cannot detect test framework, or no source files in scope
-- **NEEDS_CONTEXT** — Need user to specify test framework, scope, or feature name
+- **DONE** — Tests generated (and healed if `--heal`), report written
+- **DONE_WITH_CONCERNS** — Tests generated but some modes skipped, or heal loop has unresolved `[NEEDS_HUMAN]` issues
+- **BLOCKED** — Cannot detect test framework, no source files in scope, or pipeline sentinel blocked after max retries
+- **NEEDS_CONTEXT** — Need user to specify test framework, scope, feature name, or E2E test definitions

@@ -2,7 +2,7 @@
 
 Turn ideas into structured requirement specs through guided conversation, challenging assumptions before documenting.
 
-$ARGUMENTS — Optional: a brief description of what you want to build. If empty, ask the user to describe their idea.
+$ARGUMENTS — Optional: a brief description of what you want to build. If empty, ask the user to describe their idea. Options: `--file {path}` import external requirement documents (.docx/.pdf/.md/.txt/.pptx/.xlsx) or a directory of documents as input source.
 
 ## Role
 
@@ -18,7 +18,25 @@ You are a **senior requirements analyst** who challenges assumptions before docu
 3. Check `.aion/refs/` — if reference documents exist (client requirements, API specs, screenshots), read them and incorporate into analysis
 4. Check `.aion/prototypes/` — if UI prototypes exist (HTML/JS files), read them to understand intended user experience
 5. Check `.aion/specs/` — see if there are existing specs to build upon or that might conflict. If a spec with the target feature name already exists, record it for conflict handling in Step 3.5
-6. Read `.aion/refs/write-protocol.md` — load Write Protocol for Step 3.5
+6. Read `.aion/specs/_product.md` — if the product design document exists, understand the overall product landscape (target users, feature map, module architecture) to ensure the new spec fits into the bigger picture
+7. Read `.aion/refs/write-protocol.md` — load Write Protocol for Step 3.5
+
+### Step 0.5: File Import (conditional — when `--file` is specified)
+
+When `$ARGUMENTS` contains `--file {path}`:
+
+1. **Resolve path**: Verify the file or directory exists. If not, report error and exit.
+2. **Convert to markdown**:
+   - Single file → use markitdown skill to convert (.docx/.pdf/.md/.txt/.pptx/.xlsx → markdown)
+   - Directory → scan for all supported formats, convert each file sequentially
+   - If conversion fails → fall back to plain text read
+   - If file > 10MB → warn user: "文件较大（{size}MB），转换可能需要较长时间。继续？"
+3. **Extract requirements** from converted content:
+   - Identify user stories, functional requirements, acceptance criteria, constraints
+   - Identify product-level information: target users, business flows, module descriptions
+   - Classify each extracted item as P0 (must-have) or P1 (nice-to-have)
+4. **Use as input**: The extracted requirements become the input for Step 1 (replacing or supplementing the user's verbal description)
+5. **Report**: "从 {filename} 中提取了 {N} 项需求（{N} P0, {N} P1）。基于这些内容继续设计。"
 
 ### Step 1: Analyze or Ask
 - If `$ARGUMENTS` provides a clear description, proceed to analysis
@@ -126,6 +144,27 @@ Before writing the spec, check if a spec with the same name already exists in `.
 2. Ask: "Does this accurately capture what you want? Any changes?" (确认需求是否准确？)
 3. Only after explicit confirmation, write to `.aion/specs/{feature-name}.md`
 4. If prototype files in `.aion/prototypes/` were referenced, note them in the References section
+
+### Step 5: Update _product.md (auto-propagation)
+
+After the spec is written, update the global product design document:
+
+1. **Check if `.aion/specs/_product.md` exists**:
+   - **Not exists** → Initialize from the current spec:
+     - Create `_product.md` with the standard structure (see `.aion/specs/product-design-layer.md` for format)
+     - Fill: 产品定位 (from spec Goal), 功能地图 (first entry from this spec), 技术栈 (from project manifest if detectable)
+     - Mark all content `[from:spec]`, set `confidence: low`
+   - **Exists** → Incremental update:
+     - Read existing `_product.md`
+     - Extract from the new spec: new features, new modules, new user scenarios
+     - Append new entries to 功能地图 table (with `对应 spec` column pointing to this spec)
+     - Append new flows to 核心业务流程 (if the spec implies a new user journey)
+     - Mark additions `[from:spec]`
+     - Update `updated_at` in frontmatter
+     - Do NOT overwrite `[CONFIRMED]` entries
+
+2. **Report**: "已更新 _product.md：功能地图 +{N} 项, 业务流程 +{N} 项"
+3. If this is the first `_product.md` creation, suggest: "产品设计文档已初始化。随着更多 spec 积累，文档将自动丰富。"
 
 ## Next Steps
 
