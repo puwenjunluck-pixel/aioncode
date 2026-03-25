@@ -424,6 +424,27 @@ function _renderReleaseLog() {
   return `
     <h2 id="about-releaselog">更新日志</h2>
 
+    <h3>2026-03-25 · design-plan 合并 + init 交互式安装 (v0.6.6)</h3>
+    <p><strong>design-plan 工作流合并：</strong></p>
+    <ul>
+      <li><code>aion-design</code> 升级为一步到位：需求分析 + 实施计划直接输出 <code>plan.md</code>，无需再单独跑 <code>aion-plan</code></li>
+      <li><code>aion-plan</code> 降级为"修订实施方案"，仅用于已有 plan 的调整</li>
+      <li>支持 <code>--design-only</code> 仅输出需求（不生成实施步骤）</li>
+      <li>10 个命令文件更新引用，全部添加 legacy fallback 兼容旧 spec 文件</li>
+    </ul>
+    <p style="margin-top:8px"><strong>init 交互式安装：</strong></p>
+    <ul>
+      <li><code>aioncode init</code> 新增交互引导：项目类型 → 角色选择（设计师/前端/后端/测试/全栈）→ 命令推荐 → 自由增减</li>
+      <li>5 种角色预设，核心命令（help/status/review/commit/learn）始终安装</li>
+      <li>升级时自动清理已移除的旧命令文件，保持 <code>.claude/commands/</code> 整洁</li>
+    </ul>
+    <p style="margin-top:8px"><strong>其他改进：</strong></p>
+    <ul>
+      <li>新增 <code>.aion/refs/command-conventions.md</code> 共享约定文档</li>
+      <li>11 个已完成 spec/plan 归档至 archive/，changelog 滚动归档</li>
+      <li><code>architecture.md</code> 更新至 v0.6.4 基线</li>
+    </ul>
+
     <h3>2026-03-23 · 测试体系升级 + 产品设计层</h3>
     <p><strong>测试体系三层升级：</strong></p>
     <ul>
@@ -482,9 +503,9 @@ function renderAboutPage() {
     ['准备','<code>aion-scan</code>','扫描项目 + 浏览器探索（--url）+ 导入文档（--file）→ 生成产品设计文档'],
     ['','<code>aion-think</code>','质疑假设，在开始前暴露盲点'],
     ['','<code>aion-help</code>','查看所有命令和工作流说明'],
-    ['设计','<code>aion-design</code>','需求分析 + 导入外部文档（--file .docx/.pdf）→ 生成 spec + 更新产品文档'],
+    ['设计','<code>aion-design</code>','需求分析 + 实施计划一步到位（--file 导入外部文档，--design-only 仅需求）→ 生成 plan.md + 更新产品文档'],
     ['','<code>aion-demo</code>','生成交互式 HTML 原型（可选）'],
-    ['','<code>aion-plan</code>','创建分步实施计划 → 自动传播模块/技术栈变更到产品文档'],
+    ['','<code>aion-plan</code>','修订已有实施方案（仅用于已有 plan 的调整，不用于新建）'],
     ['实施','<code>aion-impl</code>','按计划编写代码（自动遵守规则）'],
     ['','<code>aion-test</code>','生成测试 + E2E 三阶段（勘察→多源生成→执行）+ 自愈（--heal）+ 多代理管道（pipeline）'],
     ['质量','<code>aion-verify</code>','运行构建/测试/lint 检查 + 自动修复（--fix）'],
@@ -506,27 +527,27 @@ function renderAboutPage() {
     <h2 id="about-install">安装与升级</h2>
     <p><strong>安装：</strong>从 <a href="https://github.com/user/aioncode/releases" target="_blank">GitHub Releases</a> 下载对应平台的二进制文件：</p>
     ${_tbl(['平台','文件名','安装命令'],[['macOS (Apple Silicon)','<code>aioncode-macos-arm64</code>','<code>chmod +x aioncode-macos-arm64 && sudo mv aioncode-macos-arm64 /usr/local/bin/aioncode</code>'],['Linux (x64)','<code>aioncode-linux-x64</code>','<code>chmod +x aioncode-linux-x64 && sudo mv aioncode-linux-x64 /usr/local/bin/aioncode</code>'],['Windows (x64)','<code>aioncode-windows-x64.exe</code>','移动到 PATH 目录并重命名为 <code>aioncode.exe</code>']])}
-    <p style="margin-top:8px"><strong>初始化项目：</strong><code>aioncode init</code>，然后（可选）<code>/project:aion-scan</code> 自动提取规则。</p>
-    <p><strong>升级：</strong>执行 <code>aioncode upgrade</code> 自动下载最新版，然后在项目中执行 <code>aioncode init</code> 更新命令和模板。</p>
+    <p style="margin-top:8px"><strong>初始化项目：</strong><code>aioncode init</code> — 交互式安装，自动引导选择项目类型 → 角色（设计师/前端/后端/测试/全栈）→ 推荐命令 → 自由增减，按需安装。然后（可选）<code>/project:aion-scan</code> 自动提取规则。</p>
+    <p><strong>升级：</strong>执行 <code>aioncode upgrade</code> 自动下载最新版，然后在项目中执行 <code>aioncode init</code> 更新命令和模板（自动清理已移除的旧命令文件）。</p>
     <h2 id="about-workflow">工作流指南</h2>
-    <p><strong>新项目：</strong></p>${_flow(['think','design','plan','impl','verify','review','commit'])}
+    <p><strong>新项目：</strong></p>${_flow(['think','design','impl','verify','review','commit'])}
     <p style="margin-top:12px"><strong>已有项目：</strong></p>${_flow(['scan','impl/design','verify','review','commit'])}
     <p style="margin-top:12px"><strong>Bug 修复：</strong></p>${_flow(['bug report','impl {BUG-ID}','verify','review','commit'])}
     <p style="margin-top:8px">所有命令在 Claude Code 终端中以 <code>/project:aion-xxx</code> 格式调用。</p>
     <h2 id="about-commands">命令速查</h2>
     <table class="key-table"><tr><th>阶段</th><th>命令</th><th>说明</th></tr>${cmds.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')}</table>
     <h2 id="about-scenarios">常见场景</h2>
-    ${_tbl(['场景','操作流程'],[['加新功能','design → plan → impl → verify → review → commit'],['修 Bug','bug report → impl {BUG-ID} → verify → commit'],['E2E 测试','aion-test e2e → 自动勘察+多源生成用例 → 审核 → 执行'],['导入外部需求','aion-design --file 需求.docx → 自动提取需求生成 spec'],['接手旧项目','aion-scan --url http://localhost:3000 → 浏览器探索+代码扫描 → 产品设计文档'],['交叉验证','crosscheck --model gemini → 自动生成 Bug 报告']])}
+    ${_tbl(['场景','操作流程'],[['加新功能','design → impl → verify → review → commit（design 直出需求+实施计划）'],['修 Bug','bug report → impl {BUG-ID} → verify → commit'],['E2E 测试','aion-test e2e → 自动勘察+多源生成用例 → 审核 → 执行'],['导入外部需求','aion-design --file 需求.docx → 自动提取需求+生成实施计划'],['仅做需求分析','aion-design --design-only → 只输出需求，不生成实施步骤'],['调整已有方案','aion-plan {plan名} → 修订实施步骤（不修改需求）'],['接手旧项目','aion-scan --url http://localhost:3000 → 浏览器探索+代码扫描 → 产品设计文档'],['交叉验证','crosscheck --model gemini → 自动生成 Bug 报告']])}
     ${_renderTestingGuide()}
     <h2 id="about-dashboard">副驾驶面板</h2>
     <p>副驾驶是 <strong>CLI 的可视化外壳</strong>。启动：<code>aioncode dashboard</code></p>
     ${_tbl(['视图','用途'],[['概览','项目统计 + 最近变更历史'],['文件','浏览 .aion/ 配置文件（Markdown 渲染）'],['监控','SSE 实时事件流'],['需求','需求规格文档（specs/）'],['方案','实施计划（plans/）'],['规则','项目规则（style / pitfalls / perf）'],['清单','工作流检查清单'],['缺陷','Bug 列表与详情'],['测试','测试报告（reports/）'],['日志','变更日志（changelog.md）'],['技能','Skill 安装管理 + 官方市场'],['团队','团队成员信息'],['关于','使用指南（你正在看的这个）'],['设置','深色模式等偏好设置']])}
     <h2 id="about-faq">常见问题</h2>
-    ${[['支持哪些 AI 模型？','命令在 Claude Code 中执行。crosscheck 可调用 Gemini 等做交叉验证。'],['.aion/ 要提交 Git 吗？','建议提交。rules/specs/plans 是团队共享知识。sessions.jsonl 和 monitor/ 已排除。'],['如何升级？','执行 <code>aioncode upgrade</code> 自动更新工具，再执行 <code>aioncode init</code> 更新项目命令。'],['review 不通过能提交吗？','不能。aion-commit 要求 review 通过（docs-only 可豁免）。'],['测试人员需要会写代码吗？','不需要。E2E 测试用例由 AI 从多源（spec + 源码 + UI 勘察）自动生成，测试人员只需审核和补充边界 case。'],['什么是产品设计文档（_product.md）？','位于 <code>.aion/specs/_product.md</code>，是项目的全局产品全景（目标用户、功能地图、模块架构）。由 aion-scan 或 aion-design 自动生成和维护。'],['--file 支持哪些文件格式？','支持 .docx、.pdf、.md、.pptx、.xlsx。通过 markitdown 工具自动转换为 Markdown 后提取内容。'],['E2E 测试一定需要 Playwright MCP 吗？','不一定。没有 MCP 时自动降级为 gen 模式（生成 Playwright 脚本），有 MCP 时使用 live 模式（真实浏览器执行）。']].map(([q,a])=>_faq(q,a)).join('')}
+    ${[['支持哪些 AI 模型？','命令在 Claude Code 中执行。crosscheck 可调用 Gemini 等做交叉验证。'],['.aion/ 要提交 Git 吗？','建议提交。rules/specs/plans 是团队共享知识。sessions.jsonl 和 monitor/ 已排除。'],['如何升级？','执行 <code>aioncode upgrade</code> 自动更新工具，再执行 <code>aioncode init</code> 更新项目命令（自动清理已移除的旧命令）。'],['review 不通过能提交吗？','不能。aion-commit 要求 review 通过（docs-only 可豁免）。'],['design 和 plan 有什么区别？','<code>aion-design</code> 是主力命令：需求分析 + 实施计划一步完成，直接输出 plan.md。<code>aion-plan</code> 仅用于修订已有方案的实施步骤，不用于新建。'],['init 可以只安装部分命令吗？','可以。<code>aioncode init</code> 交互式安装会根据你的角色（设计师/前端/后端/测试/全栈）推荐命令，你可以自由增减。核心命令（help/status/review/commit/learn）始终安装。'],['测试人员需要会写代码吗？','不需要。E2E 测试用例由 AI 从多源（spec + 源码 + UI 勘察）自动生成，测试人员只需审核和补充边界 case。'],['什么是产品设计文档（_product.md）？','位于 <code>.aion/specs/_product.md</code>，是项目的全局产品全景（目标用户、功能地图、模块架构）。由 aion-scan 或 aion-design 自动生成和维护。'],['--file 支持哪些文件格式？','支持 .docx、.pdf、.md、.pptx、.xlsx。通过 markitdown 工具自动转换为 Markdown 后提取内容。'],['E2E 测试一定需要 Playwright MCP 吗？','不一定。没有 MCP 时自动降级为 gen 模式（生成 Playwright 脚本），有 MCP 时使用 live 模式（真实浏览器执行）。']].map(([q,a])=>_faq(q,a)).join('')}
     <h2 id="about-roadmap">版本路线图</h2>
     <ul>
       <li><strong>v0.5</strong> — FastAPI 重构 + 副驾驶 UI + Core 层统一</li>
-      <li><strong>v0.6</strong>（当前）— Skills 管理 + 工作流强制化 + 测试体系升级（自愈/E2E/多代理管道）+ 产品设计层（_product.md）+ 外部文档导入（--file）</li>
+      <li><strong>v0.6</strong>（当前 v0.6.6）— Skills 管理 + 工作流强制化 + 测试体系升级（自愈/E2E/多代理管道）+ 产品设计层 + design-plan 合并 + init 交互式安装</li>
       <li><strong>v0.7</strong> — 云端 MVP：意图日志管道 + 多项目统计</li>
     </ul>
 

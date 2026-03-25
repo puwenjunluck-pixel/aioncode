@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from aioncode.core.project import InitProfile
 from aioncode.utils.console import (
     banner,
     choose_one,
@@ -20,10 +21,9 @@ from aioncode.utils.console import (
 )
 
 
-def _ask_project_profile() -> "InitProfile":
+def _ask_project_profile() -> InitProfile:
     """Interactive project setup: ask project type, role, select commands."""
     from aioncode.core.profiles import ALL_COMMANDS, CORE_COMMANDS, get_recommended
-    from aioncode.core.project import InitProfile
 
     header("Project Setup")
 
@@ -91,7 +91,6 @@ def _ask_upgrade_commands(existing_commands: list[str]) -> list[str] | None:
 def _init_project(target: Path, *, upgrade: bool = False, install_all: bool = False) -> None:
     """Execute project initialization with rich CLI output."""
     from aioncode.core.project import (
-        InitProfile,
         _check_gitignore,
         detect_project,
         get_source_version,
