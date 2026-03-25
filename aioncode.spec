@@ -14,11 +14,22 @@ TEMPLATES = PACKAGE / "internal" / "templates"
 COMMANDS = ROOT / "commands"
 
 # SSL certificates for HTTPS requests (urllib)
+SSL_CERT_FILE = None
 try:
     import certifi
     SSL_CERT_FILE = certifi.where()
 except ImportError:
     SSL_CERT_FILE = ssl.get_default_verify_paths().cafile
+# Fallback: search common system CA paths (Linux CI often lacks certifi)
+if not SSL_CERT_FILE:
+    for _p in (
+        "/etc/ssl/certs/ca-certificates.crt",
+        "/etc/pki/tls/certs/ca-bundle.crt",
+        "/etc/ssl/ca-bundle.pem",
+    ):
+        if os.path.isfile(_p):
+            SSL_CERT_FILE = _p
+            break
 
 a = Analysis(
     [str(PACKAGE / "__main__.py")],
@@ -30,7 +41,7 @@ a = Analysis(
         # Bundle command markdown files
         (str(COMMANDS), "commands"),
         # SSL certificates for HTTPS (GitHub API)
-        (SSL_CERT_FILE, "certifi"),
+        *( [(SSL_CERT_FILE, "certifi")] if SSL_CERT_FILE else [] ),
     ],
     hiddenimports=[
         # CLI commands
