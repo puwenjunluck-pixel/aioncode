@@ -43,18 +43,35 @@ _SHARED = {"aion-scan", "aion-save"}
 
 ROLE_PRESETS: dict[str, frozenset[str]] = {
     "designer": _SHARED | {"aion-design", "aion-demo"},
-    "frontend": _SHARED | {
-        "aion-think", "aion-design", "aion-demo",
-        "aion-impl", "aion-verify", "aion-bug",
+    "frontend": _SHARED
+    | {
+        "aion-think",
+        "aion-design",
+        "aion-demo",
+        "aion-impl",
+        "aion-verify",
+        "aion-bug",
     },
-    "backend": _SHARED | {
-        "aion-think", "aion-design",
-        "aion-impl", "aion-test", "aion-verify", "aion-bug",
+    "backend": _SHARED
+    | {
+        "aion-think",
+        "aion-design",
+        "aion-impl",
+        "aion-test",
+        "aion-verify",
+        "aion-bug",
     },
     "tester": _SHARED | {"aion-test", "aion-verify", "aion-bug"},
-    "fullstack": _SHARED | {
-        "aion-think", "aion-design", "aion-plan", "aion-demo",
-        "aion-impl", "aion-test", "aion-verify", "aion-bug",
+    "fullstack": _SHARED
+    | {
+        "aion-think",
+        "aion-design",
+        "aion-plan",
+        "aion-demo",
+        "aion-impl",
+        "aion-test",
+        "aion-verify",
+        "aion-bug",
     },
 }
 
@@ -93,7 +110,10 @@ def read_profile(config_path: Path) -> dict[str, str | list[str]] | None:
 
 
 def write_profile(
-    config_path: Path, project_type: str, role: str, commands: list[str],
+    config_path: Path,
+    project_type: str,
+    role: str,
+    commands: list[str],
 ) -> None:
     """Append or update profile + commands section in config.yml."""
     lines: list[str] = []

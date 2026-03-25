@@ -28,7 +28,12 @@ def _ask_project_profile() -> InitProfile:
     header("Project Setup")
 
     # 1. Project type
-    project_types = ["前端项目（React/Vue/小程序等）", "后端项目（API/服务/数据处理）", "全栈项目（前后端一体）", "Monorepo（多包仓库）"]
+    project_types = [
+        "前端项目（React/Vue/小程序等）",
+        "后端项目（API/服务/数据处理）",
+        "全栈项目（前后端一体）",
+        "Monorepo（多包仓库）",
+    ]
     type_keys = ["frontend", "backend", "fullstack", "monorepo"]
     type_idx = choose_one("项目类型：", project_types, default=3)
     project_type = type_keys[type_idx - 1]

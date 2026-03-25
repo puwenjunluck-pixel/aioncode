@@ -2,6 +2,13 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-25 | fix: 关于页使用说明更新 + init.py ruff 修复
+- Dashboard 关于页同步 v0.6.6 变更：命令速查、工作流、常见场景、安装说明、FAQ、路线图、更新日志
+- 修复 init.py ruff F821/UP037：InitProfile import 提升到模块顶层
+- Commit: 56e304c
+
+---
+
 ## 2026-03-25 | feat: design-plan 工作流合并 + init 交互式安装
 
 ### Summary
