@@ -60,6 +60,11 @@ def _build_parser() -> argparse.ArgumentParser:
         default=".",
         help="Target project directory (default: current directory)",
     )
+    init_p.add_argument(
+        "--all",
+        action="store_true",
+        help="Install all commands (skip interactive setup)",
+    )
 
     dash_p = sub.add_parser("dashboard", help="Start the web UI")
     dash_p.add_argument("--port", type=int, default=19200, help="Server port (default: 19200)")

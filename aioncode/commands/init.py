@@ -7,6 +7,7 @@ from pathlib import Path
 
 from aioncode.utils.console import (
     banner,
+    choose_one,
     confirm,
     error,
     header,
@@ -14,13 +15,83 @@ from aioncode.utils.console import (
     install_report,
     muted,
     success,
+    toggle_select,
     warning,
 )
 
 
-def _init_project(target: Path, *, upgrade: bool = False) -> None:
+def _ask_project_profile() -> "InitProfile":
+    """Interactive project setup: ask project type, role, select commands."""
+    from aioncode.core.profiles import ALL_COMMANDS, CORE_COMMANDS, get_recommended
+    from aioncode.core.project import InitProfile
+
+    header("Project Setup")
+
+    # 1. Project type
+    project_types = ["前端项目（React/Vue/小程序等）", "后端项目（API/服务/数据处理）", "全栈项目（前后端一体）", "Monorepo（多包仓库）"]
+    type_keys = ["frontend", "backend", "fullstack", "monorepo"]
+    type_idx = choose_one("项目类型：", project_types, default=3)
+    project_type = type_keys[type_idx - 1]
+
+    # 2. Role
+    roles = ["设计师（原型 & UI 为主）", "前端开发", "后端开发", "测试 / QA", "全栈开发"]
+    role_keys = ["designer", "frontend", "backend", "tester", "fullstack"]
+    role_idx = choose_one("你的角色：", roles, default=5)
+    role = role_keys[role_idx - 1]
+
+    # 3. Command selection
+    recommended = get_recommended(role)
+    items: list[tuple[str, str, bool]] = []
+    for cmd in ALL_COMMANDS:
+        selected = cmd.name in recommended or cmd.name in CORE_COMMANDS
+        items.append((cmd.name, cmd.label, selected))
+
+    header("Command Selection")
+    total_rec = sum(1 for _, _, s in items if s)
+    info(f"推荐安装 {total_rec}/{len(ALL_COMMANDS)} 个命令：\n")
+    selections = toggle_select(items)
+
+    # Core commands are always selected
+    selected_commands: list[str] = []
+    for i, cmd in enumerate(ALL_COMMANDS):
+        if cmd.name in CORE_COMMANDS or selections[i]:
+            selected_commands.append(cmd.name)
+
+    return InitProfile(
+        project_type=project_type,
+        role=role,
+        selected_commands=selected_commands,
+    )
+
+
+def _ask_upgrade_commands(existing_commands: list[str]) -> list[str] | None:
+    """During upgrade, ask about newly available commands not yet installed."""
+    from aioncode.core.profiles import ALL_COMMANDS, CORE_COMMANDS
+
+    existing_set = set(existing_commands)
+    all_names = {c.name for c in ALL_COMMANDS}
+    new_commands = [c for c in ALL_COMMANDS if c.name not in existing_set and c.name in all_names]
+
+    if not new_commands:
+        return None
+
+    header("New Commands Available")
+    info(f"发现 {len(new_commands)} 个新命令：\n")
+    items = [(c.name, c.label, c.name in CORE_COMMANDS) for c in new_commands]
+    selections = toggle_select(items)
+
+    added: list[str] = []
+    for i, cmd in enumerate(new_commands):
+        if cmd.name in CORE_COMMANDS or selections[i]:
+            added.append(cmd.name)
+
+    return added if added else None
+
+
+def _init_project(target: Path, *, upgrade: bool = False, install_all: bool = False) -> None:
     """Execute project initialization with rich CLI output."""
     from aioncode.core.project import (
+        InitProfile,
         _check_gitignore,
         detect_project,
         get_source_version,
@@ -86,6 +157,36 @@ def _init_project(target: Path, *, upgrade: bool = False) -> None:
         info(f"Existing docs found: {', '.join(project.existing_docs)}")
         muted("  Consider importing to .aion/refs/ after init")
 
+    # --- Project Setup (interactive profile) ---
+    profile: InitProfile | None = None
+    if install_all:
+        muted("--all: installing all commands")
+    elif upgrade and project.has_aion:
+        # Upgrade: check for new commands
+        from aioncode.core.profiles import read_profile
+
+        existing_profile = read_profile(target / ".aion" / "config.yml")
+        if existing_profile and "commands" in existing_profile:
+            existing_cmds = existing_profile["commands"]
+            if not isinstance(existing_cmds, list):
+                existing_cmds = []
+            added = _ask_upgrade_commands(existing_cmds)
+            if added:
+                profile = InitProfile(
+                    project_type=str(existing_profile.get("project_type", "fullstack")),
+                    role=str(existing_profile.get("role", "fullstack")),
+                    selected_commands=existing_cmds + added,
+                )
+                success(f"新增 {len(added)} 个命令")
+            else:
+                info("无新命令可添加")
+        else:
+            # No profile saved — ask full setup
+            profile = _ask_project_profile()
+    else:
+        # Fresh init — full interactive setup
+        profile = _ask_project_profile()
+
     # --- Check gitignore interactively ---
     gitignore_path = target / ".gitignore"
     missing_entries = _check_gitignore(gitignore_path)
@@ -101,6 +202,7 @@ def _init_project(target: Path, *, upgrade: bool = False) -> None:
         target,
         upgrade=upgrade,
         update_gitignore=update_gitignore,
+        profile=profile,
     )
 
     if not result.ok:
@@ -154,5 +256,6 @@ def run_init(args: argparse.Namespace) -> None:
 
     # Detect if this is an upgrade (already has .aion/)
     upgrade = (target / ".aion").is_dir()
+    install_all = getattr(args, "all", False)
 
-    _init_project(target, upgrade=upgrade)
+    _init_project(target, upgrade=upgrade, install_all=install_all)

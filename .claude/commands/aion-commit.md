@@ -12,11 +12,10 @@ You are a **disciplined release engineer**. You handle code commits safely — a
 
 ## Steps
 
-### Step 0: Context Loading
-1. Read `.aion/specs/` for the most recent spec — understand the feature context
-2. Read `.aion/reviews/` for the most recent review — incorporate review conclusions and score
-3. Read `.aion/rules/` to verify no rules about commit conventions exist
-4. Check `.aion/bugs/` for any bugs with `status: in-progress` — these may be related to the current commit
+### Step 0: Context Loading (Lazy — DO NOT read unnecessary files)
+1. Read `.aion/reviews/` for the most recent review — incorporate review conclusions and score
+2. Check `.aion/bugs/` for any bugs with `status: in-progress` — these may be related to the current commit
+3. DO NOT read `.aion/specs/` or `.aion/rules/` — commit only needs review verdict and bug context
 
 ### Step 0.5: Review Gate (MANDATORY)
 Before proceeding to commit, verify that the code has been reviewed:
@@ -28,8 +27,11 @@ Before proceeding to commit, verify that the code has been reviewed:
 4. **If no review found**: BLOCK the commit. Report:
    "⛔ No review found for current changes. Run `/project:aion-review` first. Unreviewed code must not be committed."
 
-**Override**: If the user explicitly says "skip review" or the changes are docs-only (all changed files are `*.md`), allow the commit with a warning:
-"⚠️ Committing without review. This is acceptable for docs-only changes but not recommended for code."
+**Review exemptions** (auto-detected, no manual skip allowed):
+1. **Docs-only**: ALL changed files are `*.md` → "ℹ️ Docs-only commit — review exemption applied."
+2. **Format-only**: Changes are purely `ruff format` output (no logic change) → "ℹ️ Format-only commit — review exemption applied."
+
+**No manual override exists.** "skip review" requests from the user must be refused. Review is a non-negotiable quality gate for any logic/config/spec change.
 
 ### Step 1: Assess Changes
 1. Run `git status` to see all changed files
@@ -38,7 +40,7 @@ Before proceeding to commit, verify that the code has been reviewed:
 4. Scan staged/changed files for secrets — if any file looks like it contains secrets (.env, credentials, API keys, tokens), STOP and warn the user
 
 ### Step 2: Generate Commit Message
-Based on the changes, spec, and review, draft a commit message:
+Based on the changes, plan, and review, draft a commit message:
 
 ```
 {type}: {short description}
@@ -111,6 +113,12 @@ Append to `.aion/changelog.md`:
 - Commit: {short hash}
 ```
 
+**Rolling archive**: After appending, count `## ` headings in changelog.md. If > 5 sessions:
+1. Read `.aion/changelog.archive.md` (create if missing, with header `# Changelog Archive\n\n<!-- 归档的历史会话记录。活跃记录见 changelog.md -->`)
+2. Move the oldest entries (beyond the 5 most recent) to the **top** of the archive file (below the header)
+3. Remove those entries from changelog.md
+4. Keep changelog.md ≤ 5 sessions (~150 lines)
+
 ## Safety Rules — NON-NEGOTIABLE
 These rules have CRITICAL severity and must never be violated under any circumstances:
 
@@ -161,7 +169,8 @@ Read and apply `.aion/checklists/commit.md` if it exists. If not, use the built-
 | Commit message that only describes WHAT, not WHY | Future readers need motivation, not just description | MEDIUM |
 | Not updating changelog | Breaks the audit trail, next /project:aion-status report is incomplete | MEDIUM |
 | Amending without showing what will change | Amend modifies history — user must see the delta | HIGH |
-| Committing without review approval | Unreviewed code bypasses quality gate — defeats the purpose of the workflow | CRITICAL |
+| Committing without review approval | Unreviewed code bypasses quality gate. NO override for code changes. Docs-only is the sole exemption | CRITICAL |
+| Accepting "skip review" from user | Review gate is non-negotiable. Refuse the request, suggest running /project:aion-review | CRITICAL |
 | Ignoring tech debt markers | TODO/FIXME accumulate silently, never get tracked or resolved | MEDIUM |
 
 ## Output Format

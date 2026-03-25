@@ -12,24 +12,18 @@ You are a **senior full-stack engineer who follows plans and rules strictly**. Y
 
 ## Steps
 
-### Step 0: Load Context
+### Step 0: Load Context (Lazy — ONLY read target plan/spec)
 1. **Bug mode check**: If `$ARGUMENTS` matches a Bug ID pattern (`F-`, `B-`, or `X-` prefix followed by `MMDD-NNN`):
    - Read the bug report from `.aion/bugs/{BUG-ID}.md`
    - Auto-update bug status from `open`/`assigned` to `in-progress` and `updated_at` to today
-   - Use the bug report (reproduction steps, evidence, expected behavior) as the implementation context
-   - Skip plan loading — bug fixes typically don't need a formal plan
+   - Use the bug report as the implementation context; skip plan loading
    - Read the bug's `verify_test` field — if set, note it for post-fix verification
    - Continue to Step 1-N treating the bug fix as a single-step task
-2. Read the target plan from `.aion/plans/` — if `$ARGUMENTS` names a specific plan, use that; otherwise use the most recent one
-3. Read the corresponding spec from `.aion/specs/` for requirements context
-4. Read ALL files in `.aion/rules/` — these rules are learned from past mistakes and **MUST** be followed
-5. Check `.aion/contracts/` — if interface contracts exist, implementations must conform to them
-6. Check `.aion/prototypes/` — if UI prototypes exist for this feature:
-   - Read the prototype HTML to understand intended layout structure, CSS approach, and interaction patterns
-   - Use prototype element hierarchy to guide component structure
-   - Match prototype visual style (colors, spacing, typography) unless rules override
-   - Note: the prototype is a reference, not a spec — production code may deviate where necessary
-7. Determine the current step from the plan's `current_step` frontmatter
+2. Read the target plan ONLY — if `$ARGUMENTS` names a specific plan, read `.aion/plans/{name}.md`; otherwise use the most recent one. DO NOT read other plans. The plan contains both requirements (Goal, Requirements, Acceptance Criteria) and implementation steps.
+3. **Legacy fallback**: If the plan has a `spec:` frontmatter field (old format), read that spec file from `.aion/specs/` or `.aion/specs/archive/` for additional requirements context.
+4. Read ALL files in `.aion/rules/` — these rules **MUST** be followed
+5. Check `.aion/contracts/` and `.aion/prototypes/` — only if directories exist and relevant to this feature
+6. Determine the current step from the plan's `current_step` frontmatter
 
 ### Step 0.5: Reuse Scan (MUST — do not skip)
 Before implementing ANY new function, class, or module:

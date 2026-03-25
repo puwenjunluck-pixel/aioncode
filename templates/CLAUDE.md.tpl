@@ -11,7 +11,7 @@ Run `/project:aion-help` for full command list. Key workflow commands:
 scan | think | design | demo | plan | impl | test | verify | review | commit | save | bug | crosscheck | upgrade | loop
 
 ## Workflow
-New:      think → design → (demo) → plan → impl → (test) → verify → review → commit
+New:      think → design → (demo) → impl → (test) → verify → review → commit
 Existing: scan → impl/design → verify → review → commit
 Bug:      bug report → impl {BUG-ID} → verify → review → commit
 Note: review includes auto-learning. commit requires review approval.

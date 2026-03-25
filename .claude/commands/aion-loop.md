@@ -37,7 +37,7 @@ Parse `$ARGUMENTS` to determine the pipeline:
 | Mode | Phases |
 |------|--------|
 | empty / `default` | impl → test → verify → review (→ fix loop) → commit |
-| `full` | design → plan → impl → test → verify → review (→ fix loop) → learn → commit |
+| `full` | design → impl → test → verify → review (→ fix loop) → learn → commit |
 | `fix` | verify → review → fix (loop until pass, max N rounds) |
 | `verify-only` | verify only |
 
@@ -50,8 +50,7 @@ Parse options:
 
 For each phase in the selected pipeline, execute inline:
 
-**design**: Follow aion-design logic — gather requirements, write spec to `.aion/specs/`
-**plan**: Follow aion-plan logic — read spec, create implementation plan in `.aion/plans/`
+**design**: Follow aion-design logic — gather requirements, explore codebase, create plan in `.aion/plans/` + update `_product.md`
 **impl**: Follow aion-impl logic — read plan, implement code changes
 **test**: Follow aion-test logic — auto-generate unit + integration tests for changed files (incremental mode)
 **verify**: Follow aion-verify logic — build, types, lint, tests (including newly generated tests), debug audit
@@ -59,7 +58,7 @@ For each phase in the selected pipeline, execute inline:
 **learn**: Follow aion-learn logic — extract rules from the session
 **commit**: Follow aion-commit logic — generate message, show to user, WAIT for confirmation
 
-> **Note**: `demo` is NOT included in any pipeline mode. Prototyping is an optional, interactive step between design and plan. Run `/project:aion-demo` manually when needed.
+> **Note**: `demo` is NOT included in any pipeline mode. Prototyping is an optional, interactive step before implementation. Run `/project:aion-demo` manually when needed.
 
 Phase execution rules:
 - After **verify**: If result is `FAIL`, enter fix loop (Step 3). Do NOT proceed to review with a failing build/tests.
@@ -114,9 +113,42 @@ After all phases complete (or the pipeline stops):
    - **WAIT for explicit user confirmation before committing**
    - NEVER auto-commit
 
+### Step 4.5: Persist Report（执行报告持久化）
+
+Write the pipeline execution report to `.aion/monitor/loop-{YYYY-MM-DD-HHMMSS}.md`:
+
+```markdown
+# Pipeline Report — {YYYY-MM-DD HH:MM:SS}
+
+## Environment
+- Branch: {branch}
+- Mode: {pipeline mode}
+- Max rounds: {N}
+
+## Phase Results
+| # | Phase | Result | Duration | Notes |
+|---|-------|--------|----------|-------|
+| 1 | {name} | PASS/FAIL | — | {brief note if failed} |
+| 2 | {name} | PASS/FAIL | — | |
+
+## Fix Loop (if triggered)
+- Rounds: {used}/{max}
+- Issues fixed: {N}
+- Issues remaining: {N}
+
+## Files Changed
+{git diff --stat output}
+
+## Result
+**{DONE / DONE_WITH_CONCERNS / BLOCKED}**
+{remaining concerns if any}
+```
+
+This ensures every automated pipeline run has a persistent audit trail, especially important when running with `--auto` flag and broad permissions.
+
 ## Next Steps
 
-Pipeline complete. Review the summary above.
+Pipeline complete. Report saved to `.aion/monitor/`. Review the summary above.
 
 ## Checklist
 
@@ -128,6 +160,7 @@ Pipeline complete. Review the summary above.
 - Commit ALWAYS requires user confirmation
 - Phase status reported after each phase
 - Final summary includes all phases and any remaining concerns
+- Execution report persisted to `.aion/monitor/loop-{timestamp}.md`
 
 ## Anti-Patterns
 

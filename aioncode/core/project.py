@@ -176,11 +176,21 @@ def get_source_version() -> str:
     return "0.0"
 
 
+@dataclass
+class InitProfile:
+    """User profile for selective command installation."""
+
+    project_type: str = "fullstack"
+    role: str = "fullstack"
+    selected_commands: list[str] = field(default_factory=list)
+
+
 def init_project(
     target: Path,
     *,
     upgrade: bool = False,
     update_gitignore: bool = True,
+    profile: InitProfile | None = None,
 ) -> InitResult:
     """Initialize or upgrade .aion/ project intelligence.
 
@@ -191,6 +201,7 @@ def init_project(
         target: Project root directory.
         upgrade: If True, update version in config.yml.
         update_gitignore: If True, add missing entries to .gitignore.
+        profile: If set, install only selected commands and save profile.
 
     Returns:
         InitResult with details of what was created/updated/skipped.
@@ -215,11 +226,15 @@ def init_project(
     result.source_version = get_source_version()
     result.project = detect_project(target)
 
-    # 1. Copy commands to .claude/commands/ (always overwrite)
+    # 1. Copy commands to .claude/commands/ (filtered by profile)
     cmd_dst = target / ".claude" / "commands"
     cmd_dst.mkdir(parents=True, exist_ok=True)
+    selected = set(profile.selected_commands) if profile else None
     if commands_dir.is_dir():
         for f in sorted(commands_dir.glob("*.md")):
+            if selected is not None and f.stem not in selected:
+                result.skipped.append(f".claude/commands/{f.name}")
+                continue
             dst = cmd_dst / f.name
             shutil.copy2(f, dst)
             result.updated.append(f".claude/commands/{f.name}")
@@ -305,6 +320,17 @@ def init_project(
             if not updated:
                 new_lines.append(f'version: "{result.source_version}"')
             config_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+    # 5.5. Save profile to config.yml
+    if profile is not None:
+        from aioncode.core.profiles import write_profile
+
+        write_profile(
+            aion_dst / "config.yml",
+            profile.project_type,
+            profile.role,
+            profile.selected_commands,
+        )
 
     # 6. Gitignore update
     if update_gitignore:

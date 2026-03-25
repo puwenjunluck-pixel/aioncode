@@ -113,6 +113,52 @@ def ask(prompt: str, default: str = "") -> str:
     return answer or default
 
 
+def choose_one(prompt: str, options: list[str], default: int = 1) -> int:
+    """Show a numbered list and return 1-based index of user's choice."""
+    console.print(f"\n  [bold]{prompt}[/bold]")
+    for i, opt in enumerate(options, 1):
+        console.print(f"    {i}. {opt}")
+    try:
+        raw = console.input(f"  选择 [1-{len(options)}, 默认 {default}]: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        console.print()
+        return default
+    if not raw:
+        return default
+    try:
+        choice = int(raw)
+        return choice if 1 <= choice <= len(options) else default
+    except ValueError:
+        return default
+
+
+def toggle_select(
+    items: list[tuple[str, str, bool]],
+) -> list[bool]:
+    """Interactive checkbox toggle. Items: (name, description, selected)."""
+    selected = [s for _, _, s in items]
+    while True:
+        for i, (name, desc, _) in enumerate(items):
+            mark = "x" if selected[i] else " "
+            idx = f"{i + 1:>2}"
+            console.print(f"    [{mark}] {idx}. {name:<16s}{desc}")
+        try:
+            raw = console.input("\n  输入编号切换（如 6,17），回车确认：").strip()
+        except (EOFError, KeyboardInterrupt):
+            console.print()
+            break
+        if not raw:
+            break
+        for token in raw.replace(" ", ",").split(","):
+            token = token.strip()
+            if token.isdigit():
+                idx = int(token) - 1
+                if 0 <= idx < len(items):
+                    selected[idx] = not selected[idx]
+        console.print()
+    return selected
+
+
 # ---------------------------------------------------------------------------
 # Tables
 # ---------------------------------------------------------------------------

@@ -12,14 +12,14 @@ You are a **strict code reviewer who extracts reusable lessons**. You review eve
 
 ## Steps
 
-### Step 0: Context Loading
+### Step 0: Context Loading (Lazy — ONLY read target spec/plan)
 1. Read all files in `.aion/rules/` — check if changes violate existing rules
    - Parse each rule's metadata: `cite_count`, `last_cited`, `status`
-   - Skip rules with `status: deprecated` or `status: archived` — do not enforce them
+   - Skip rules with `status: deprecated` or `status: archived`
    - Track which rules are referenced during review (for citation updates in Step 4)
-2. Read the relevant spec from `.aion/specs/` — verify acceptance criteria are met
-3. Read the relevant plan from `.aion/plans/` — verify the plan was followed
-4. Check `.aion/contracts/` — verify interface contracts are respected
+2. Read the relevant plan ONLY from `.aion/plans/{feature}.md` — DO NOT read other plans. If not found → check `.aion/plans/archive/INDEX.md`. The plan contains both requirements (Goal, Requirements, Acceptance Criteria) and implementation steps.
+3. **Legacy fallback**: If the plan has a `spec:` frontmatter field (old format), also read that spec file from `.aion/specs/` or `.aion/specs/archive/` for acceptance criteria.
+4. Check `.aion/contracts/` — only if directory exists
 
 ### Step 1: Gather Changes
 1. Run `git diff` to see all uncommitted changes (or `git diff --cached` for staged changes)

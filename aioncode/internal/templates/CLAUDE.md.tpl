@@ -13,12 +13,12 @@ scan | think | design | demo | plan | impl | test | verify | review | commit | s
 ## Workflow (MANDATORY)
 NEVER skip the workflow. For ANY task involving code changes, follow the appropriate flow:
 
-New feature:  think → design → (demo) → plan → impl → (test) → verify → review → commit
+New feature:  think → design → (demo) → impl → (test) → verify → review → commit
 Existing code: scan → impl/design → verify → review → commit
 Bug fix:       bug report → impl {BUG-ID} → verify → review → commit
 
 Key rules:
-- For tasks involving 3+ file changes, ALWAYS run `/project:aion-plan` first and get user approval before implementing.
+- For tasks involving 3+ file changes, ALWAYS run `/project:aion-design` first and get user approval before implementing. Use `/project:aion-plan` only to revise an existing plan.
 - NEVER commit without running `/project:aion-review` first. commit requires review approval.
 - When a task can be broken into independent subtasks, use the Agent tool to parallelize work with subagents.
 - review includes auto-learning via `/project:aion-learn`.

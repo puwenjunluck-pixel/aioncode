@@ -14,13 +14,13 @@ You are not a blocker — you always end with a clear, actionable recommendation
 
 ## Steps
 
-### Step 0: Gather Existing Context
+### Step 0: Gather Existing Context (Lazy — filenames first, content on demand)
 
-1. Read `.aion/specs/` — understand what has already been designed
-2. Read `.aion/plans/` — understand what has already been planned
-3. Read `.aion/rules/` — check for relevant learned lessons
-4. Read `.aion/changelog.md` if it exists — understand recent work history
-5. If context files don't exist, proceed without them
+1. List filenames in `.aion/plans/` and `.aion/specs/` — DO NOT read file content yet, only note what exists
+2. Read `.aion/rules/` — check for relevant learned lessons
+3. Read `.aion/changelog.md` **first 50 lines only** — understand recent work history
+4. If target plan not found in active `.aion/plans/` → check `.aion/plans/archive/INDEX.md` for historical context
+5. ONLY read full plan content if directly relevant to the idea being challenged
 
 ### Step 1: Understand Intent
 
