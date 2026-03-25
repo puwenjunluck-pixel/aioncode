@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,23 @@ from urllib.request import Request, urlopen
 
 from aioncode import __version__
 from aioncode.utils.platform import get_platform_tag
+
+# ---------------------------------------------------------------------------
+# SSL fix for PyInstaller-bundled binary
+# ---------------------------------------------------------------------------
+
+
+def _setup_ssl() -> None:
+    """Ensure SSL certificates are found in PyInstaller bundles."""
+    if not getattr(sys, "frozen", False):
+        return
+    bundle_dir = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+    cert_file = bundle_dir / "certifi" / "cacert.pem"
+    if cert_file.exists():
+        os.environ.setdefault("SSL_CERT_FILE", str(cert_file))
+
+
+_setup_ssl()
 
 # ---------------------------------------------------------------------------
 # Constants

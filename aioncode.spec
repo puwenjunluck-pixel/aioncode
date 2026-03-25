@@ -2,6 +2,7 @@
 """PyInstaller spec for building aioncode single-file binary."""
 
 import os
+import ssl
 from pathlib import Path
 
 block_cipher = None
@@ -12,6 +13,13 @@ PACKAGE = ROOT / "aioncode"
 TEMPLATES = PACKAGE / "internal" / "templates"
 COMMANDS = ROOT / "commands"
 
+# SSL certificates for HTTPS requests (urllib)
+try:
+    import certifi
+    SSL_CERT_FILE = certifi.where()
+except ImportError:
+    SSL_CERT_FILE = ssl.get_default_verify_paths().cafile
+
 a = Analysis(
     [str(PACKAGE / "__main__.py")],
     pathex=[str(ROOT)],
@@ -21,6 +29,8 @@ a = Analysis(
         (str(TEMPLATES), "templates"),
         # Bundle command markdown files
         (str(COMMANDS), "commands"),
+        # SSL certificates for HTTPS (GitHub API)
+        (SSL_CERT_FILE, "certifi"),
     ],
     hiddenimports=[
         # CLI commands
@@ -81,6 +91,7 @@ a = Analysis(
         "sniffio",
         "click",
         "httptools",
+        "certifi",
     ],
     hookspath=[],
     hooksconfig={},
