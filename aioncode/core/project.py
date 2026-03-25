@@ -230,14 +230,23 @@ def init_project(
     cmd_dst = target / ".claude" / "commands"
     cmd_dst.mkdir(parents=True, exist_ok=True)
     selected = set(profile.selected_commands) if profile else None
+    source_commands = set()
     if commands_dir.is_dir():
         for f in sorted(commands_dir.glob("*.md")):
+            source_commands.add(f.stem)
             if selected is not None and f.stem not in selected:
                 result.skipped.append(f".claude/commands/{f.name}")
                 continue
             dst = cmd_dst / f.name
             shutil.copy2(f, dst)
             result.updated.append(f".claude/commands/{f.name}")
+
+    # 1.5. Clean up stale aion-* command files
+    keep = selected if selected is not None else source_commands
+    for existing in sorted(cmd_dst.glob("aion-*.md")):
+        if existing.stem not in keep:
+            existing.unlink()
+            result.updated.append(f".claude/commands/{existing.name} (removed)")
 
     # 2. Scaffold .aion/ (never overwrite existing files)
     aion_src = templates_dir / "aion"
