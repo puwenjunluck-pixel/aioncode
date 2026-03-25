@@ -2,6 +2,21 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-25 | feat: design-plan 工作流合并 + init 交互式安装
+
+### Summary
+- design→spec→plan 三步合并为 design→plan 一步流程，消除冗余
+- aion-design 重写：直出 plan.md + 自动更新 _product.md，支持 --design-only
+- aion-plan 降级为"修订实现方案"，仅用于已有 plan 的修订
+- 10 个命令文件更新 spec→plan 引用，全部添加 legacy fallback
+- init 新增交互式安装：项目类型→角色→命令推荐→自由选择
+- 新建 profiles.py（角色预设矩阵）、console.py 新增 choose_one/toggle_select
+- 11 个已完成 spec/plan 归档至 archive/，changelog 滚动归档
+- architecture.md 更新至 v0.6.4 基线
+- Commit: 751c94f
+
+---
+
 ## 2026-03-24 | session: Review + Scan
 
 ### Summary
@@ -74,19 +89,5 @@
 - 版本号同步至 v0.6.3（含 templates/aion/config.yml 从 0.5.0 补齐）
 - Review: approved (94/100)
 - Commit: 35f114a
-
-## 2026-03-23 | docs: 关于页安装升级教程 + 版本路线图更新
-
-### Summary
-- 关于页"安装与初始化"重写为"安装与升级"，包含 3 平台安装命令表格
-- 升级流程修正为 `aioncode upgrade` + `aioncode init`（非 init --upgrade）
-- FAQ 升级问题修正
-- 版本路线图更新：v0.6（当前）
-
-### Pending
-- GitHub 仓库为 private，`aioncode upgrade` 无法访问 API（需要 token 或改为 public）
-- 关于页内容未提交
-
----
 
 <!-- Older entries archived to changelog.archive.md -->

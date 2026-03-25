@@ -2,6 +2,20 @@
 
 <!-- 归档的历史会话记录。活跃记录见 changelog.md -->
 
+## 2026-03-23 | docs: 关于页安装升级教程 + 版本路线图更新
+
+### Summary
+- 关于页"安装与初始化"重写为"安装与升级"，包含 3 平台安装命令表格
+- 升级流程修正为 `aioncode upgrade` + `aioncode init`（非 init --upgrade）
+- FAQ 升级问题修正
+- 版本路线图更新：v0.6（当前）
+
+### Pending
+- GitHub 仓库为 private，`aioncode upgrade` 无法访问 API（需要 token 或改为 public）
+- 关于页内容未提交
+
+---
+
 ## 2026-03-22 | chore: auto 模式权限扩展 + loop 报告持久化
 
 ### Summary
