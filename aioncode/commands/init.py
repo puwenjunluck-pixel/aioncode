@@ -227,7 +227,7 @@ def _init_project(target: Path, *, upgrade: bool = False, install_all: bool = Fa
     print()
     header("Next Steps")
     info("1. Open Claude Code in your project")
-    info("2. Run: /project:aion-status")
+    info("2. Run: /project:aion-help")
     if project.is_new:
         info("3. Start with: /project:aion-design")
     else:

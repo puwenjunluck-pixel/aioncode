@@ -17,23 +17,15 @@ class CommandInfo:
 
 ALL_COMMANDS: list[CommandInfo] = [
     CommandInfo("aion-help", "帮助与引导", core=True),
-    CommandInfo("aion-status", "项目状态", core=True),
     CommandInfo("aion-scan", "项目扫描"),
-    CommandInfo("aion-think", "假设挑战"),
     CommandInfo("aion-design", "需求设计"),
     CommandInfo("aion-plan", "修订方案"),
-    CommandInfo("aion-demo", "UI 原型"),
-    CommandInfo("aion-impl", "代码实现"),
-    CommandInfo("aion-test", "测试生成"),
-    CommandInfo("aion-verify", "质量验证"),
     CommandInfo("aion-review", "代码审查", core=True),
+    CommandInfo("aion-qa", "浏览器 QA 测试"),
+    CommandInfo("aion-fix", "Bug 修复"),
     CommandInfo("aion-commit", "安全提交", core=True),
-    CommandInfo("aion-bug", "Bug 管理"),
-    CommandInfo("aion-learn", "规则学习", core=True),
-    CommandInfo("aion-save", "上下文保存"),
-    CommandInfo("aion-crosscheck", "交叉验证"),
     CommandInfo("aion-loop", "自动流水线"),
-    CommandInfo("aion-upgrade", "版本升级"),
+    CommandInfo("aion-save", "上下文保存"),
 ]
 
 CORE_COMMANDS: frozenset[str] = frozenset(c.name for c in ALL_COMMANDS if c.core)
@@ -42,37 +34,11 @@ CORE_COMMANDS: frozenset[str] = frozenset(c.name for c in ALL_COMMANDS if c.core
 _SHARED = {"aion-scan", "aion-save"}
 
 ROLE_PRESETS: dict[str, frozenset[str]] = {
-    "designer": _SHARED | {"aion-design", "aion-demo"},
-    "frontend": _SHARED
-    | {
-        "aion-think",
-        "aion-design",
-        "aion-demo",
-        "aion-impl",
-        "aion-verify",
-        "aion-bug",
-    },
-    "backend": _SHARED
-    | {
-        "aion-think",
-        "aion-design",
-        "aion-impl",
-        "aion-test",
-        "aion-verify",
-        "aion-bug",
-    },
-    "tester": _SHARED | {"aion-test", "aion-verify", "aion-bug"},
-    "fullstack": _SHARED
-    | {
-        "aion-think",
-        "aion-design",
-        "aion-plan",
-        "aion-demo",
-        "aion-impl",
-        "aion-test",
-        "aion-verify",
-        "aion-bug",
-    },
+    "designer": _SHARED | {"aion-design"},
+    "frontend": _SHARED | {"aion-design", "aion-qa", "aion-fix"},
+    "backend": _SHARED | {"aion-design", "aion-plan", "aion-qa", "aion-fix"},
+    "tester": _SHARED | {"aion-qa", "aion-fix"},
+    "fullstack": _SHARED | {"aion-design", "aion-plan", "aion-qa", "aion-fix", "aion-loop"},
 }
 
 
