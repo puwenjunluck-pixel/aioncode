@@ -31,9 +31,9 @@ def _setup_ssl() -> None:
     # Fallback: try system CA paths (covers old binaries missing bundled certs)
     for candidate in (
         "/etc/ssl/certs/ca-certificates.crt",  # Debian/Ubuntu
-        "/etc/pki/tls/certs/ca-bundle.crt",    # RHEL/CentOS
-        "/etc/ssl/ca-bundle.pem",               # openSUSE
-        "/usr/local/etc/openssl/cert.pem",      # macOS Homebrew
+        "/etc/pki/tls/certs/ca-bundle.crt",  # RHEL/CentOS
+        "/etc/ssl/ca-bundle.pem",  # openSUSE
+        "/usr/local/etc/openssl/cert.pem",  # macOS Homebrew
         "/usr/local/share/ca-certificates/cacert.pem",
     ):
         if Path(candidate).exists():
