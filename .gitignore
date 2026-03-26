@@ -27,3 +27,4 @@ build/
 .aion/monitor/events.jsonl
 .aion/sessions.jsonl
 projects.json
+.gstack/

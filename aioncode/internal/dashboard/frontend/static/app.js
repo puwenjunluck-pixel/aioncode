@@ -46,6 +46,8 @@ function showViewDetail(view) {
     case 'team':
       d.innerHTML = '<div class="detail-team" id="detail-team"></div>';
       loadTeamDetail(); break;
+    case 'help':
+      d.innerHTML = renderHelpPage(); break;
     case 'about':
       d.innerHTML = renderAboutPage(); break;
     case 'specs':

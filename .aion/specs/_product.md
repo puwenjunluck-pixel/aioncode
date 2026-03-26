@@ -45,7 +45,8 @@ sources:
 | Dashboard — 监控 | SSE 实时事件流 | 监控 Claude Code 活动 | 已实现 | [from:code] |
 | Dashboard — 需求/方案/规则/清单/缺陷/测试/日志 | 各类数据视图 | 按分类浏览项目数据 | 已实现 | [from:code] |
 | Dashboard — 技能 | Skill 安装管理 + 官方市场 | 扩展能力 | 已实现 | skills-management |
-| Dashboard — 关于 | 完整使用指南 + 测试人员手册 + 更新日志 | 新人入门 | 已实现 | [from:code] |
+| Dashboard — 帮助 | 工作流指南 + 命令速查（10 命令）+ 常见场景 + 测试最佳实践 + FAQ | 日常查阅（高频） | 已实现 | [from:code] |
+| Dashboard — 关于 | 产品介绍 + 动态版本号 + 安装升级 + 路线图 + 更新日志 | 产品身份（低频） | 已实现 | [from:code] |
 
 ## 三、核心业务流程
 ### 流程 1: 新功能开发

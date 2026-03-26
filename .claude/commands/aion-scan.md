@@ -10,8 +10,6 @@ You are a **senior architect onboarding onto an existing codebase**. Your job is
 
 > ⚠️ **CRITICAL**: NEVER assume project conventions — discover them from evidence. NEVER generate generic checklists — every item must be grounded in this project's actual stack, patterns, and structure. On RE_SCAN, NEVER overwrite existing rules or user-customized checklists — follow the Write Protocol (`.aion/refs/write-protocol.md`).
 
-> **Core Protocol**: You MUST read and adhere to `.aion/refs/command-conventions.md` before executing any step. This governs output formats, interaction logic, and evidence standards. Non-negotiable.
-
 ## Steps
 
 ### Step 0: Pre-flight Check
@@ -31,6 +29,7 @@ Scan the project systematically. For medium-to-large projects, consider using th
 #### 1a. Project Identity
 - Read `README.md`, `CONTRIBUTING.md`, `ARCHITECTURE.md` (if they exist)
 - Read `package.json` / `requirements.txt` / `go.mod` / `Cargo.toml` / `pom.xml` / `build.gradle` — identify tech stack, dependencies, scripts
+- **Bun detection**: Check for `bun.lockb` (bun lockfile) or `bunfig.toml` → record runtime as **bun**. Also check `package.json` scripts for `bunx` or `bun run` patterns. If detected, note "Runtime: bun" in the Tech Stack (bun replaces node for install/run/test).
 - Read `docker-compose.yml` / `Dockerfile` — understand deployment model
 - Read `.env.example` / `.env.template` — understand config structure
 
@@ -75,27 +74,95 @@ When `$ARGUMENTS` contains `--file {path}`:
 3. **Merge with scan data**: Use extracted information to supplement the Deep Scan findings. Mark supplemented items `[from:file]`.
 4. **Report**: "从 {N} 个文件中导入了补充上下文：{N} 项需求, {N} 个模块, {N} 个 API 端点"
 
-### Step 1.7: Browser Exploration (conditional — Playwright MCP + running service)
+### Step 1.7: Browser Exploration (conditional — browser backend + running service)
 
-Explore the running application to discover UI structure, navigation, and dynamic content invisible to static analysis.
+Explore the running application through a browser to discover UI structure, navigation flows, and dynamic content that static code analysis cannot reveal.
 
-**Prerequisites**: Check Playwright MCP availability (`playwright_navigate`, `playwright_click`, `playwright_screenshot`). Determine target URL from `--url` argument, or detect from project config, or ask user. Verify URL is reachable (HTTP 200/301/302).
+**Prerequisites check**:
+1. **Detect browser backend** (same priority as aion-qa):
+   - **gstack browse** (preferred): `~/.claude/skills/gstack/browse/dist/browse status 2>/dev/null`
+   - **Playwright MCP** (fallback): check for MCP tools (`playwright_navigate`, `playwright_click`)
+   - **Neither**: skip to Static UI Analysis
+2. Determine target URL:
+   - If `--url` specified in `$ARGUMENTS` → use that
+   - If not → try to detect from code: `package.json` scripts (dev/start), Docker config, Python server config
+   - If cannot determine → ask user: "检测到浏览器后端，是否有可访问的开发环境？请提供 URL（如 http://localhost:3000）"
+3. Verify URL is reachable (HTTP GET, check for 200/301/302)
 
-**If Playwright MCP available AND URL reachable** → Live Exploration:
+**If gstack browse available AND URL reachable** → Live Exploration (preferred):
 
-1. Navigate to home page, screenshot it
-2. Map navigation: click each nav item, record label/URL/type, screenshot each view
-3. Explore key pages (up to 15): record UI elements, form fields (labels/types/required/validation), states (empty/loading/error)
-4. Check responsive: mobile viewport (375x667), screenshot home + one content page
-5. Handle login if encountered: ask user for test credentials or manual login
-6. Save screenshots to `.aion/refs/screenshots/`
-7. Output **UI Discovery Report** with sections: Navigation Structure (table: Label|URL|Type|Notes), Pages Discovered (table: Page|Elements|Forms|States), Forms & Inputs (table: Page|Field|Type|Required|Validation), Responsive Notes, Screenshots
+Set `B=~/.claude/skills/gstack/browse/dist/browse`.
+
+1. **Navigate to home page**: `$B goto {url}`, `$B screenshot`
+2. **Get ARIA snapshot**: `$B snapshot` — get all interactive elements as @e refs
+3. **Map navigation structure**:
+   - Read snapshot for navigation elements (links, buttons with nav roles)
+   - `$B click @e{N}` each nav item, `$B url` to record target, `$B snapshot` to record page content
+   - `$B screenshot` each view
+4. **Explore key pages** (up to 15 pages):
+   - `$B snapshot` on each page — ARIA tree reveals all UI elements, forms, buttons
+   - `$B forms` — list all form fields with types and labels
+   - Check states: `$B text @e{N}` for content
+5. **Check responsive**: `$B responsive 375 667`, `$B screenshot`
+6. **Handle login** (if encountered):
+   - Detect login form in snapshot (password field)
+   - Option A: `$B cookie-import-browser` — import cookies from user's real browser
+   - Option B: Ask user for test credentials, then `$B fill @e{N} "user"`, `$B fill @e{M} "pass"`, `$B click @e{K}`
+7. **Save screenshots** to `.aion/refs/screenshots/`
+8. **Output**: UI Discovery Report
+
+**If Playwright MCP available (fallback) AND URL reachable** → Live Exploration:
+
+1. **Navigate to home page**, take full-page screenshot
+2. **Map navigation structure**:
+   - Identify all navigation elements (nav bars, sidebars, menus, tabs)
+   - Click each navigation item, record: label, target URL/view, page title
+   - Screenshot each view
+3. **Explore key pages** (up to 15 pages):
+   - Record: page title, key UI elements (buttons, forms, tables, lists)
+   - Identify form fields: labels, types, required status, validation hints
+   - Check states: empty state, loading indicator, error display
+4. **Check responsive behavior**: Switch to mobile viewport (375×667), screenshot home page and one content page
+5. **Handle login** (if encountered):
+   - Detect login page (form with password field)
+   - Ask user: "系统需要登录。请提供测试账号，或在弹出的浏览器中手动登录后告知我继续。"
+   - After login, continue exploration
+6. **Save screenshots** to `.aion/refs/screenshots/`
+7. **Output**: UI Discovery Report
+
+```markdown
+# UI Discovery Report
+
+## Navigation Structure
+| Label | URL/View | Type | Notes |
+|-------|---------|------|-------|
+| {nav label} | {path} | {page|modal|tab} | {key elements} |
+
+## Pages Discovered ({N} total)
+| Page | Key Elements | Forms | States Observed |
+|------|-------------|-------|-----------------|
+| {page name} | {buttons, tables, lists} | {form fields} | {empty/loading/error} |
+
+## Forms & Inputs
+| Page | Field | Type | Required | Validation |
+|------|-------|------|----------|-----------|
+
+## Responsive Notes
+- {observations about mobile layout}
+
+## Screenshots
+- {path to each screenshot with description}
+```
 
 **If NO Playwright MCP OR URL not reachable** → Static UI Analysis:
 
-Read HTML/JSX/Vue/Svelte templates, frontend router config, CSS/SCSS, and API call patterns. Output same report structure, marked `[from:static]`.
+1. Read HTML templates / JSX / Vue / Svelte files → extract page structure
+2. Read frontend router config → extract navigation/URL map
+3. Read CSS/SCSS → identify responsive breakpoints, theme variables
+4. Read API call patterns in frontend code → infer data fetching
+5. Output: Static UI Analysis Report (same structure, marked `[from:static]`)
 
-> Static analysis misses dynamic content and runtime states. Suggest `--url` for better results.
+> Note: Static analysis misses dynamic content, JS-rendered elements, and actual runtime states. Suggest user provides `--url` for better results.
 
 ### Step 2: Determine Intent
 
@@ -125,7 +192,36 @@ Follow Write Protocol category: **Regenerable**.
 - Hash mismatch (user-modified) → show diff summary of changes, ask: "Update architecture reference? [Y/Keep existing/Replace]"
 - No fingerprint (legacy) → treat as user-modified, ask before overwriting
 
-Architecture file must include sections: **Tech Stack** (Language, Framework, Database, Test Framework, Build Tool, CI/CD), **Directory Structure** (key dirs with descriptions), **Entry Points**, **Key Patterns** (routing, state mgmt, data access), **Build & Run** (Dev/Test/Build/Lint commands).
+Architecture file format:
+
+```markdown
+# Project Architecture
+
+## Tech Stack
+- Language: {detected}
+- Framework: {detected}
+- Database: {detected or N/A}
+- Test Framework: {detected}
+- Build Tool: {detected}
+- CI/CD: {detected or N/A}
+
+## Directory Structure
+{key directories with one-line descriptions}
+
+## Entry Points
+- {main entry files}
+
+## Key Patterns
+- {routing pattern}
+- {state management pattern}
+- {data access pattern}
+
+## Build & Run
+- Dev: {command}
+- Test: {command}
+- Build: {command}
+- Lint: {command}
+```
 
 ### Step 3.5: Generate _product.md (Product Design Document)
 
@@ -157,23 +253,45 @@ Follow Write Protocol category: **Versioned**.
    - Update tech stack if versions changed
    - Mark new entries with source tags
 
-**Frontmatter** fields: `product`, `updated_at`, `generation_method` (scan|scan+file|scan+explore|scan+file+explore), `confidence` (high|medium|low), `sources` (list of code-scan, file-import, browser-explore as applicable).
+**Frontmatter**:
+```yaml
+---
+product: {project name}
+updated_at: {YYYY-MM-DD}
+generation_method: {scan | scan+file | scan+explore | scan+file+explore}
+confidence: {high | medium | low}
+sources:
+  - code-scan
+  - file-import (if used)
+  - browser-explore (if performed)
+---
+```
 
 ### Step 4: Generate Rules
 
 Follow Write Protocol category: **Accumulative**.
 
 **FIRST_SCAN**: Generate initial rules based on scan findings. Write to `.aion/rules/`:
-- **style.md** — conventions from linter configs + code patterns. Format: `- **{Convention}** (scan, {date}) [cite_count: 0, last_cited: {date}]` with description and concrete project example
-- **pitfalls.md** — from git log fix commits + code patterns. Same format with pitfall description and avoidance guidance
 
-Only write rules that are project-specific and evidenced. No evidence = no rule.
+**style.md** — Extracted from linter configs, existing code patterns:
+```markdown
+- **{Convention}** (scan, {date}) [cite_count: 0, last_cited: {date}]
+  {Description with concrete example from this project}
+```
+
+**pitfalls.md** — Extracted from git log fix commits and code patterns:
+```markdown
+- **{Known issue}** (scan, {date}) [cite_count: 0, last_cited: {date}]
+  {Description of the pitfall and how to avoid it}
+```
+
+Only write rules that are project-specific and evidenced. If you can't find evidence for a rule, don't write it.
 
 **RE_SCAN**: Do NOT regenerate or overwrite existing rules. Instead:
 1. Read all existing rules (MANDATORY — Write Protocol Refusal Condition applies)
 2. Compare scan findings against existing rules
 3. If scan reveals conventions NOT covered by existing rules → propose additions (append only), show each candidate to user
-4. If scan reveals existing rules that may be outdated → note them but do NOT modify — suggest running `/aion-learn` to update
+4. If scan reveals existing rules that may be outdated → note them but do NOT modify — suggest running `/project:aion-review` to update (auto-learn is embedded in every review)
 5. Never overwrite or replace existing rule entries
 
 ### Step 5: Generate Intent-Specific Artifacts
@@ -186,32 +304,199 @@ Only write rules that are project-specific and evidenced. No evidence = no rule.
 
 #### Intent A: 补测试
 
-1. Write `.aion/specs/test-coverage.md` — include sections: Current State (test/source file counts, estimated coverage, framework), Untested Modules by priority (High: business logic without tests; Medium: utilities/helpers), Existing Test Patterns (mock style, assertion style, setup/teardown)
-2. Write `.aion/checklists/test-plan.md` — include sections: Unit Tests (per-module checklist with specific scenarios from code), Integration Tests (API/service interaction scenarios), E2E Tests if applicable (user flow steps)
-3. Write `.aion/rules/test-style.md` — rules extracted from existing tests or project config, standard rule format with `(scan, {date})` tag
+1. Write `.aion/specs/test-coverage.md`:
+   ```markdown
+   # Test Coverage Analysis
+
+   ## Current State
+   - Test files: {count}
+   - Source files: {count}
+   - Estimated coverage: {rough %}
+   - Framework: {name}
+
+   ## Untested Modules (High Priority)
+   {modules with business logic but no tests, sorted by importance}
+
+   ## Untested Modules (Medium Priority)
+   {utility modules, helpers, etc.}
+
+   ## Existing Test Patterns
+   {patterns observed in existing tests — mock style, assertion style, setup/teardown}
+   ```
+
+2. Write `.aion/checklists/test-plan.md`:
+   ```markdown
+   # Test Plan
+
+   ## Unit Tests
+   {per-module checklist with specific test scenarios derived from reading the code}
+   - [ ] {module}: {scenario 1}
+   - [ ] {module}: {scenario 2}
+
+   ## Integration Tests
+   - [ ] {API endpoint / service interaction}: {scenario}
+
+   ## E2E Tests (if applicable)
+   - [ ] {user flow}: {steps}
+   ```
+
+3. Write `.aion/rules/test-style.md`:
+   ```markdown
+   # Test Style Rules
+
+   {extracted from existing tests, or derived from project config}
+   - **{Rule}** (scan, {date})
+     {e.g., "Use vitest + @testing-library/vue, not manual DOM queries"}
+   ```
 
 #### Intent B: 迭代前端
 
-1. Write `.aion/refs/component-map.md` — include sections: Routes (path-to-component mapping), Component Tree (key components with props/dependencies), State Management (stores/reducers), Design Tokens (CSS variables, theme, breakpoints)
-2. Write `.aion/checklists/frontend.md` — Before/During/After format. Before: read target component+parent, check props/types, check store/state, read rules. During: project-specific items (CSS variables, naming conventions, router registration). After: visual check, responsive test, no console errors
-3. Write `.aion/contracts/api-interface.md` (if backend exists) — endpoint-to-request/response shape mapping
+1. Write `.aion/refs/component-map.md`:
+   ```markdown
+   # Component Map
+
+   ## Routes
+   {path → component mapping}
+
+   ## Component Tree
+   {key components with their props/dependencies}
+
+   ## State Management
+   {stores/reducers and what they manage}
+
+   ## Design Tokens
+   {CSS variables, theme, breakpoints if detected}
+   ```
+
+2. Write `.aion/checklists/frontend.md`:
+   ```markdown
+   # Frontend Iteration Checklist
+
+   ## Before Changes
+   - [ ] Read the target component and its parent
+   - [ ] Check props interface / type definitions
+   - [ ] Check related store/state
+   - [ ] Read .aion/rules/ for style constraints
+
+   ## During Changes
+   - [ ] {project-specific items based on scan, e.g.:}
+   - [ ] Use CSS variables from {file} (don't hardcode colors)
+   - [ ] Follow {naming convention} for new components
+   - [ ] New routes need entry in {router file}
+
+   ## After Changes
+   - [ ] Visual check in browser
+   - [ ] Responsive test (if applicable)
+   - [ ] No console errors
+   ```
+
+3. Write `.aion/contracts/api-interface.md` (if backend exists):
+   ```markdown
+   # API Interface Contract
+
+   {endpoint → request/response shape, extracted from code}
+   ```
 
 #### Intent C: 迭代后端
 
-1. Write `.aion/refs/api-inventory.md` — include sections: Endpoints (method, path, handler, auth), Database Schema (tables/models, relationships), Middleware/Interceptors
-2. Write `.aion/checklists/backend.md` — Before/During/After format. Before: read target module+dependencies, check DB schema, read rules. During: project-specific items (router registration, migrations, error pattern, auth checks). After: run tests, check N+1 queries, verify error handling
-3. Write `.aion/refs/db-schema.md` (if database detected) — models/tables, fields, relationships, indexes
+1. Write `.aion/refs/api-inventory.md`:
+   ```markdown
+   # API Inventory
+
+   ## Endpoints
+   {method, path, handler, auth requirement}
+
+   ## Database Schema
+   {tables/models and their relationships}
+
+   ## Middleware / Interceptors
+   {what runs on each request}
+   ```
+
+2. Write `.aion/checklists/backend.md`:
+   ```markdown
+   # Backend Iteration Checklist
+
+   ## Before Changes
+   - [ ] Read the target module and its dependencies
+   - [ ] Check database schema / models involved
+   - [ ] Read .aion/rules/
+
+   ## During Changes
+   - [ ] {project-specific items, e.g.:}
+   - [ ] New endpoints registered in {router file}
+   - [ ] Database changes need migration in {migrations dir}
+   - [ ] Error responses follow {existing pattern}
+   - [ ] Auth/permission checks where needed
+
+   ## After Changes
+   - [ ] Run tests: {test command}
+   - [ ] Check for N+1 queries
+   - [ ] Verify error handling paths
+   ```
+
+3. Write `.aion/refs/db-schema.md` (if database detected):
+   ```markdown
+   # Database Schema
+
+   {models/tables, fields, relationships, indexes}
+   ```
 
 #### Intent D: 新功能开发
 
 Generate all artifacts from B + C, plus:
 
-1. Write `.aion/checklists/feature.md` — phases: Design (spec, API contract, UI prototype), Plan (backend steps: models-services-routes-tests; frontend steps: types-store-components-integration), Implementation (backend API tested, frontend connected, error states handled), Verification (test command passes, E2E test, edge cases)
+1. Write `.aion/checklists/feature.md`:
+   ```markdown
+   # Full-Stack Feature Checklist
+
+   ## Design Phase
+   - [ ] Spec written to .aion/specs/
+   - [ ] API contract defined in .aion/contracts/
+   - [ ] UI prototype in .aion/prototypes/ (if visual)
+
+   ## Plan Phase
+   - [ ] Backend steps (models → services → routes → tests)
+   - [ ] Frontend steps (types → store → components → integration)
+
+   ## Implementation
+   - [ ] Backend API implemented and tested
+   - [ ] Frontend connected to API
+   - [ ] Error states handled (loading, empty, error)
+
+   ## Verification
+   - [ ] {project test command} passes
+   - [ ] Manual E2E test
+   - [ ] Edge cases covered
+   ```
 
 #### Intent E: 重构/优化
 
-1. Write `.aion/specs/refactor-targets.md` — include sections: Code Smells (large files, deep nesting, duplication with file:line refs), Dependency Issues (circular imports, unused/outdated deps), Performance Concerns (N+1 queries, missing indexes, large bundle)
-2. Write `.aion/checklists/refactor.md` — items: identify scope, write tests for current behavior first, refactor in small testable steps, run tests after each step, no behavior changes unless intended, project-specific items
+1. Write `.aion/specs/refactor-targets.md`:
+   ```markdown
+   # Refactor Targets
+
+   ## Code Smells Detected
+   {large files, deep nesting, duplicated logic, etc. — with file:line references}
+
+   ## Dependency Issues
+   {circular imports, heavy unused deps, outdated packages}
+
+   ## Performance Concerns
+   {N+1 queries, missing indexes, large bundle, etc.}
+   ```
+
+2. Write `.aion/checklists/refactor.md`:
+   ```markdown
+   # Refactor Checklist
+
+   - [ ] Identify the refactor scope (don't boil the ocean)
+   - [ ] Write tests for current behavior FIRST
+   - [ ] Refactor in small, testable steps
+   - [ ] Run tests after each step
+   - [ ] No behavior changes unless explicitly intended
+   - [ ] {project-specific items}
+   ```
 
 #### Intent F: 全面扫描
 
@@ -219,21 +504,81 @@ Generate all artifacts from A through E. This is comprehensive but takes longer.
 
 ### Step 6: Report
 
-**FIRST_SCAN** — Present summary: Project name + tech stack, selected intent(s), list of generated files with one-line descriptions, Quick Start (1-2 sentences on next steps based on intent).
+**FIRST_SCAN** — Present generation summary:
 
-**RE_SCAN** — Present Delta Report (MANDATORY) with sections: New findings (concrete discoveries with specifics), Updated (file + what changed + why), Skipped/protected (file + reason), Suggested follow-up.
+```
+Scan Complete
+-----------------------------------
+Project: {name} ({tech stack summary})
+Intent: {selected intent(s)}
 
-### Step 6.5: AI Q&A — Confirm Product Design (when _product.md was generated/updated)
+Generated:
+  refs/architecture.md    ← Project architecture overview
+  rules/style.md          ← {N} conventions extracted
+  rules/pitfalls.md       ← {N} pitfalls identified
+  {intent-specific files with one-line descriptions}
 
-Present all `[INFERRED]` items from `_product.md` grouped by section (产品定位, 功能地图, 业务流程). Ask user: "请确认或纠正以下推断，或回复'确认'接受全部。"
+Quick Start:
+  {1-2 sentences on what to do next based on intent}
+```
 
-Process response: confirms → `[INFERRED]` becomes `[CONFIRMED]`; corrects → apply + mark `[CONFIRMED]`; adds info → append as `[from:user]` `[CONFIRMED]`. Update `_product.md` and `confidence` level.
+**RE_SCAN** — Present a Delta Report (MANDATORY):
+
+```
+Delta Report
+-----------------------------------
+Project: {name} | Mode: RE_SCAN
+
+New findings:
+  - {concrete new discoveries, e.g., "2 new API endpoints (POST /users, DELETE /users/:id)"}
+  - {e.g., "1 new dependency (redis)"}
+
+Updated:
+  - {file}: {what changed and why, e.g., "refs/architecture.md: Auth module restructured (fingerprint mismatch, user confirmed)"}
+
+Skipped (protected):
+  - {file}: {reason, e.g., "checklists/backend.md: user-customized (fingerprint mismatch)"}
+  - {file}: {reason, e.g., "rules/style.md: 3 existing rules, no new conventions found"}
+
+Suggested follow-up:
+  - {e.g., "Run /project:aion-review to update potentially stale rules (auto-learn runs in every review)"}
+```
+
+### Step 6.5: AI Q&A — Confirm Product Design (always, when _product.md was generated/updated)
+
+After the scan report, present the `_product.md` content to the user for confirmation:
+
+1. **Show all `[INFERRED]` items** grouped by section:
+   ```
+   我从扫描中推断了以下产品信息，请确认或纠正：
+
+   产品定位：
+   - 目标用户：{推断} [INFERRED]
+   - 核心价值：{推断} [INFERRED]
+
+   功能地图中不确定的项：
+   - {模块}: {推断的功能描述} [INFERRED]
+
+   业务流程中不确定的项：
+   - {流程}: {推断的步骤} [INFERRED]
+
+   请回复需要修正的项，或回复"确认"接受所有推断。
+   ```
+
+2. **Process user response**:
+   - User confirms → update all `[INFERRED]` → `[CONFIRMED]`
+   - User corrects → apply corrections, mark corrected items `[CONFIRMED]`
+   - User adds new info → append to relevant sections, mark `[from:user]` `[CONFIRMED]`
+
+3. **Update `_product.md`** with confirmed content, update `confidence` level
+
+> This step ensures the product design document is not just AI guesswork but validated knowledge. Every scan produces a Q&A round — the more the user confirms, the higher the confidence.
 
 ## Next Steps
 
 Based on intent:
-- Testing → /project:aion-impl with the test plan
-- Frontend/Backend iteration → /project:aion-design for new features, or /project:aion-impl for planned changes
+- Testing → /project:aion-review (test gap analysis auto-discovers and generates missing tests)
+- Frontend/Backend iteration → /project:aion-design for new features, or /project:aion-plan for planned changes (plan confirms then executes directly)
 - New feature → /project:aion-design to start the full workflow
 - Refactor → /project:aion-plan to plan the refactoring steps
 
@@ -254,9 +599,15 @@ Based on intent:
 - [ ] All artifacts are project-specific, not generic
 
 ## Anti-Patterns
-- **CRITICAL**: Generic checklists not grounded in project evidence; assuming conventions without evidence; overwriting existing rules/refs on RE_SCAN without Write Protocol verification
-- **HIGH**: Scanning too deeply (read samples, not everything); skipping test landscape analysis; RE_SCAN without Delta Report
-- **MEDIUM**: Not asking user intent (targeted output > generating everything)
+| Violation | Why it fails | Severity |
+|-----------|-------------|----------|
+| Writing generic checklists not grounded in the project | Users get no value from "write good code" — they need "use {this framework} pattern from {this file}" | CRITICAL |
+| Assuming conventions without evidence | Wrong conventions are worse than no conventions | CRITICAL |
+| Scanning too deeply (reading every file) | Scan should be fast — read representative samples, not everything | HIGH |
+| Skipping test landscape analysis | Test gaps are the #1 reason existing projects adopt AI tooling | HIGH |
+| Not asking user intent | Generating everything wastes time; targeted output is more useful | MEDIUM |
+| Overwriting existing rules/refs on RE_SCAN | Write Protocol Refusal Condition: must read existing files and verify fingerprint/dedup before writing | CRITICAL |
+| RE_SCAN without Delta Report | User cannot assess what the re-scan discovered vs what was protected | HIGH |
 
 ## Output Format
 The scan report shown in Step 6, plus all generated files in `.aion/`.

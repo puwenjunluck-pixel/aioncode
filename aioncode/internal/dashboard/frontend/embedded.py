@@ -528,8 +528,12 @@ body {
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6 8a3 3 0 100-6 3 3 0 000 6zm-5 6s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H1zm9-1.5a.5.5 0 01.5-.5H12V10a.5.5 0 011 0v2h1.5a.5.5 0 010 1H13v2a.5.5 0 01-1 0v-2h-1.5a.5.5 0 01-.5-.5z"/></svg>
     <span class="tip">团队</span>
   </button>
+  <button class="rail-btn" data-view="help" onclick="switchView('help')" aria-label="帮助">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
+    <span class="tip">帮助</span>
+  </button>
   <button class="rail-btn" data-view="about" onclick="switchView('about')" aria-label="关于">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 118 1a7 7 0 010 14zm0 1A8 8 0 108 0a8 8 0 000 16z"/><path d="M8.93 6.588l-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
     <span class="tip">关于</span>
   </button>
   <button class="rail-btn" data-view="settings" onclick="switchView('settings')" aria-label="设置">
@@ -626,9 +630,14 @@ body {
           </div>
         </div>
       </div>
+      <!-- Help sidebar (TOC) -->
+      <div class="view-sidebar hidden" id="vs-help">
+        <div class="sw-title">帮助中心</div>
+        <div class="sw-body" id="help-toc"></div>
+      </div>
       <!-- About sidebar (TOC) -->
       <div class="view-sidebar hidden" id="vs-about">
-        <div class="sw-title">使用指南</div>
+        <div class="sw-title">关于 AionCode</div>
         <div class="sw-body" id="about-toc"></div>
       </div>
     </div>
@@ -695,6 +704,8 @@ function showViewDetail(view) {
     case 'team':
       d.innerHTML = '<div class="detail-team" id="detail-team"></div>';
       loadTeamDetail(); break;
+    case 'help':
+      d.innerHTML = renderHelpPage(); break;
     case 'about':
       d.innerHTML = renderAboutPage(); break;
     case 'specs':
@@ -1152,16 +1163,18 @@ async function viewDataItem(path) {
   document.getElementById('detail').innerHTML = `<div class="md-content"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><h1 style="margin:0;flex:1">${esc(path.split('/').pop())}</h1></div>${renderFrontmatterTable(data.meta)}${renderMarkdown(data.body)}</div>`;
 }
 const ABOUT_SECTIONS = [
-  { id:'what',      title:'什么是 AionCode' },
-  { id:'install',   title:'安装与初始化' },
+  { id:'what',       title:'什么是 AionCode' },
+  { id:'install',    title:'安装与升级' },
+  { id:'roadmap',    title:'版本路线图' },
+  { id:'releaselog', title:'更新日志' },
+];
+const HELP_SECTIONS = [
   { id:'workflow',  title:'工作流指南' },
   { id:'commands',  title:'命令速查' },
   { id:'scenarios', title:'常见场景' },
-  { id:'testing',   title:'测试人员最佳实践' },
+  { id:'testing',   title:'测试最佳实践' },
   { id:'dashboard', title:'副驾驶面板' },
   { id:'faq',       title:'常见问题' },
-  { id:'roadmap',   title:'版本路线图' },
-  { id:'releaselog',title:'更新日志' },
 ];
 function renderAboutToc() {
   document.getElementById('about-toc').innerHTML = ABOUT_SECTIONS.map(s =>
@@ -1171,191 +1184,114 @@ function scrollAbout(id) {
   const el = document.getElementById('about-' + id);
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+function renderHelpToc() {
+  document.getElementById('help-toc').innerHTML = HELP_SECTIONS.map(s =>
+    `<div class="fnode" style="padding-left:4px;cursor:pointer" onclick="scrollHelp('${s.id}')"><span class="ico">§</span>${s.title}</div>`).join('');
+}
+function scrollHelp(id) {
+  const el = document.getElementById('help-' + id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function _tbl(h,r){return `<table class="key-table"><tr>${h.map(x=>'<th>'+x+'</th>').join('')}</tr>${r.map(x=>'<tr>'+x.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')}</table>`}
 function _flow(s){return `<div class="flow">${s.map(x=>`<span class="flow-step">${x}</span>`).join('<span class="flow-arrow">→</span>')}</div>`}
 function _faq(q,a){return `<p><strong>Q：${q}</strong></p><p>${a}</p>`}
-/** 测试人员最佳实践板块 */
+/** 测试最佳实践板块 */
 function _renderTestingGuide() {
   return `
-    <h2 id="about-testing">测试人员最佳实践</h2>
-    <p>本章是写给<strong>测试人员（QA）</strong>的完整指南。你不需要写代码——只需用自然语言描述测试场景，AionCode 会帮你生成、执行、修复测试。</p>
+    <h2 id="help-testing">测试最佳实践</h2>
+    <p>本章是写给<strong>测试人员（QA）</strong>的完整指南。核心工具是 <code>aion-qa</code>（发现）+ <code>aion-fix</code>（修复）+ <code>aion-review</code>（质量验收）。</p>
 
     <h3>一、你的角色定位</h3>
-    <p>在 AionCode 体系中，测试人员的核心职责从"手写脚本"转变为<strong>设计测试策略 + 编写测试剧本 + 审查 AI 输出</strong>。</p>
-    ${_tbl(['传统模式','AionCode 模式'],[
-      ['手写 Selenium/Playwright 脚本','用中文 Markdown 描述测试用例，AI 生成脚本'],
-      ['手动维护选择器','AI 自动适应 UI 变化，选择器失效时自动修复'],
-      ['测试失败后手动排查','<code>--heal</code> 自愈模式自动诊断并修复'],
-      ['覆盖率靠人肉检查','<code>coverage</code> 模式自动分析缺口并补充测试'],
-      ['测试报告手写','自动生成结构化报告到 <code>.aion/tests/reports/</code>']
+    ${_tbl(['传统模式','AionCode v0.7 模式'],[
+      ['手写 Selenium/Playwright 脚本','<code>aion-qa {url}</code> 自动浏览所有页面发现问题'],
+      ['手动整理 Bug 报告','AI 自动生成结构化 Bug 报告到 <code>.aion/bugs/</code>'],
+      ['开发修复后手工回归','<code>aion-fix</code> + <code>aion-review</code> 自动修复并验证'],
+      ['测试覆盖率靠人肉检查','<code>aion-review</code> 自动发现 test gap 并生成测试'],
+      ['E2E 用例用代码写','用中文 Given/When/Then Markdown 描述，存 <code>.aion/tests/e2e/</code>']
     ])}
 
-    <h3>二、完整测试流程</h3>
-    <p>以下是测试人员参与一个完整项目的推荐流程：</p>
-    ${_flow(['运行 aion-test e2e','审核生成的用例','再次运行执行测试','查看报告','反馈 Bug'])}
-    <p style="margin-top:12px"><strong>详细步骤：</strong></p>
-    <ol>
-      <li><strong>运行 E2E 测试命令</strong>：在 Claude Code 终端输入 <code>/project:aion-test e2e</code>。你有多种方式指定测试目标：
-        ${_tbl(['输入方式','示例','说明'],[
-          ['不填（推荐）','<code>aion-test e2e</code>','列出所有可用 spec，交互式选择'],
-          ['中文描述','<code>aion-test e2e "登录功能"</code>','AI 模糊匹配最相关的 spec'],
-          ['spec 文件名','<code>aion-test e2e github-token-auth</code>','精确匹配'],
-          ['模块路径','<code>aion-test e2e src/auth/</code>','从代码反查关联 spec']
-        ])}
-        <p style="margin-top:4px">选定目标后，AI 自动完成：</p>
-        <ul style="margin:4px 0 4px 16px">
-          <li><strong>实地勘察</strong>：通过 Playwright MCP 浏览系统界面，记录页面、元素、状态</li>
-          <li><strong>多源分析</strong>：从 spec（验收标准）+ 源码（错误路径）+ 勘察结果（UI 细节）+ API 契约 + Bug 历史自动生成测试用例</li>
-          <li>输出到 <code>.aion/tests/e2e/{feature}.md</code>，每个用例标注来源</li>
-        </ul>
-      </li>
-      <li><strong>审核测试用例</strong>：打开生成的 <code>.md</code> 文件，检查是否覆盖了你关心的场景，补充额外的边界 case。</li>
-      <li><strong>执行测试</strong>：再次运行 <code>/project:aion-test e2e {feature}</code>，AI 检测到用例已存在，直接执行。也可以用 <code>--now</code> 跳过审核直接执行。</li>
-      <li><strong>查看报告</strong>：打开副驾驶「测试」视图，或读 <code>.aion/tests/reports/{feature}-e2e.md</code>。</li>
-      <li><strong>提交 Bug</strong>：发现问题后运行 <code>/project:aion-bug</code>，AI 自动生成格式化的 Bug 报告。</li>
-    </ol>
-    <p style="margin-top:8px;color:var(--fg-muted)">注意：测试人员<strong>不需要手写测试用例</strong>。AI 从多个信息源自动生成，你只需审核和补充。</p>
+    <h3>二、QA 流程</h3>
+    <p><strong>推荐流程（先报告后修复）：</strong></p>
+    ${_flow(['aion-qa --report-only {url}','审核 Bug 报告','aion-fix','aion-review','commit'])}
+    <p style="margin-top:8px"><strong>全自动流程（一键测试+修复）：</strong></p>
+    ${_flow(['aion-qa {url}','aion-review','commit'])}
+    <p style="margin-top:6px;color:var(--text-tertiary)">推荐用"先报告后修复"，方便 QA 人员审核 Bug 报告再决定是否修复。</p>
 
-    <h3>三、编写自然语言测试用例</h3>
-    <p>测试用例存放在 <code>.aion/tests/e2e/</code> 目录，每个功能一个 <code>.md</code> 文件。</p>
-    <p><strong>文件结构：</strong></p>
+    <h3>三、aion-qa — 浏览器 QA 测试</h3>
+    <p>aion-qa 使用真实浏览器逐页测试，自动发现并分类 Bug：</p>
+    ${_tbl(['参数','说明'],[
+      ['<code>aion-qa {url}</code>','测试 URL，发现 Bug 后自动修复（P0/P1 优先）'],
+      ['<code>aion-qa --report-only {url}</code>','只生成报告，不修改任何代码（QA 审查模式）'],
+    ])}
+    <p style="margin-top:8px"><strong>Bug 严重级别：</strong></p>
+    ${_tbl(['级别','触发条件','示例'],[
+      ['P0 Critical','崩溃 / 数据丢失 / 支付 / 认证破坏','登录后跳转死循环、支付报错'],
+      ['P1 High','核心功能无法完成','表单提交无响应、列表加载失败'],
+      ['P2 Medium','功能可用但有问题','按钮位置偏移、某些输入不校验'],
+      ['P3 Low','UI 细节 / 文案问题','字体大小不一致、标点错误']
+    ])}
+    <p style="margin-top:8px"><strong>Bug 类型前缀：</strong><code>F-</code> 前端 · <code>B-</code> 后端 · <code>X-</code> 跨端。报告写入 <code>.aion/bugs/</code>，可在副驾驶「缺陷」视图查看。</p>
+    <p style="margin-top:6px"><strong>浏览器后端：</strong>优先使用 gstack browse CLI（ARIA 交互，~100ms）；回退到 Playwright MCP。两者都没有时命令退出并提示安装。</p>
+
+    <h3>四、aion-fix — 按角色修复 Bug</h3>
+    <p>读取 <code>.aion/bugs/</code> 中的报告，根据当前角色过滤，逐个 atomic commit 修复：</p>
+    ${_tbl(['参数','说明'],[
+      ['<code>aion-fix</code>','修复所有符合当前角色的 open Bug'],
+      ['<code>aion-fix -f</code>','只修复前端 Bug（F-* 前缀）'],
+      ['<code>aion-fix -b</code>','只修复后端 Bug（B-* 前缀）'],
+      ['<code>aion-fix {BUG-ID}</code>','只修复指定 Bug（如 F-0326-001）'],
+    ])}
+    <p style="margin-top:6px;color:var(--text-tertiary)">每个 Bug 独立提交（fix(bug): {ID} {title}），方便单独回滚。修复完成后自动将 Bug 状态更新为 fixed。</p>
+
+    <h3>五、aion-review — 代码质量 + 测试缺口</h3>
+    <p>一站式质量门禁，QA 阶段修复完成后运行：</p>
+    ${_tbl(['检查项','说明'],[
+      ['Build / Lint / Tests','先 verify，不通过则阻止 review'],
+      ['代码审查','逐文件审查，评分 0-100，verdict: approved / needs_fix'],
+      ['Test Gap 分析','覆盖图：已改动函数 vs 已有测试；自动生成 P0 缺口的测试'],
+      ['Regression Iron Rule','已有测试的函数如有修改，测试必须同步更新'],
+      ['--quick 模式','只跑 verify + 审查，跳过 test gap 分析（快速确认）']
+    ])}
+
+    <h3>六、自然语言 E2E 测试用例</h3>
+    <p>测试用例存在 <code>.aion/tests/e2e/</code>，每个功能一个 <code>.md</code> 文件，aion-review 会引用它们生成测试：</p>
     <pre style="background:var(--bg-sidebar);padding:12px;border-radius:6px;font-size:12px;line-height:1.6;overflow-x:auto">---
 feature: 功能名称
 target_url: http://localhost:19200
-viewport: [desktop, mobile]
-preconditions:
-  - 用户已登录
 ---
-
-# E2E: 功能名称
 
 ## TC-001: 测试标题
 
-**Given**: 前置状态描述
-**When**: 操作步骤1 → 操作步骤2 → 操作步骤3
+**Given**: 在登录页，用户未登录
+**When**: 输入正确账号 → 点击登录
 **Then**:
-  - 预期结果1
-  - 预期结果2
+  - 跳转到主页
+  - 顶部显示用户名
 
 **Edge Cases**:
-  - 边界场景1
-  - 边界场景2</pre>
-    <p style="margin-top:8px"><strong>关键语法：</strong></p>
-    ${_tbl(['元素','格式','说明'],[
-      ['Given','单行','前置状态，用"在XX页"描述当前位置'],
-      ['When','用 → 分隔步骤','每个 → 是一个用户操作'],
-      ['Then','缩进列表','每项必须是<strong>可验证</strong>的断言'],
-      ['Edge Cases','缩进列表','边界场景：空值、超长、特殊字符、网络异常']
-    ])}
-    <p style="margin-top:8px"><strong>常用操作关键词：</strong></p>
-    ${_tbl(['你写的','AI 理解为'],[
-      ['点击"保存"','点击包含"保存"文本的按钮'],
-      ['输入"测试"到名称字段','在"名称"输入框中填写"测试"'],
-      ['访问 http://localhost:19200','在浏览器中打开该 URL'],
-      ['等待列表加载完成','等待列表元素出现在页面上'],
-      ['确认删除','点击确认按钮'],
-      ['切换到移动端视口','将浏览器窗口调整为 375×667']
-    ])}
-    <p style="margin-top:8px;color:var(--fg-muted)">提示：你不需要记忆关键词，直接用自然语言描述操作即可。AI 会根据语义推断对应的浏览器操作。</p>
+  - 密码错误时显示错误提示
+  - 连续失败 5 次后锁定账号</pre>
+    <p style="margin-top:8px;color:var(--text-tertiary)">直接用自然语言描述操作，AI 会推断对应的浏览器操作（点击/输入/等待/截图等）。</p>
 
-    <h3>四、测试模式一览</h3>
-    <p>AionCode 的 <code>aion-test</code> 命令提供多种模式，覆盖从单元测试到 E2E 的完整测试需求：</p>
-    ${_tbl(['命令','适用场景','谁来用'],[
-      ['<code>aion-test</code>','为最近实现的代码自动生成单元/集成测试','开发者 / QA'],
-      ['<code>aion-test coverage</code>','分析测试覆盖率缺口，自动补充测试','QA'],
-      ['<code>aion-test e2e</code>','智能匹配目标（中文/spec名/模块路径/交互选择）→ 勘察 → 多源生成 → 执行','<strong>QA 首选</strong>'],
-      ['<code>aion-test e2e --heal</code>','E2E 测试 + 失败自动修复','QA'],
-      ['<code>aion-test perf</code>','生成性能/负载测试脚本（k6/locust）','QA / 性能测试'],
-      ['<code>aion-test ui</code>','UI 测试清单 + 可访问性审计','QA / 前端'],
-      ['<code>aion-test pipeline</code>','多代理测试管道（5 阶段全自动）','复杂功能'],
-      ['<code>aion-test full</code>','依次执行所有模式','发布前全量测试']
-    ])}
-
-    <h3>五、E2E 测试的两种运行模式</h3>
-    <p>当你运行 <code>/project:aion-test e2e</code> 时，系统会自动检测环境并选择模式：</p>
-    ${_tbl(['模式','条件','行为'],[
-      ['<strong>e2e-live</strong>','已安装 Playwright MCP','<strong>真实浏览器执行</strong>：AI 控制浏览器点击、输入、截图，实时验证每个 TC'],
-      ['<strong>e2e-gen</strong>','未安装 Playwright MCP','<strong>生成脚本</strong>：输出 Playwright 测试代码，需手动运行或交给开发者']
-    ])}
-    <p style="margin-top:8px"><strong>推荐：安装 Playwright MCP 以启用 live 模式</strong>（效果最佳）：</p>
-    <pre style="background:var(--bg-sidebar);padding:8px 12px;border-radius:6px;font-size:12px">npx @anthropic-ai/playwright-mcp</pre>
-    <p style="margin-top:4px">然后在 Claude Code 设置中添加 MCP server 配置即可。</p>
-
-    <h3>六、自愈能力（--heal）</h3>
-    <p>这是 AionCode 测试体系的核心差异化能力。当测试失败时，<code>--heal</code> 不会只报错，而是<strong>自动诊断根因并修复</strong>。</p>
-    <p><strong>工作原理：</strong></p>
-    <ol>
-      <li>运行测试，捕获失败日志（Traceback）</li>
-      <li>对比 <code>.aion/specs/</code> 中的验收标准，判断"是代码写错了"还是"测试用例过期了"</li>
-      <li>自动应用修复补丁（修代码或修测试）</li>
-      <li>重新运行，最多循环 3 轮</li>
-    </ol>
-    <p style="margin-top:8px"><strong>诊断决策表：</strong></p>
-    ${_tbl(['失败信号','AI 判断','自动动作'],[
-      ['断言失败 + spec 有对应标准','代码没满足需求','修复源代码 <code>[CODE_FIX]</code>'],
-      ['导入错误（模块改名）','代码重构后测试过期','更新测试引用 <code>[TEST_FIX]</code>'],
-      ['导入错误（依赖未安装）','环境问题','停止自愈，提示安装 <code>[ENV_ISSUE]</code>'],
-      ['连接超时/拒绝','服务未启动','停止自愈，报告 <code>[ENV_ISSUE]</code>'],
-      ['选择器失效（E2E）','UI 变更了','更新选择器 <code>[TEST_FIX]</code>'],
-      ['无 spec + 失败原因不明','无法判断谁对','标记 <code>[NEEDS_HUMAN]</code>，等待人工']
-    ])}
-    <p style="margin-top:8px"><strong>安全护栏：</strong>最多 3 轮修复 · 每轮最多改 3 个文件 · 无进展立即停止 · 修复源代码前必须确认 spec 支持</p>
-
-    <h3>七、多代理测试管道（pipeline）</h3>
-    <p>对于复杂功能（5+ 用户流程），使用 <code>/project:aion-test pipeline</code> 启动全自动 5 阶段管道：</p>
-    ${_flow(['分析师','规划师','工程师','哨兵','治疗师'])}
-    ${_tbl(['阶段','代理','职责'],[
-      ['Stage 1','分析师','从 spec 和源码中提取所有测试点、用户流程、边界 case'],
-      ['Stage 2','规划师','按 P0/P1/P2 优先级编排测试计划'],
-      ['Stage 3','工程师','编写测试代码（遵循项目约定）'],
-      ['Stage 4','哨兵','<strong>质量门禁</strong>：审计测试质量，有权阻止（BLOCK）管道'],
-      ['Stage 5','治疗师','运行测试并自动修复失败（复用 --heal 逻辑）']
-    ])}
-    <p style="margin-top:8px">管道产物保存在 <code>.aion/tests/pipeline/{feature}/</code>，每阶段一个报告文件。</p>
-
-    <h3>八、验证与修复（verify --fix）</h3>
-    <p>测试完成后，运行 <code>/project:aion-verify --fix</code> 做全面检查并<strong>自动修复</strong>：</p>
-    ${_tbl(['检查项','默认行为','--fix 行为'],[
-      ['Build','报告 PASS/FAIL','失败时分析错误并尝试修复'],
-      ['Lint','报告警告和错误','自动运行 <code>ruff --fix</code> 等工具修复'],
-      ['Tests','报告通过/失败','触发自愈循环（同 --heal）'],
-      ['Debug','检测调试语句','仅报告（不自动删除）']
-    ])}
-    <p style="margin-top:8px">默认的 <code>aion-verify</code>（不带 --fix）只报告不修复，适合最终确认。</p>
-
-    <h3>九、测试报告</h3>
-    <p>所有测试报告自动生成到 <code>.aion/tests/reports/</code>，可在副驾驶的「测试」视图中查看。</p>
-    <p><strong>报告内容包括：</strong></p>
-    <ul>
-      <li>生成的测试数量（单元/集成/E2E）和文件列表</li>
-      <li>覆盖率变化（before → after）</li>
-      <li>E2E 测试结果（每个 TC 的 PASS/FAIL + 截图路径）</li>
-      <li>自愈日志（每轮修复了什么、改了哪些文件）</li>
-      <li>未解决问题（<code>[NEEDS_HUMAN]</code> 标记的项需人工处理）</li>
-    </ul>
-
-    <h3>十、与开发者协作</h3>
-    <p>测试人员和开发者在 AionCode 中的协作模式：</p>
-    ${_tbl(['测试人员做','开发者做'],[
-      ['在 <code>.aion/specs/</code> 中确认验收标准','编写需求规格（aion-design / --file 导入）'],
-      ['审核 AI 生成的 E2E 用例，补充边界 case','实现功能代码（aion-impl）'],
-      ['运行 <code>aion-test e2e</code> 执行测试','运行 <code>aion-test</code> 生成单元测试'],
-      ['发现问题用 <code>aion-bug</code> 提 Bug','通过 <code>aion-impl {BUG-ID}</code> 修复'],
-      ['用 <code>aion-verify</code> 做最终验收','用 <code>aion-review</code> + <code>aion-commit</code> 提交']
+    <h3>七、与开发者协作</h3>
+    ${_tbl(['QA 负责','开发者负责'],[
+      ['运行 <code>aion-qa --report-only {url}</code> 发现 Bug','用 <code>aion-design</code> 写需求规格'],
+      ['审核 <code>.aion/bugs/</code> 中的 Bug 报告','用 <code>aion-plan</code> 规划实现方案'],
+      ['在 <code>.aion/tests/e2e/</code> 补充测试场景','用 <code>aion-fix {BUG-ID}</code> 修复 Bug'],
+      ['用 <code>aion-review --quick</code> 快速验收','用 <code>aion-review</code> 全量质量检查']
     ])}
     <p style="margin-top:12px"><strong>推荐协作流程：</strong></p>
-    ${_flow(['QA 写 E2E 用例','开发实现功能','QA 运行 e2e','提 Bug','开发修复','QA 回归验证'])}
+    ${_flow(['QA: qa --report-only','审核 Bug 报告','开发: fix','QA: review --quick','commit'])}
 
-    <h3>十一、快速上手检查清单</h3>
-    <p>如果你是第一次使用 AionCode 做测试，按这个顺序操作：</p>
+    <h3>八、快速上手</h3>
     <ol>
       <li>✅ 确认项目已执行 <code>aioncode init</code>（<code>.aion/</code> 目录存在）</li>
-      <li>✅ 阅读 <code>.aion/tests/e2e/README.md</code> 了解用例格式</li>
-      <li>✅ 参考 <code>.aion/tests/e2e/_example.md</code> 编写你的第一个测试文件</li>
-      <li>✅ 在 Claude Code 终端运行 <code>/project:aion-test e2e</code></li>
-      <li>✅ 查看 <code>.aion/tests/reports/</code> 下的测试报告</li>
-      <li>✅（可选）安装 Playwright MCP 启用 live 模式获得最佳体验</li>
-      <li>✅（可选）运行 <code>/project:aion-test e2e --heal</code> 体验自愈能力</li>
+      <li>✅ 启动你要测试的应用（如 <code>npm run dev</code>）</li>
+      <li>✅ 在 Claude Code 终端运行 <code>/project:aion-qa --report-only http://localhost:3000</code></li>
+      <li>✅ 查看 <code>.aion/bugs/</code> 下生成的 Bug 报告</li>
+      <li>✅ 运行 <code>/project:aion-fix</code> 修复 Bug，或指定 ID 修复单个</li>
+      <li>✅ 运行 <code>/project:aion-review --quick</code> 快速验收</li>
+      <li>✅（可选）在 <code>.aion/tests/e2e/</code> 添加自然语言测试用例</li>
     </ol>
   `;
 }
@@ -1437,57 +1373,117 @@ function _renderReleaseLog() {
     </ul>
   `;
 }
+function renderHelpPage() {
+  setTimeout(renderHelpToc, 0);
+  return `<div class="about">
+    <h1>帮助中心</h1>
+    <p class="subtitle">使用指南 · 命令速查 · 最佳实践</p>
+
+    <h2 id="help-workflow">工作流指南</h2>
+    <p><strong>新功能开发：</strong></p>
+    ${_flow(['design','plan','[OK→执行]','review','commit'])}
+    <p style="margin-top:6px;font-size:12px;color:var(--text-tertiary)">design 内含：挑战假设 + 方案对比 + spec。plan 确认后直接执行代码。</p>
+    <p style="margin-top:12px"><strong>Bug 修复：</strong></p>
+    ${_flow(['qa --report-only','fix','review','commit'])}
+    <p style="margin-top:6px;font-size:12px;color:var(--text-tertiary)">或：<code>aion-qa {url}</code> 一键测试+修复。</p>
+    <p style="margin-top:12px"><strong>小改动（Tier 1 快速通道）：</strong></p>
+    ${_flow(['直接改代码','commit -y'])}
+    <p style="margin-top:6px;font-size:12px;color:var(--text-tertiary)">Tier 1 自动检测微小改动，跳过 review gate，自动提交。</p>
+
+    <h2 id="help-commands">命令速查</h2>
+    ${_tbl(['阶段','命令','说明'],[
+      ['准备','<code>aion-scan</code>','扫描项目 + 浏览器探索（--url）+ 文档导入（--file）→ 产品设计文档'],
+      ['设计','<code>aion-design</code>','挑战假设 + 需求分析 + 方案对比 + spec（--demo 生成原型，--file 导入文档）'],
+      ['规划','<code>aion-plan</code>','技术方案 + Scope Challenge + ASCII 图，用户确认后直接执行'],
+      ['质量','<code>aion-review</code>','verify + 代码审查 + test gap 一站式（--quick 只跑 verify+review）'],
+      ['QA','<code>aion-qa</code>','浏览器 QA 测试 → bug 报告（--report-only 只报告不修复）'],
+      ['修复','<code>aion-fix</code>','按角色修复 .aion/bugs/ 中的 bug（-f 前端 / -b 后端 / 指定 ID）'],
+      ['提交','<code>aion-commit</code>','Tier 1/2/3 智能分级提交 + changelog（-y 快速提交）'],
+      ['流水线','<code>aion-loop</code>','自动化流水线（full: 全流程 / fix: 修复循环 / --auto: 跳过确认）'],
+      ['保存','<code>aion-save</code>','保存对话上下文到 .aion/ 和 memory'],
+      ['帮助','<code>aion-help</code>','查看所有命令和工作流说明'],
+    ])}
+    <p style="margin-top:8px;font-size:12px;color:var(--text-tertiary)">所有命令在 Claude Code 中以 <code>/project:aion-xxx</code> 格式调用。</p>
+
+    <h2 id="help-scenarios">常见场景</h2>
+    ${_tbl(['场景','操作流程'],[
+      ['加新功能','design → plan → [OK→执行] → review → commit'],
+      ['修 Bug（测试报告）','qa --report-only {url} → fix → review → commit'],
+      ['修 Bug（全自动）','qa {url}（自动测试+修复）→ review → commit'],
+      ['小改动','直接改 → commit -y（Tier 1 自动放行）'],
+      ['导入外部需求','design --file 需求.docx → 自动提取需求+生成 spec'],
+      ['接手旧项目','scan → design/plan → review → commit'],
+      ['补充测试','review（自动发现 test gap + 生成测试）'],
+      ['全自动流水线','loop full --auto（design → plan → 执行 → review → commit）'],
+    ])}
+
+    ${_renderTestingGuide()}
+
+    <h2 id="help-dashboard">副驾驶面板</h2>
+    <p>副驾驶是 <strong>CLI 的可视化外壳</strong>。启动：<code>aioncode dashboard</code></p>
+    ${_tbl(['视图','用途'],[
+      ['概览','项目统计 + 最近变更历史'],
+      ['文件','浏览 .aion/ 配置文件（Markdown 渲染）'],
+      ['监控','SSE 实时事件流'],
+      ['需求','需求规格文档（specs/）'],
+      ['方案','实施计划（plans/）'],
+      ['规则','项目规则（style / pitfalls / perf）'],
+      ['清单','工作流检查清单'],
+      ['缺陷','Bug 列表与详情（aion-qa 生成，aion-fix 消费）'],
+      ['测试','测试报告（reports/）'],
+      ['日志','变更日志（changelog.md）'],
+      ['技能','Skill 安装管理 + 官方市场'],
+      ['团队','团队成员信息'],
+      ['帮助','使用指南（你正在看的这个）'],
+      ['关于','产品介绍 + 版本信息'],
+      ['设置','深色模式等偏好设置'],
+    ])}
+
+    <h2 id="help-faq">常见问题</h2>
+    ${[
+      ['支持哪些 AI 模型？','命令在 Claude Code 中执行，当前基于 Claude Sonnet/Opus。aion-review 支持多 Agent 并行 review 不同模块。'],
+      ['.aion/ 要提交 Git 吗？','建议提交。rules/specs/plans/bugs 是团队共享知识。sessions.jsonl 和 monitor/ 已在 .gitignore 排除。'],
+      ['如何升级？','执行 <code>aioncode upgrade</code> 更新工具，再执行 <code>aioncode init</code> 更新项目命令文件（自动清理已移除的旧命令）。'],
+      ['review 不通过能提交吗？','不能（Tier 3）。aion-commit 的 Tier 3 需要 review 通过。docs-only 改动自动判定为 Tier 1，可直接提交。'],
+      ['design 和 plan 有什么区别？','<code>aion-design</code> 是需求层：挑战假设 + 分析需求 + 方案对比 → spec。<code>aion-plan</code> 是实现层：技术方案 → 用户确认后直接执行代码。'],
+      ['init 可以只安装部分命令吗？','可以。<code>aioncode init</code> 交互式安装根据角色（设计师/前端/后端/测试/全栈）推荐命令，你可以自由增减。'],
+      ['什么是 Tier 1/2/3 提交？','Tier 1（微小改动）自动放行，Tier 2（小改动）内联轻量审查，Tier 3（大改动/安全路径）需要完整 review 通过。commit -y 强制走 Tier 1。'],
+      ['--file 支持哪些格式？','支持 .docx、.pdf、.md、.pptx、.xlsx，通过 markitdown 自动转为 Markdown 后提取需求。'],
+      ['aion-qa 和 aion-fix 什么关系？','aion-qa 负责"发现"：浏览器测试 → 生成 .aion/bugs/ 报告。aion-fix 负责"修复"：读 bugs 报告 → 按角色过滤 → 逐个修复 → atomic commit。'],
+    ].map(([q,a])=>_faq(q,a)).join('')}
+  </div>`;
+}
 function renderAboutPage() {
   setTimeout(renderAboutToc, 0);
-  const cmds = [
-    ['准备','<code>aion-scan</code>','扫描项目 + 浏览器探索（--url）+ 导入文档（--file）→ 生成产品设计文档'],
-    ['','<code>aion-think</code>','质疑假设，在开始前暴露盲点'],
-    ['','<code>aion-help</code>','查看所有命令和工作流说明'],
-    ['设计','<code>aion-design</code>','需求分析 + 实施计划一步到位（--file 导入外部文档，--design-only 仅需求）→ 生成 plan.md + 更新产品文档'],
-    ['','<code>aion-demo</code>','生成交互式 HTML 原型（可选）'],
-    ['','<code>aion-plan</code>','修订已有实施方案（仅用于已有 plan 的调整，不用于新建）'],
-    ['实施','<code>aion-impl</code>','按计划编写代码（自动遵守规则）'],
-    ['','<code>aion-test</code>','生成测试 + E2E 三阶段（勘察→多源生成→执行）+ 自愈（--heal）+ 多代理管道（pipeline）'],
-    ['质量','<code>aion-verify</code>','运行构建/测试/lint 检查 + 自动修复（--fix）'],
-    ['','<code>aion-review</code>','代码审查 + 自动提取规则'],
-    ['管理','<code>aion-commit</code>','安全提交（需 review 通过）'],
-    ['','<code>aion-save</code>','保存对话上下文到 .aion/ 和 memory'],
-    ['','<code>aion-bug</code>','Bug 管理：报告/列表/分配/关闭'],
-    ['','<code>aion-crosscheck</code>','用其他 AI 模型交叉验证代码'],
-    ['运维','<code>aion-loop</code>','自动化流水线（设计→实现→验证→审查→提交）'],
-    ['','<code>aion-status</code>','项目状态总览'],['','<code>aion-upgrade</code>','版本升级'],['','<code>aion-learn</code>','从审查中提取规则'],
-  ];
   return `<div class="about">
-    <h1>AionCode 使用指南</h1>
-    <p class="subtitle">AI 原生开发智能框架 · 让 AI 编程有章可循</p>
+    <h1>关于 AionCode</h1>
+    <p class="subtitle">AI 原生开发智能框架 · 成都奕贝科技</p>
+
     <h2 id="about-what">什么是 AionCode</h2>
     <p>AionCode 是成都奕贝科技公司开发的一个 <strong>AI 辅助开发的智能框架</strong>。它为你的项目建立一套结构化的知识体系（规则、规格、计划），让 AI（Claude Code）在编码时有据可循。</p>
     <p style="margin-top:8px">核心理念：<strong>知识沉淀 → 规则驱动 → 质量可控</strong></p>
-    ${_tbl(['组成','作用'],[['<code>.aion/</code> 目录','项目智能数据：规则、规格、计划、日志、Bug'],['<code>commands/</code>','18 个 AI 工作流命令'],['<code>aioncode</code> CLI','命令行工具：初始化、升级、副驾驶'],['副驾驶面板','Web 可视化界面（你正在看的这个）']])}
+    ${_tbl(['组成','作用'],[
+      ['<code>.aion/</code> 目录','项目智能数据：规则、规格、计划、日志、Bug'],
+      ['<code>commands/</code>','10 个 AI 工作流命令'],
+      ['<code>aioncode</code> CLI','命令行工具：初始化、升级、副驾驶'],
+      ['副驾驶面板','Web 可视化界面（你正在看的这个）'],
+    ])}
+    <p style="margin-top:8px">使用指南请见「帮助」页面 · <a href="https://github.com/user/aioncode/releases" target="_blank">GitHub Releases</a></p>
+
     <h2 id="about-install">安装与升级</h2>
     <p><strong>安装：</strong>从 <a href="https://github.com/user/aioncode/releases" target="_blank">GitHub Releases</a> 下载对应平台的二进制文件：</p>
-    ${_tbl(['平台','文件名','安装命令'],[['macOS (Apple Silicon)','<code>aioncode-macos-arm64</code>','<code>chmod +x aioncode-macos-arm64 && sudo mv aioncode-macos-arm64 /usr/local/bin/aioncode</code>'],['Linux (x64)','<code>aioncode-linux-x64</code>','<code>chmod +x aioncode-linux-x64 && sudo mv aioncode-linux-x64 /usr/local/bin/aioncode</code>'],['Windows (x64)','<code>aioncode-windows-x64.exe</code>','移动到 PATH 目录并重命名为 <code>aioncode.exe</code>']])}
-    <p style="margin-top:8px"><strong>初始化项目：</strong><code>aioncode init</code> — 交互式安装，自动引导选择项目类型 → 角色（设计师/前端/后端/测试/全栈）→ 推荐命令 → 自由增减，按需安装。然后（可选）<code>/project:aion-scan</code> 自动提取规则。</p>
+    ${_tbl(['平台','文件名','安装命令'],[
+      ['macOS (Apple Silicon)','<code>aioncode-macos-arm64</code>','<code>chmod +x aioncode-macos-arm64 && sudo mv aioncode-macos-arm64 /usr/local/bin/aioncode</code>'],
+      ['Linux (x64)','<code>aioncode-linux-x64</code>','<code>chmod +x aioncode-linux-x64 && sudo mv aioncode-linux-x64 /usr/local/bin/aioncode</code>'],
+      ['Windows (x64)','<code>aioncode-windows-x64.exe</code>','移动到 PATH 目录并重命名为 <code>aioncode.exe</code>'],
+    ])}
+    <p style="margin-top:8px"><strong>初始化项目：</strong><code>aioncode init</code> — 交互式安装，自动引导选择项目类型 → 角色（设计师/前端/后端/测试/全栈）→ 推荐命令 → 自由增减，按需安装。</p>
     <p><strong>升级：</strong>执行 <code>aioncode upgrade</code> 自动下载最新版，然后在项目中执行 <code>aioncode init</code> 更新命令和模板（自动清理已移除的旧命令文件）。</p>
-    <h2 id="about-workflow">工作流指南</h2>
-    <p><strong>新项目：</strong></p>${_flow(['think','design','impl','verify','review','commit'])}
-    <p style="margin-top:12px"><strong>已有项目：</strong></p>${_flow(['scan','impl/design','verify','review','commit'])}
-    <p style="margin-top:12px"><strong>Bug 修复：</strong></p>${_flow(['bug report','impl {BUG-ID}','verify','review','commit'])}
-    <p style="margin-top:8px">所有命令在 Claude Code 终端中以 <code>/project:aion-xxx</code> 格式调用。</p>
-    <h2 id="about-commands">命令速查</h2>
-    <table class="key-table"><tr><th>阶段</th><th>命令</th><th>说明</th></tr>${cmds.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')}</table>
-    <h2 id="about-scenarios">常见场景</h2>
-    ${_tbl(['场景','操作流程'],[['加新功能','design → impl → verify → review → commit（design 直出需求+实施计划）'],['修 Bug','bug report → impl {BUG-ID} → verify → commit'],['E2E 测试','aion-test e2e → 自动勘察+多源生成用例 → 审核 → 执行'],['导入外部需求','aion-design --file 需求.docx → 自动提取需求+生成实施计划'],['仅做需求分析','aion-design --design-only → 只输出需求，不生成实施步骤'],['调整已有方案','aion-plan {plan名} → 修订实施步骤（不修改需求）'],['接手旧项目','aion-scan --url http://localhost:3000 → 浏览器探索+代码扫描 → 产品设计文档'],['交叉验证','crosscheck --model gemini → 自动生成 Bug 报告']])}
-    ${_renderTestingGuide()}
-    <h2 id="about-dashboard">副驾驶面板</h2>
-    <p>副驾驶是 <strong>CLI 的可视化外壳</strong>。启动：<code>aioncode dashboard</code></p>
-    ${_tbl(['视图','用途'],[['概览','项目统计 + 最近变更历史'],['文件','浏览 .aion/ 配置文件（Markdown 渲染）'],['监控','SSE 实时事件流'],['需求','需求规格文档（specs/）'],['方案','实施计划（plans/）'],['规则','项目规则（style / pitfalls / perf）'],['清单','工作流检查清单'],['缺陷','Bug 列表与详情'],['测试','测试报告（reports/）'],['日志','变更日志（changelog.md）'],['技能','Skill 安装管理 + 官方市场'],['团队','团队成员信息'],['关于','使用指南（你正在看的这个）'],['设置','深色模式等偏好设置']])}
-    <h2 id="about-faq">常见问题</h2>
-    ${[['支持哪些 AI 模型？','命令在 Claude Code 中执行。crosscheck 可调用 Gemini 等做交叉验证。'],['.aion/ 要提交 Git 吗？','建议提交。rules/specs/plans 是团队共享知识。sessions.jsonl 和 monitor/ 已排除。'],['如何升级？','执行 <code>aioncode upgrade</code> 自动更新工具，再执行 <code>aioncode init</code> 更新项目命令（自动清理已移除的旧命令）。'],['review 不通过能提交吗？','不能。aion-commit 要求 review 通过（docs-only 可豁免）。'],['design 和 plan 有什么区别？','<code>aion-design</code> 是主力命令：需求分析 + 实施计划一步完成，直接输出 plan.md。<code>aion-plan</code> 仅用于修订已有方案的实施步骤，不用于新建。'],['init 可以只安装部分命令吗？','可以。<code>aioncode init</code> 交互式安装会根据你的角色（设计师/前端/后端/测试/全栈）推荐命令，你可以自由增减。核心命令（help/status/review/commit/learn）始终安装。'],['测试人员需要会写代码吗？','不需要。E2E 测试用例由 AI 从多源（spec + 源码 + UI 勘察）自动生成，测试人员只需审核和补充边界 case。'],['什么是产品设计文档（_product.md）？','位于 <code>.aion/specs/_product.md</code>，是项目的全局产品全景（目标用户、功能地图、模块架构）。由 aion-scan 或 aion-design 自动生成和维护。'],['--file 支持哪些文件格式？','支持 .docx、.pdf、.md、.pptx、.xlsx。通过 markitdown 工具自动转换为 Markdown 后提取内容。'],['E2E 测试一定需要 Playwright MCP 吗？','不一定。没有 MCP 时自动降级为 gen 模式（生成 Playwright 脚本），有 MCP 时使用 live 模式（真实浏览器执行）。']].map(([q,a])=>_faq(q,a)).join('')}
+
     <h2 id="about-roadmap">版本路线图</h2>
     <ul>
       <li><strong>v0.5</strong> — FastAPI 重构 + 副驾驶 UI + Core 层统一</li>
-      <li><strong>v0.6</strong>（当前 v0.6.6）— Skills 管理 + 工作流强制化 + 测试体系升级（自愈/E2E/多代理管道）+ 产品设计层 + design-plan 合并 + init 交互式安装</li>
+      <li><strong>v0.6</strong>（当前 v0.6.8）— Skills 管理 + 工作流强制化 + 命令精简（18→10）+ init 交互式安装 + 浏览器 QA 测试 + Dashboard 帮助/关于拆分</li>
       <li><strong>v0.7</strong> — 云端 MVP：意图日志管道 + 多项目统计</li>
     </ul>
 

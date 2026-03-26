@@ -27,6 +27,18 @@ def _setup_ssl() -> None:
     cert_file = bundle_dir / "certifi" / "cacert.pem"
     if cert_file.exists():
         os.environ.setdefault("SSL_CERT_FILE", str(cert_file))
+        return
+    # Fallback: try system CA paths (covers old binaries missing bundled certs)
+    for candidate in (
+        "/etc/ssl/certs/ca-certificates.crt",  # Debian/Ubuntu
+        "/etc/pki/tls/certs/ca-bundle.crt",    # RHEL/CentOS
+        "/etc/ssl/ca-bundle.pem",               # openSUSE
+        "/usr/local/etc/openssl/cert.pem",      # macOS Homebrew
+        "/usr/local/share/ca-certificates/cacert.pem",
+    ):
+        if Path(candidate).exists():
+            os.environ.setdefault("SSL_CERT_FILE", candidate)
+            return
 
 
 _setup_ssl()

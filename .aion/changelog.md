@@ -2,6 +2,47 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-26 | feat: Dashboard 帮助/关于拆分 + 命令体系精简（18→10）
+
+### Summary
+- Dashboard「关于」拆分为「帮助」（使用指南，高频）+「关于」（产品身份，低频）
+- 帮助页：新 10 命令速查表、4 步工作流图（design→plan→review→commit）、常见场景、测试最佳实践、副驾驶面板说明、FAQ（9 项）
+- 关于页：精简为产品介绍 + 安装升级 + 路线图 + 更新日志（4 章节）
+- 命令体系从 18 → 10：删除 aion-think/demo/impl/test/verify/learn/bug/crosscheck/status/upgrade
+- 新增 aion-qa（浏览器 QA + bug 报告，基于 project_type 智能 split/unified 目录）
+- 新增 aion-fix（按角色过滤 bugs，atomic commit 逐个修复）
+- aion-review 重写：verify + 审查 + test gap + 自动学习一站式，--quick 跳过 gap 分析
+- aion-design 重写：Anti-Sycophancy + PREMISES 假设挑战 + 3 方案对比（A/B/C）+ --demo/--file/--skip-challenge
+- aion-plan 重写：Scope Challenge（8+ 文件 = smell）+ ASCII 图 + 用户确认后直接执行
+- 更新 .aion/bin/dashboard.py 遗留命令表 → 新 10 命令架构
+
+### Key Conclusions
+- 10 命令完整覆盖工作流：scan→design→plan→review→qa→fix→commit→loop→save→help
+- 帮助/关于拆分遵循「高频/低频分离」原则
+- project_type（frontend/backend/fullstack/monorepo）驱动 aion-qa/aion-fix 的 split/unified bug 目录
+
+### Pending
+- aioncode Python 包尚未同步 10 命令（init.py ALL_COMMANDS、profiles.py ROLE_PRESETS、install.sh）
+- _renderTestingGuide() 内部命令引用仍是旧体系（aion-test e2e 等），需后续更新
+- gstack 借鉴功能（aion-design --demo 0-10 维度评分）推迟到下次迭代
+
+---
+
+## 2026-03-25 | fix: CI 构建 certifi 缺失 + SSL fallback 防护
+
+### Summary
+- GitHub Actions release CI 构建因 `certifi` 未安装导致 PyInstaller 报 `(None, 'certifi')` 错误
+- `release.yml` pip install 步骤添加 `certifi` 依赖
+- `aioncode.spec` 添加系统 CA 路径 fallback 搜索（Ubuntu/RHEL/macOS）
+- `network.py` `_setup_ssl()` 添加系统 CA 路径 fallback，解决旧二进制升级时 SSL 失败问题
+- 已提交 commit 14bbb5f，重新打 v0.6.7 tag 触发 CI 重建
+
+### Key Conclusions
+- 旧版本二进制（v0.6.6）因缺 SSL 证书无法自我升级，需手动下载新版替换
+- 新版本同时修复了构建端和运行端的 SSL 问题，后续版本不再有此问题
+
+---
+
 ## 2026-03-25 | fix: 关于页使用说明更新 + init.py ruff 修复
 - Dashboard 关于页同步 v0.6.6 变更：命令速查、工作流、常见场景、安装说明、FAQ、路线图、更新日志
 - 修复 init.py ruff F821/UP037：InitProfile import 提升到模块顶层

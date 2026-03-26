@@ -2,7 +2,7 @@
 
 Run multi-phase workflows autonomously with fix loops and safety controls.
 
-$ARGUMENTS — Pipeline mode and options. Modes: empty/`default` (impl → verify → review → commit), `full` (design → plan → impl → verify → review → fix → learn → commit), `fix` (verify → review → fix loop), `verify-only` (just verify). Options: `--max-rounds N` (fix loop limit, default 3), `--skip-commit` (omit commit phase), `--auto` (skip startup confirmation, proceed immediately after environment checks pass).
+$ARGUMENTS — Pipeline mode and options. Modes: empty/`default` (plan execute → review → commit), `full` (design → plan → execute → review → commit), `fix` (verify → review → fix loop), `verify-only` (just verify). Options: `--max-rounds N` (fix loop limit, default 3), `--skip-commit` (omit commit phase), `--auto` (skip startup confirmation, proceed immediately after environment checks pass).
 
 ## Role
 
@@ -36,8 +36,8 @@ Parse `$ARGUMENTS` to determine the pipeline:
 
 | Mode | Phases |
 |------|--------|
-| empty / `default` | impl → test → verify → review (→ fix loop) → commit |
-| `full` | design → impl → test → verify → review (→ fix loop) → learn → commit |
+| empty / `default` | review (→ fix loop) → commit |
+| `full` | design → plan → execute → review (→ fix loop) → commit |
 | `fix` | verify → review → fix (loop until pass, max N rounds) |
 | `verify-only` | verify only |
 
@@ -50,18 +50,17 @@ Parse options:
 
 For each phase in the selected pipeline, execute inline:
 
-**design**: Follow aion-design logic — gather requirements, explore codebase, create plan in `.aion/plans/` + update `_product.md`
-**impl**: Follow aion-impl logic — read plan, implement code changes
-**test**: Follow aion-test logic — auto-generate unit + integration tests for changed files (incremental mode)
-**verify**: Follow aion-verify logic — build, types, lint, tests (including newly generated tests), debug audit
-**review**: Follow aion-review logic — review changes, score, extract rules
-**learn**: Follow aion-learn logic — extract rules from the session
+**design**: Follow aion-design logic — challenge assumptions, compare options, write spec to `.aion/specs/`
+**plan**: Follow aion-plan logic — read spec, create plan, then execute steps after user confirms
+**execute**: Part of aion-plan — after plan confirmed, implement all steps with TDD where specified
+**verify**: Run build/lint/tests (same logic as aion-review Step 1)
+**review**: Follow aion-review logic — verify + review + test gap + extract rules, one-stop quality gate
 **commit**: Follow aion-commit logic — generate message, show to user, WAIT for confirmation
 
-> **Note**: `demo` is NOT included in any pipeline mode. Prototyping is an optional, interactive step before implementation. Run `/project:aion-demo` manually when needed.
+> **Note**: `demo` is NOT included in any pipeline mode. Prototyping is an optional, interactive step between design and plan. Run `/project:aion-design --demo` manually when needed.
 
 Phase execution rules:
-- After **verify**: If result is `FAIL`, enter fix loop (Step 3). Do NOT proceed to review with a failing build/tests.
+- After **verify** (in fix/verify-only mode): If result is `FAIL`, enter fix loop (Step 3). Do NOT proceed to review with a failing build/tests.
 - After **review**: If verdict is `needs_fix`, enter fix loop (Step 3).
 - After **review**: If verdict is `approved`, proceed to next phase.
 - If any phase is `BLOCKED`, stop the entire pipeline and report.

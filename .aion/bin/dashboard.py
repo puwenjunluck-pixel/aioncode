@@ -2577,41 +2577,30 @@ bash aioncode/uninstall.sh /path/to/your/project</code></pre>
         </ul>
 
         <h2>核心工作流</h2>
-        <p>完整流程 8 步，按需取用。核心链路是 <strong>实现 &rarr; 验证 &rarr; 审查</strong>。</p>
-        <pre><code># 新项目
-think &rarr; design &rarr; (demo) &rarr; plan &rarr; impl &rarr; (test) &rarr; verify &rarr; review &rarr; learn &rarr; commit
-
-# 已有项目
-scan &rarr; design/impl &rarr; verify &rarr; review &rarr; commit
+        <p>核心链路是 <strong>设计 &rarr; 规划 &rarr; 质量 &rarr; 提交</strong>。</p>
+        <pre><code># 新功能开发
+design &rarr; plan &rarr; [OK&rarr;执行] &rarr; review &rarr; commit
 
 # Bug 修复
-bug report &rarr; impl {BUG-ID} &rarr; verify &rarr; review &rarr; commit
+qa --report-only &rarr; fix &rarr; review &rarr; commit
 
-# 自动化流水线
-aion-loop &rarr; 自动执行 impl &rarr; verify &rarr; review &rarr; fix loop &rarr; commit</code></pre>
+# 小改动（Tier 1 快速通道）
+直接改代码 &rarr; commit -y</code></pre>
 
         <h2>命令速查表</h2>
         <table class="cmd-table">
-          <thead><tr><th>命令</th><th>用途</th><th>产出</th></tr></thead>
+          <thead><tr><th>阶段</th><th>命令</th><th>说明</th></tr></thead>
           <tbody>
-            <tr><td><code>aion-scan</code></td><td>扫描项目，生成规则和文档</td><td><code>.aion/refs/</code> + <code>.aion/rules/</code></td></tr>
-            <tr><td><code>aion-think</code></td><td>质疑假设，防过度设计</td><td>替代方案分析</td></tr>
-            <tr><td><code>aion-design</code></td><td>需求分析与规格设计</td><td><code>.aion/specs/*.md</code></td></tr>
-            <tr><td><code>aion-demo</code></td><td>交互式 HTML 原型</td><td><code>.aion/prototypes/*/index.html</code></td></tr>
-            <tr><td><code>aion-plan</code></td><td>基于代码的技术规划</td><td><code>.aion/plans/*.md</code></td></tr>
-            <tr><td><code>aion-impl</code></td><td>分步代码实现</td><td>源代码 + 计划进度</td></tr>
-            <tr><td><code>aion-test</code></td><td>测试生成 + 覆盖率 + 性能</td><td>测试文件 + <code>.aion/tests/</code></td></tr>
-            <tr><td><code>aion-verify</code></td><td>build / lint / test 验证</td><td>验证报告 + 错误定位</td></tr>
-            <tr><td><code>aion-review</code></td><td>代码审查 + 自动学习</td><td><code>.aion/reviews/*.md</code> + 规则</td></tr>
-            <tr><td><code>aion-learn</code></td><td>深度规则提取</td><td><code>.aion/rules/*.md</code></td></tr>
-            <tr><td><code>aion-bug</code></td><td>Bug 管理（报告/分配/关闭）</td><td><code>.aion/bugs/*.md</code></td></tr>
-            <tr><td><code>aion-crosscheck</code></td><td>交叉模型验证</td><td>Bug 报告</td></tr>
-            <tr><td><code>aion-loop</code></td><td>自动化流水线</td><td>全流程自动执行</td></tr>
-            <tr><td><code>aion-save</code></td><td>保存对话上下文</td><td>多个 <code>.aion/</code> 文件</td></tr>
-            <tr><td><code>aion-commit</code></td><td>安全 git 提交</td><td>Git commit + changelog</td></tr>
-            <tr><td><code>aion-status</code></td><td>项目智能概览</td><td>终端输出</td></tr>
-            <tr><td><code>aion-upgrade</code></td><td>版本检查与升级</td><td>升级报告</td></tr>
-            <tr><td><code>aion-help</code></td><td>命令帮助与引导</td><td>终端输出</td></tr>
+            <tr><td>准备</td><td><code>aion-scan</code></td><td>扫描项目 + 浏览器探索（--url）+ 文档导入（--file）→ 产品设计文档</td></tr>
+            <tr><td>设计</td><td><code>aion-design</code></td><td>挑战假设 + 需求分析 + 方案对比 + spec（--demo 生成原型，--file 导入文档）</td></tr>
+            <tr><td>规划</td><td><code>aion-plan</code></td><td>技术方案 + Scope Challenge + ASCII 图，用户确认后直接执行</td></tr>
+            <tr><td>质量</td><td><code>aion-review</code></td><td>verify + 代码审查 + test gap 一站式（--quick 只跑 verify+review）</td></tr>
+            <tr><td>QA</td><td><code>aion-qa</code></td><td>浏览器 QA 测试 → bug 报告（--report-only 只报告不修复）</td></tr>
+            <tr><td>修复</td><td><code>aion-fix</code></td><td>按角色修复 .aion/bugs/ 中的 bug（-f 前端 / -b 后端 / 指定 ID）</td></tr>
+            <tr><td>提交</td><td><code>aion-commit</code></td><td>Tier 1/2/3 智能分级提交 + changelog（-y 快速提交）</td></tr>
+            <tr><td>流水线</td><td><code>aion-loop</code></td><td>自动化流水线（full: 全流程 / fix: 修复循环 / --auto: 跳过确认）</td></tr>
+            <tr><td>保存</td><td><code>aion-save</code></td><td>保存对话上下文到 .aion/ 和 memory</td></tr>
+            <tr><td>帮助</td><td><code>aion-help</code></td><td>查看所有命令和工作流说明</td></tr>
           </tbody>
         </table>
 

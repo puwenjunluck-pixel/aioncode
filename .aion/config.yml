@@ -1,7 +1,7 @@
 # AionCode Project Configuration
 # Docs: https://github.com/user/aioncode
 
-version: "0.6.7"
+version: "0.6.8"
 
 rules:
   # Maximum rules per category before suggesting consolidation
@@ -10,12 +10,24 @@ rules:
 workflow:
   # Recommended phase order (not enforced)
   phases:
-    - design
-    - demo      # optional: generate interactive HTML prototypes
-    - plan
-    - impl
-    - test      # optional: generate tests
-    - verify
-    - review
-    - learn
+    - design    # 挑战假设 + 需求设计 + 方案对比 + (--demo 原型)
+    - plan      # 规划 + 用户确认后直接执行
+    - review    # verify + review + test gap 一站式
     - commit
+
+profile:
+  project_type: "fullstack"
+  role: "fullstack"
+
+commands:
+  installed:
+    - aion-commit
+    - aion-design
+    - aion-fix
+    - aion-help
+    - aion-loop
+    - aion-plan
+    - aion-qa
+    - aion-review
+    - aion-save
+    - aion-scan

@@ -1,7 +1,7 @@
 ---
 category: style
 rule_count: 11
-last_updated: 2026-03-24
+last_updated: 2026-03-26
 ---
 
 # Style — Project code conventions
@@ -21,8 +21,8 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 - **分发物必须单文件自包含** (design, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
   开发态允许引入成熟第三方库（如 rich, requests），但 PyInstaller 打包后的分发物必须是单文件自包含二进制，用户无需预装 Python 或任何库。`internal/dashboard.py` 保持零外部依赖（历史遗留，v0.5 重构时再统一）。
 
-- **命令文件结构规范** (scan, 2026-03-21) [cite_count: 1, last_cited: 2026-03-24]
-  18 个 `commands/aion-*.md` 命令文件遵循统一结构：Header → `$ARGUMENTS` → Role → `⚠️ CRITICAL` 断言 → Steps（Step 0 = 上下文加载）→ Next Steps → Checklist → Anti-Patterns 表 → Output Format → Exit Status。新命令必须遵循此结构。
+- **命令文件结构规范** (scan, 2026-03-21, updated 2026-03-26) [cite_count: 2, last_cited: 2026-03-26]
+  10 个 `commands/aion-*.md` 命令文件（v0.7 架构）遵循统一结构：Header → `$ARGUMENTS` → Role → `⚠️ CRITICAL` 断言 → Steps（Step 0 = 上下文加载）→ Next Steps → Checklist → Anti-Patterns 表 → Output Format → Exit Status。新命令必须遵循此结构。
 
 - **单文件行数上限 500 行** (design, 2026-03-22) [cite_count: 3, last_cited: 2026-03-24]
   单个源码文件不得超过 500 行（不含空行和注释）。超过时必须拆分为多个模块。已知豁免：`frontend/embedded.py`（自动生成文件）。
