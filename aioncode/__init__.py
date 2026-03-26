@@ -1,4 +1,4 @@
 """AionCode — AI-powered development intelligence framework."""
 
-__version__ = "0.6.8"
+__version__ = "0.7.0"
 __app_name__ = "aioncode"

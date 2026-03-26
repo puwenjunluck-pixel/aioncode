@@ -1483,8 +1483,9 @@ function renderAboutPage() {
     <h2 id="about-roadmap">版本路线图</h2>
     <ul>
       <li><strong>v0.5</strong> — FastAPI 重构 + 副驾驶 UI + Core 层统一</li>
-      <li><strong>v0.6</strong>（当前 v0.6.8）— Skills 管理 + 工作流强制化 + 命令精简（18→10）+ init 交互式安装 + 浏览器 QA 测试 + Dashboard 帮助/关于拆分</li>
-      <li><strong>v0.7</strong> — 云端 MVP：意图日志管道 + 多项目统计</li>
+      <li><strong>v0.6</strong> — Skills 管理 + 工作流强制化 + init 交互式安装 + 浏览器 QA 测试</li>
+      <li><strong>v0.7</strong>（当前）— 命令精简（18→10）+ QA 体系（aion-qa/fix）+ Dashboard 帮助/关于拆分</li>
+      <li><strong>v0.8</strong> — 云端 MVP：意图日志管道 + 多项目统计</li>
     </ul>
 
     ${_renderReleaseLog()}

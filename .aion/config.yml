@@ -1,7 +1,7 @@
 # AionCode Project Configuration
 # Docs: https://github.com/user/aioncode
 
-version: "0.6.8"
+version: "0.7.0"
 
 rules:
   # Maximum rules per category before suggesting consolidation
@@ -25,9 +25,11 @@ commands:
     - aion-design
     - aion-fix
     - aion-help
+    - aion-learn
     - aion-loop
     - aion-plan
     - aion-qa
     - aion-review
     - aion-save
     - aion-scan
+    - aion-status
