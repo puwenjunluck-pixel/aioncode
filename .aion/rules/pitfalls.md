@@ -1,6 +1,6 @@
 ---
 category: pitfalls
-rule_count: 8
+rule_count: 9
 last_updated: 2026-03-26
 ---
 
@@ -38,6 +38,9 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 
 - **NEVER 在非 qa/scan-url 模式下调用浏览器自动化** (design, 2026-03-23, updated 2026-03-26) [cite_count: 1, last_cited: 2026-03-26]
   浏览器自动化仅允许在 `aion-qa` 和 `aion-scan --url` 两种模式下使用。支持两种后端：gstack browse CLI（优先，通过 Bash 调用）和 Playwright MCP（fallback）。在其他命令中触发浏览器操作会消耗大量 token 且超出作用域。**此规则无例外。**
+
+- **commands/ + profiles.py ALL_COMMANDS 必须同步** (bugfix, 2026-03-26) [cite_count: 0, last_cited: 2026-03-26]
+  增删命令时，`commands/` 源目录和 `aioncode/core/profiles.py` 的 `ALL_COMMANDS` + `ROLE_PRESETS` 必须同步更新。否则 `aioncode init` 会从 `commands/` 安装已废弃的命令文件，或 `profiles.py` 推荐不存在的命令。v0.6.8 曾因 `profiles.py` 未清理导致 `aion-learn`/`aion-status` 被 init 重装。
 
 - **PyInstaller CI 构建必须显式安装 certifi** (bugfix, 2026-03-25) [cite_count: 0, last_cited: 2026-03-25]
   GitHub Actions CI 环境中 `certifi` 不在默认依赖中，`ssl.get_default_verify_paths().cafile` 在 Linux CI 上可能返回 `None`，导致 `aioncode.spec` 中 `(None, "certifi")` 元组使 PyInstaller 构建失败。`release.yml` 的 pip install 步骤必须包含 `certifi`。`aioncode.spec` 和 `network.py` 已加系统 CA 路径 fallback 防护。

@@ -69,9 +69,11 @@ Run `git diff --stat` and `git diff --name-only` to detect actual code changes i
 
 1. **分类变更文件**：commands/ (命令), aioncode/ (核心代码), templates/ (模板), .aion/ (文档)
 2. **对比现有文档**：对每个重要功能变更，检查 `.aion/specs/` 和 `.aion/plans/` 是否有对应文档
-3. **Gap 处理**：
+3. **_product.md 一致性检查**（MANDATORY）：读 `.aion/specs/_product.md`，对比本次变更是否影响功能地图、核心流程、模块架构、已知约束。涉及命令增删、工作流变更、新模块/视图时必须同步更新 `_product.md`。
+4. **Gap 处理**：
    - 功能已实现但无 spec → Step 3a 中创建追溯性 spec，frontmatter 加 `source: retroactive-save`
    - 功能已实现但无 plan → Step 3a 中创建追溯性 plan summary
+   - `_product.md` 与代码不一致 → Step 3a 中更新功能地图/流程/架构/约束
    - 追溯文档基于实际代码变更（读 diff），不是对话文本
 
 ### Step 2: Read Existing Documents
@@ -188,6 +190,7 @@ Read and apply `.aion/checklists/save.md` if it exists. If not, use the built-in
 - [ ] File format matches existing conventions in each target file
 - [ ] Code changes audited via git diff
 - [ ] Spec/plan gaps identified and retroactively documented
+- [ ] _product.md checked for consistency with code changes (commands, workflows, modules, constraints)
 - [ ] CLAUDE.md: only wrote OUTSIDE markers, kept index style, ≤10 lines
 - [ ] Memory checked for existing entries before creating
 - [ ] Memory items are cross-session insights, not ephemeral task data

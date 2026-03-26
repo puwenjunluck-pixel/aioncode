@@ -2,6 +2,21 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-26 | chore: commands/ + profiles.py 同步 v0.7 10 命令
+- `commands/` 源目录清理旧命令、新增 aion-fix/aion-qa、更新 8 个命令文件
+- `profiles.py` ALL_COMMANDS 18→10，ROLE_PRESETS 更新为新命令集
+- `init.py` Next Steps 提示 aion-status → aion-help
+- 修复：`aioncode init` 会重装已删除的 aion-learn/aion-status
+- Commit: 8501be5
+
+## 2026-03-26 | feat: dashboard 帮助/关于拆分 + 命令体系精简（18→10）+ bump 0.6.8
+- 版本号从 0.6.7 → 0.6.8
+- Dashboard 帮助/关于拆分：帮助（高频使用指南）+ 关于（低频产品身份）
+- _renderTestingGuide() 完整重写为 v0.7 体系（aion-qa/fix/review）
+- 命令体系 18→10：新增 aion-qa / aion-fix，删除 10 个旧命令
+- network.py SSL certifi fallback 修复
+- Commit: 26e4930
+
 ## 2026-03-26 | feat: Dashboard 帮助/关于拆分 + 命令体系精简（18→10）
 
 ### Summary
@@ -22,7 +37,7 @@
 - project_type（frontend/backend/fullstack/monorepo）驱动 aion-qa/aion-fix 的 split/unified bug 目录
 
 ### Pending
-- aioncode Python 包尚未同步 10 命令（init.py ALL_COMMANDS、profiles.py ROLE_PRESETS、install.sh）
+- ~~aioncode Python 包尚未同步 10 命令~~ ✅ 已完成（profiles.py + init.py），仅 install.sh / uninstall.sh 待确认
 - _renderTestingGuide() 内部命令引用仍是旧体系（aion-test e2e 等），需后续更新
 - gstack 借鉴功能（aion-design --demo 0-10 维度评分）推迟到下次迭代
 

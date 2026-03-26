@@ -1,6 +1,6 @@
 ---
 product: AionCode
-updated_at: 2026-03-25
+updated_at: 2026-03-26
 generation_method: scan
 confidence: high
 sources:
@@ -25,21 +25,15 @@ sources:
 | CLI — install/uninstall | 系统级安装/卸载二进制 | 首次安装 | 已实现 | [from:code] |
 | CLI — clean | 清理 .aion/ 临时文件 | 磁盘空间管理 | 已实现 | [from:code] |
 | Skill — aion-scan | 项目扫描 + 浏览器探索(--url) + 文档导入(--file) → 生成产品设计文档 | 接手已有项目 | 已实现 | product-design-layer |
-| Skill — aion-design | 需求分析 + 外部文档导入 → 生成 spec + 更新产品文档 | 设计新功能 | 已实现 | product-design-layer |
-| Skill — aion-think | 质疑假设，暴露盲点 | 开始前三思 | 已实现 | [from:code] |
-| Skill — aion-demo | 生成交互式 HTML 原型 | 快速原型验证 | 已实现 | [from:code] |
-| Skill — aion-plan | 创建分步实施计划 → 自动传播模块/技术栈变更到产品文档 | 规划实现方案 | 已实现 | [from:code] |
-| Skill — aion-impl | 按计划编写代码（自动遵守规则） | 实现功能 | 已实现 | [from:code] |
-| Skill — aion-test | 测试生成 + E2E 三阶段 + 自愈(--heal) + 多代理管道(pipeline) | 自动化测试 | 已实现 | e2e-testing-upgrade |
-| Skill — aion-verify | 构建/测试/lint 检查 + 自动修复(--fix) | 质量验证 | 已实现 | e2e-testing-upgrade |
-| Skill — aion-review | 代码审查 + 自动提取规则 | 代码质量门禁 | 已实现 | [from:code] |
-| Skill — aion-commit | 安全提交（需 review 通过）+ changelog 更新 | 提交代码 | 已实现 | [from:code] |
-| Skill — aion-bug | Bug 管理：报告/列表/分配/关闭 | Bug 追踪 | 已实现 | [from:code] |
-| Skill — aion-crosscheck | 用其他 AI 模型交叉验证代码 | 多模型审计 | 已实现 | [from:code] |
-| Skill — aion-loop | 自动化流水线（设计→实现→验证→审查→提交） | 全自动开发循环 | 已实现 | [from:code] |
+| Skill — aion-design | 挑战假设 + 需求分析 + 方案对比 + spec（--demo 原型，--file 导入） | 设计新功能 | 已实现 | product-design-layer |
+| Skill — aion-plan | 技术方案 + Scope Challenge + ASCII 图，用户确认后直接执行 | 规划实现方案 | 已实现 | [from:code] |
+| Skill — aion-review | verify + 代码审查 + test gap + 自动学习一站式（--quick 跳过 gap） | 代码质量门禁 | 已实现 | [from:code] |
+| Skill — aion-qa | 浏览器 QA 测试 → bug 报告（--report-only 只报告不修复） | 发现 Bug | 已实现 | [from:code] |
+| Skill — aion-fix | 按角色修复 .aion/bugs/ 中的 bug（-f 前端 / -b 后端 / 指定 ID） | 修复 Bug | 已实现 | [from:code] |
+| Skill — aion-commit | Tier 1/2/3 智能分级提交 + changelog（-y 快速提交） | 提交代码 | 已实现 | [from:code] |
+| Skill — aion-loop | 自动化流水线（full: 全流程 / fix: 修复循环 / --auto: 跳过确认） | 全自动开发循环 | 已实现 | [from:code] |
 | Skill — aion-save | 保存对话上下文到 .aion/ 和 memory | 跨会话知识保留 | 已实现 | [from:code] |
-| Skill — aion-status | 项目状态总览 | 了解当前进展 | 已实现 | [from:code] |
-| Skill — aion-learn | 从审查中提取规则 | 知识积累 | 已实现 | [from:code] |
+| Skill — aion-help | 查看所有命令和工作流说明 | 快速上手 | 已实现 | [from:code] |
 | Dashboard — 概览 | 项目统计 + 最近变更历史 | 快速了解项目 | 已实现 | [from:code] |
 | Dashboard — 文件 | 浏览 .aion/ 配置文件（Markdown 渲染） | 查看规格/规则 | 已实现 | [from:code] |
 | Dashboard — 监控 | SSE 实时事件流 | 监控 Claude Code 活动 | 已实现 | [from:code] |
@@ -50,19 +44,22 @@ sources:
 
 ## 三、核心业务流程
 ### 流程 1: 新功能开发
-开发者 → aion-think（质疑假设）→ aion-design（生成 spec）→ aion-demo（可选原型）→ aion-plan（实施计划）→ aion-impl（编写代码）→ aion-test（生成测试）→ aion-verify（质量检查）→ aion-review（代码审查 + 提取规则）→ aion-commit（安全提交）[CONFIRMED]
+开发者 → aion-design（挑战假设 + 方案对比 → spec）→ aion-plan（技术方案 → 确认后直接执行）→ aion-review（verify + 审查 + test gap）→ aion-commit（Tier 分级提交）[CONFIRMED]
 
 ### 流程 2: 接手已有项目
-开发者 → aion-scan（扫描代码 + 生成产品文档 + 提取规则）→ aion-impl/design（迭代开发）→ aion-verify → aion-review → aion-commit [CONFIRMED]
+开发者 → aion-scan（扫描代码 + 生成产品文档）→ aion-design/plan → aion-review → aion-commit [CONFIRMED]
 
 ### 流程 3: Bug 修复
-开发者 → aion-bug report（报告 Bug）→ aion-impl {BUG-ID}（修复）→ aion-verify → aion-review → aion-commit [CONFIRMED]
+开发者/测试 → aion-qa --report-only（浏览器测试 → bug 报告）→ aion-fix（按角色修复）→ aion-review → aion-commit [CONFIRMED]
 
-### 流程 4: E2E 测试（测试人员视角）
-测试人员 → aion-test e2e（AI 自动勘察 + 多源生成用例）→ 审核用例 → 再次运行执行测试 → 查看报告 → aion-bug（提 Bug）[CONFIRMED]
+### 流程 4: 全自动 Bug 修复
+开发者 → aion-qa {url}（自动测试 + 修复）→ aion-review → aion-commit [CONFIRMED]
 
-### 流程 5: 知识积累飞轮
-aion-review（审查代码）→ 自动提取规则到 rules/ → 下次 Claude Code 会话加载规则 → aion-impl（遵守规则编码）→ aion-review → 更多规则 → 持续改进 [CONFIRMED]
+### 流程 5: 小改动快速通道
+开发者 → 直接改代码 → aion-commit -y（Tier 1 自动放行，跳过 review gate）[CONFIRMED]
+
+### 流程 6: 知识积累飞轮
+aion-review（审查代码 + 自动学习）→ 提取规则到 rules/ → 下次会话加载规则 → 编码遵守规则 → aion-review → 更多规则 → 持续改进 [CONFIRMED]
 
 ## 四、模块架构
 | 模块 | 职责 | 对外接口 | 依赖 | 解耦方式 |
@@ -77,7 +74,7 @@ aion-review（审查代码）→ 自动提取规则到 rules/ → 下次 Claude 
 | dashboard.routers | 10 个 API 路由模块（projects/files/monitor/bugs/team/commands/skills/logs/browse） | REST endpoints | services | 路由→服务 |
 | dashboard.services | 7 个业务服务（project_registry/file_ops/bugs/encoding/monitor/team/stats/skills） | Python API | 文件系统 | 文件 I/O |
 | dashboard.frontend | 嵌入式 HTML/CSS/JS 前端（build_frontend.py 构建） | HTML pages | 无运行时依赖 | 内嵌 |
-| commands/ (skills) | 18 个 Markdown 命令文件，由 Claude Code 加载执行 | Claude Code prompt | .aion/ 数据 | 文件驱动 |
+| commands/ (skills) | 10 个 Markdown 命令文件（v0.7），由 Claude Code 加载执行 | Claude Code prompt | .aion/ 数据 | 文件驱动 |
 | .aion/ | 项目智能数据目录（规则、规格、计划、日志、Bug、测试） | 文件系统 | 无 | 文件驱动 |
 
 ## 五、技术栈
@@ -120,8 +117,8 @@ aion-review（审查代码）→ 自动提取规则到 rules/ → 下次 Claude 
 ## 八、已知约束与限制
 - GitHub 仓库为 private，upgrade 命令需要 GITHUB_TOKEN 环境变量 [CONFIRMED]
 - 前端无构建工具（无 Node.js），所有 JS 手写，changes 需运行 build_frontend.py [CONFIRMED]
-- uninstall.sh 仅删除 11/18 个命令文件，缺失 7 个新命令 [CONFIRMED]
-- Playwright 浏览器自动化仅限 aion-test e2e 和 aion-scan --url 模式 [CONFIRMED]
+- uninstall.sh 命令列表需与 profiles.py ALL_COMMANDS 同步（v0.7: 10 命令）[CONFIRMED]
+- 浏览器自动化仅限 aion-qa 和 aion-scan --url 模式（gstack browse CLI 优先，Playwright MCP fallback）[CONFIRMED]
 - commands/ 与 .claude/commands/ 必须手动同步，禁止自动复制 [CONFIRMED]
 - .aion/ 与 templates/ 数据流单向：templates/ → .aion/，禁止反向同步 [CONFIRMED]
 - 单文件行数上限 500 行、单函数 50 行、嵌套 4 层、参数 5 个 [CONFIRMED]
