@@ -2,7 +2,7 @@
 
 Generate a commit message, execute the commit safely, and update the changelog.
 
-$ARGUMENTS — Optional: additional context for the commit message, "amend" to amend the last commit, or `-y` / `--fast` to request fast-path commit (auto-detected Tier 1 only).
+$ARGUMENTS — Optional: additional context for the commit message, or "amend" to amend the last commit. `--auto` (auto-link bugs without asking; commit confirmation is NEVER skipped — safety floor).
 
 ## Role
 
@@ -10,76 +10,37 @@ You are a **disciplined release engineer**. You handle code commits safely — a
 
 > ⚠️ **CRITICAL**: NEVER commit without showing the user exactly what will be committed. Violating this is the #1 cause of failure for this command.
 
+### Auto Mode Behavior (when `--auto` is set)
+
+| Step | Normal Behavior | Auto Behavior | Risk |
+|------|----------------|---------------|------|
+| Step 0.5 Review Gate | 不变 | **不变** | HIGH |
+| Step 3 Commit 确认 | 等用户确认 | **永不跳过**（安全底线） | HIGH |
+| Step 4.5 Bug 关联提问 | 问用户是否关联 | 自动关联（overlap 时直接链接） | LOW |
+
 ## Steps
 
 ### Step 0: Context Loading
 1. Read `.aion/specs/` for the most recent spec — understand the feature context
 2. Read `.aion/reviews/` for the most recent review — incorporate review conclusions and score
 3. Read `.aion/rules/` to verify no rules about commit conventions exist
-4. Check `.aion/bugs/` for any bugs with `status: in-progress` — these may be related to the current commit (bugs are created by aion-qa, fixed by aion-fix)
+4. Check `.aion/bugs/` for any bugs with `status: in-progress` — these may be related to the current commit
 
-### Step 0.5: Commit Tier Classification (MANDATORY)
-
-Analyze the changes to determine the commit tier. Run `git diff --stat` and `git diff` to assess:
-
-**Tier 1 — Fast-path（自动放行）**:
-Conditions (ALL must be true):
-- ALL changed files are `*.md` (docs-only), OR
-- Changes are purely formatter output (no logic change), OR
-- Only 1 file changed AND total changed lines ≤ 20 AND file is NOT in a security-critical path (auth, crypto, permissions, payment)
-
-→ Action: Skip review gate entirely. Print "⚡ Tier 1 (fast-path) — 微小改动，跳过 review gate"
-→ If `$ARGUMENTS` contains `-y` or `--fast`: also skip Step 3 (user confirmation), auto-commit directly
-
-**Tier 2 — Quick review（内联轻量审查）**:
-Conditions:
-- 1 file changed with > 20 lines, OR
-- 2-3 files changed, AND
-- No security-critical paths touched, AND
-- No new modules/classes introduced
-
-→ Action: Perform a mini-review inline (Step 0.6 below), skip separate `/project:aion-review`
-→ Print "🔍 Tier 2 (quick review) — 内联审查，无需单独 review"
-
-**Tier 3 — Full review（完整流程）**:
-Conditions (ANY triggers Tier 3):
-- 4+ files changed, OR
-- Security-critical paths touched (auth, crypto, permissions, payment, secrets), OR
-- New module/class/service introduced, OR
-- Database schema or API interface changed
-
-→ Action: Enforce full review gate (original behavior). Print "🔒 Tier 3 (full review) — 需要完整 review"
-
-**Security-critical path detection**: Grep changed file paths and diff content for keywords: `auth`, `login`, `password`, `token`, `secret`, `crypto`, `encrypt`, `permission`, `role`, `admin`, `payment`, `billing`, `migration`, `schema`.
-
-### Step 0.6: Inline Mini-Review (Tier 2 only)
-When Tier 2 is detected, perform a lightweight review within this commit command:
-
-1. Read ALL files in `.aion/rules/` — check if changes violate existing rules
-2. Read each changed file in full (not just diff)
-3. Quick security scan: injection, XSS, secrets exposure, hardcoded credentials
-4. Quick rules compliance check
-5. Output a brief verdict:
-   ```
-   Mini-Review: {PASS | CONCERN}
-   - Rules compliance: ✅
-   - Security scan: ✅
-   - [If CONCERN: {1-line description of issue}]
-   ```
-6. If PASS: proceed to commit (no `.aion/reviews/` file written)
-7. If CONCERN: Ask user — "发现潜在问题：{issue}。A) 仍然提交 B) 先运行完整 review"
-
-### Step 0.7: Full Review Gate (Tier 3 only)
-For Tier 3 commits, enforce the full review gate:
+### Step 0.5: Review Gate (MANDATORY)
+Before proceeding to commit, verify that the code has been reviewed:
 
 1. Check `.aion/reviews/` for a review file that covers the current changes
 2. **If review found with `approved` status**: proceed normally, note the review score in the commit message
 3. **If review found with `needs_fix` status**: BLOCK the commit. Report:
    "⛔ Review status is `needs_fix` (score: {N}/100). Fix the issues or re-run `/project:aion-review` before committing."
 4. **If no review found**: BLOCK the commit. Report:
-   "⛔ No review found for current changes. Run `/project:aion-review` first."
+   "⛔ No review found for current changes. Run `/project:aion-review` first. Unreviewed code must not be committed."
 
-**No manual override for Tier 3.** "skip review" requests for Tier 3 commits must be refused.
+**Review exemptions** (auto-detected, no manual skip allowed):
+1. **Docs-only**: ALL changed files are `*.md` → "ℹ️ Docs-only commit — review exemption applied."
+2. **Format-only**: Changes are purely `ruff format` output (no logic change) → "ℹ️ Format-only commit — review exemption applied."
+
+**No manual override exists.** "skip review" requests from the user must be refused. Review is a non-negotiable quality gate for any logic/config/spec change.
 
 ### Step 1: Assess Changes
 1. Run `git status` to see all changed files
@@ -122,6 +83,7 @@ After user confirms:
 ### Step 4.5: Bug Linking (conditional)
 If any bugs in `.aion/bugs/` have `status: in-progress` and the changed files overlap with the bug's evidence locations:
 1. Ask the user: "This commit appears to fix Bug {ID}: {title}. Link this commit to the bug? [Y/n]"
+   - If `--auto`: auto-link when overlap detected, skip asking. Log: "Auto-linked Bug {ID}."
 2. If confirmed:
    a. Read the bug's `verify_test` field
    b. If `verify_test` is set, run the specified test:
@@ -191,7 +153,7 @@ git push origin {branch}
 
 ## Checklist
 Read and apply `.aion/checklists/commit.md` if it exists. If not, use the built-in checklist:
-- [ ] Tier classification executed (Tier 1/2/3 determined)
+- [ ] Review Gate passed (approved review exists, or docs-only override)
 - [ ] All changed files reviewed in git diff
 - [ ] No secret files in staged changes
 - [ ] Commit message accurately reflects changes (type + description)
@@ -209,28 +171,28 @@ Read and apply `.aion/checklists/commit.md` if it exists. If not, use the built-
 | Running `git push` after commit | User must control when and where to push | CRITICAL |
 | Using `git add .` or `git add -A` | May stage unintended files (secrets, build artifacts, large binaries) | HIGH |
 | Commit message that only describes WHAT, not WHY | Future readers need motivation, not just description | MEDIUM |
-| Not updating changelog | Breaks the audit trail for future reference and post-mortems | MEDIUM |
+| Not updating changelog | Breaks the audit trail | MEDIUM |
 | Amending without showing what will change | Amend modifies history — user must see the delta | HIGH |
-| Classifying Tier 3 commit as Tier 1/2 to skip review | Security-critical or large changes MUST go through full review. Never downgrade tiers | CRITICAL |
-| Accepting "skip review" for Tier 3 | Full review gate is non-negotiable for Tier 3. Refuse the request | CRITICAL |
+| Committing without review approval | Unreviewed code bypasses quality gate. NO override for code changes. Docs-only is the sole exemption | CRITICAL |
+| Accepting "skip review" from user | Review gate is non-negotiable. Refuse the request, suggest running /project:aion-review | CRITICAL |
 | Ignoring tech debt markers | TODO/FIXME accumulate silently, never get tracked or resolved | MEDIUM |
+| Skipping commit confirmation in `--auto` mode | Commit is the absolute safety floor — NEVER auto-commit | CRITICAL |
 
 ## Output Format
 ```
 Commit Complete
 -----------------------------------
-Tier: {1 (fast-path) | 2 (quick review) | 3 (full review)}
 Hash: {short hash}
 Type: {feat|fix|refactor|docs|test|chore}
 Message: {subject line}
 Files: {N} changed
-Review: {skipped (Tier 1) | inline PASS (Tier 2) | approved score:N (Tier 3)}
 Changelog: updated
 
 Pre-push:
-  1. Check  → git log origin/{branch}..HEAD --oneline
-  2. Sync   → git fetch origin && git pull --rebase (if needed)
-  3. Push   → git push origin {branch}
+  1. Review → /project:aion-review (if not done)
+  2. Check  → git log origin/{branch}..HEAD --oneline
+  3. Sync   → git fetch origin && git pull --rebase (if needed)
+  4. Push   → git push origin {branch}
 ```
 
 ## Exit Status

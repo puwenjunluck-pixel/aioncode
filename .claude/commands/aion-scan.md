@@ -29,7 +29,6 @@ Scan the project systematically. For medium-to-large projects, consider using th
 #### 1a. Project Identity
 - Read `README.md`, `CONTRIBUTING.md`, `ARCHITECTURE.md` (if they exist)
 - Read `package.json` / `requirements.txt` / `go.mod` / `Cargo.toml` / `pom.xml` / `build.gradle` — identify tech stack, dependencies, scripts
-- **Bun detection**: Check for `bun.lockb` (bun lockfile) or `bunfig.toml` → record runtime as **bun**. Also check `package.json` scripts for `bunx` or `bun run` patterns. If detected, note "Runtime: bun" in the Tech Stack (bun replaces node for install/run/test).
 - Read `docker-compose.yml` / `Dockerfile` — understand deployment model
 - Read `.env.example` / `.env.template` — understand config structure
 
@@ -74,44 +73,19 @@ When `$ARGUMENTS` contains `--file {path}`:
 3. **Merge with scan data**: Use extracted information to supplement the Deep Scan findings. Mark supplemented items `[from:file]`.
 4. **Report**: "从 {N} 个文件中导入了补充上下文：{N} 项需求, {N} 个模块, {N} 个 API 端点"
 
-### Step 1.7: Browser Exploration (conditional — browser backend + running service)
+### Step 1.7: Browser Exploration (conditional — Playwright MCP + running service)
 
 Explore the running application through a browser to discover UI structure, navigation flows, and dynamic content that static code analysis cannot reveal.
 
 **Prerequisites check**:
-1. **Detect browser backend** (same priority as aion-qa):
-   - **gstack browse** (preferred): `~/.claude/skills/gstack/browse/dist/browse status 2>/dev/null`
-   - **Playwright MCP** (fallback): check for MCP tools (`playwright_navigate`, `playwright_click`)
-   - **Neither**: skip to Static UI Analysis
+1. Check for Playwright MCP availability (look for browser-control MCP tools: `playwright_navigate`, `playwright_click`, `playwright_screenshot`)
 2. Determine target URL:
    - If `--url` specified in `$ARGUMENTS` → use that
    - If not → try to detect from code: `package.json` scripts (dev/start), Docker config, Python server config
-   - If cannot determine → ask user: "检测到浏览器后端，是否有可访问的开发环境？请提供 URL（如 http://localhost:3000）"
+   - If cannot determine → ask user: "检测到 Playwright MCP，是否有可访问的开发环境？请提供 URL（如 http://localhost:3000）"
 3. Verify URL is reachable (HTTP GET, check for 200/301/302)
 
-**If gstack browse available AND URL reachable** → Live Exploration (preferred):
-
-Set `B=~/.claude/skills/gstack/browse/dist/browse`.
-
-1. **Navigate to home page**: `$B goto {url}`, `$B screenshot`
-2. **Get ARIA snapshot**: `$B snapshot` — get all interactive elements as @e refs
-3. **Map navigation structure**:
-   - Read snapshot for navigation elements (links, buttons with nav roles)
-   - `$B click @e{N}` each nav item, `$B url` to record target, `$B snapshot` to record page content
-   - `$B screenshot` each view
-4. **Explore key pages** (up to 15 pages):
-   - `$B snapshot` on each page — ARIA tree reveals all UI elements, forms, buttons
-   - `$B forms` — list all form fields with types and labels
-   - Check states: `$B text @e{N}` for content
-5. **Check responsive**: `$B responsive 375 667`, `$B screenshot`
-6. **Handle login** (if encountered):
-   - Detect login form in snapshot (password field)
-   - Option A: `$B cookie-import-browser` — import cookies from user's real browser
-   - Option B: Ask user for test credentials, then `$B fill @e{N} "user"`, `$B fill @e{M} "pass"`, `$B click @e{K}`
-7. **Save screenshots** to `.aion/refs/screenshots/`
-8. **Output**: UI Discovery Report
-
-**If Playwright MCP available (fallback) AND URL reachable** → Live Exploration:
+**If Playwright MCP available AND URL reachable** → Live Exploration:
 
 1. **Navigate to home page**, take full-page screenshot
 2. **Map navigation structure**:
@@ -127,7 +101,7 @@ Set `B=~/.claude/skills/gstack/browse/dist/browse`.
    - Detect login page (form with password field)
    - Ask user: "系统需要登录。请提供测试账号，或在弹出的浏览器中手动登录后告知我继续。"
    - After login, continue exploration
-6. **Save screenshots** to `.aion/refs/screenshots/`
+6. **Save screenshots** to `.aion/refs/screenshots/` (create directory if needed)
 7. **Output**: UI Discovery Report
 
 ```markdown
@@ -291,7 +265,7 @@ Only write rules that are project-specific and evidenced. If you can't find evid
 1. Read all existing rules (MANDATORY — Write Protocol Refusal Condition applies)
 2. Compare scan findings against existing rules
 3. If scan reveals conventions NOT covered by existing rules → propose additions (append only), show each candidate to user
-4. If scan reveals existing rules that may be outdated → note them but do NOT modify — suggest running `/project:aion-review` to update (auto-learn is embedded in every review)
+4. If scan reveals existing rules that may be outdated → note them but do NOT modify — suggest user review and update manually
 5. Never overwrite or replace existing rule entries
 
 ### Step 5: Generate Intent-Specific Artifacts
@@ -541,7 +515,7 @@ Skipped (protected):
   - {file}: {reason, e.g., "rules/style.md: 3 existing rules, no new conventions found"}
 
 Suggested follow-up:
-  - {e.g., "Run /project:aion-review to update potentially stale rules (auto-learn runs in every review)"}
+  - {e.g., "建议人工审查可能过时的规则并更新"}
 ```
 
 ### Step 6.5: AI Q&A — Confirm Product Design (always, when _product.md was generated/updated)
@@ -577,8 +551,8 @@ After the scan report, present the `_product.md` content to the user for confirm
 ## Next Steps
 
 Based on intent:
-- Testing → /project:aion-review (test gap analysis auto-discovers and generates missing tests)
-- Frontend/Backend iteration → /project:aion-design for new features, or /project:aion-plan for planned changes (plan confirms then executes directly)
+- Testing → 直接编写和运行测试
+- Frontend/Backend iteration → /project:aion-design for new features, or directly implement planned changes
 - New feature → /project:aion-design to start the full workflow
 - Refactor → /project:aion-plan to plan the refactoring steps
 

@@ -2,6 +2,21 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-26 | fix: 清理 .claude/commands/ 中已删除命令的残留引用
+
+### Summary
+- 9 个已删除命令（impl/think/demo/test/verify/learn/bug/crosscheck/upgrade/status）的引用从所有命令文件中清除
+- 影响 9 个文件：CLAUDE.md + 8 个命令文件（help/plan/design/loop/review/save/scan/commit）
+- aion-help.md 重写：命令总览、场景推荐、工作流图、速查表全部更新为 10 命令体系
+- 解决用户反馈：不再出现 "运行 /project:aion-impl" 等无效提示
+
+### Key Conclusions
+- v0.7 命令精简后，.claude/commands/ 中残留大量旧命令引用，导致 AI 频繁推荐不存在的命令
+- 全量 grep 验证已无残留
+
+### Pending
+- 无
+
 ## 2026-03-26 | chore: commands/ + profiles.py 同步 v0.7 10 命令
 - `commands/` 源目录清理旧命令、新增 aion-fix/aion-qa、更新 8 个命令文件
 - `profiles.py` ALL_COMMANDS 18→10，ROLE_PRESETS 更新为新命令集

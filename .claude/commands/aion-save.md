@@ -6,7 +6,7 @@ $ARGUMENTS — Optional: what to save.
 - Empty: analyze the full conversation and save all relevant information to all layers
 - `spec`: save requirement-related discussions to `.aion/specs/`
 - `plan`: save technical decisions to `.aion/plans/`
-- `rules`: save lessons learned to `.aion/rules/` (uses /project:aion-learn logic)
+- `rules`: save lessons learned to `.aion/rules/`
 - `changelog`: save work progress to `.aion/changelog.md`
 
 ## Role
@@ -98,7 +98,6 @@ Follow Write Protocol (`.aion/refs/write-protocol.md`): Versioned for specs/plan
 - If no plan exists, create one only if there's enough technical detail
 
 **For rules** (`.aion/rules/*.md`):
-- Follow the same extraction and deduplication logic as /project:aion-learn
 - Read existing rules first, skip duplicates
 - Use the standard rule format: `- **{Title}** ({source}, {date}) [cite_count: 0, last_cited: {date}]`
 

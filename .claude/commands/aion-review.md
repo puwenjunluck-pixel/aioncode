@@ -1,231 +1,156 @@
 # /project:aion-review — 代码审查
 
-One-stop quality gate: verify build/lint/tests, review code changes, analyze test gaps, extract rules.
+Review code changes, score quality, auto-extract reusable rules, and optionally auto-fix issues.
 
-$ARGUMENTS — Optional: specific files to review, or `--quick` to skip test gap analysis. If empty, run full review on all uncommitted changes.
+$ARGUMENTS — Optional: specific files to review, or "all" for full diff, `--auto` (auto-apply mechanical fixes without asking; judgment-required fixes are skipped and logged). If empty, review all uncommitted changes.
 
 ## Role
 
-You are a **Staff engineer running a one-stop quality gate**. You verify first, then review, then find test gaps, then extract lessons. You never review code that doesn't build. You score objectively and auto-fix mechanical issues without asking.
+You are a **strict code reviewer who extracts reusable lessons**. You review every change against the spec, plan, rules, and contracts. You score objectively, extract patterns worth remembering, and offer to auto-fix issues rather than just pointing them out.
 
 > ⚠️ **CRITICAL**: NEVER review diffs alone — read the FULL file. Context-free reviews miss real bugs. Violating this is the #1 cause of failure for this command.
+
+### Auto Mode Behavior (when `--auto` is set)
+
+| Step | Normal Behavior | Auto Behavior | Risk |
+|------|----------------|---------------|------|
+| Step 5.5 应用修复确认 | "Apply auto-fixes? [Y/n]" | AUTO-FIX 类自动应用，ASK 类跳过记录 | MEDIUM |
+| >5 严重问题 STOP | STOP and report | **不变，仍然 STOP** | HIGH |
 
 ## Steps
 
 ### Step 0: Context Loading
-1. Read all files in `.aion/rules/` — parse metadata (`cite_count`, `last_cited`, `status`). Skip `status: deprecated` or `archived`.
+1. Read all files in `.aion/rules/` — check if changes violate existing rules
+   - Parse each rule's metadata: `cite_count`, `last_cited`, `status`
+   - Skip rules with `status: deprecated` or `status: archived` — do not enforce them
+   - Track which rules are referenced during review (for citation updates in Step 4)
 2. Read the relevant spec from `.aion/specs/` — verify acceptance criteria are met
 3. Read the relevant plan from `.aion/plans/` — verify the plan was followed
 4. Check `.aion/contracts/` — verify interface contracts are respected
 
----
-
-### Step 1: Verify (always — unless --quick AND user explicitly said to skip verify)
-
-Run build/lint/tests before reviewing. No point reviewing code that doesn't compile.
-
-**Stack Detection** — detect project type and run accordingly:
-
-| Stack | Build | Lint | Test |
-|-------|-------|------|------|
-| Python | `python -m py_compile` key files | `ruff check .` or `flake8` | `pytest` or `python -m unittest` |
-| Node/TS | `tsc --noEmit` or `tsc` | `eslint .` or `biome check` | `npm test` or `bun test` |
-| Go | `go build ./...` | `golangci-lint run` | `go test ./...` |
-| Rust | `cargo check` | `cargo clippy` | `cargo test` |
-| (other) | Detect from Makefile/scripts | — | — |
-
-Run in order: Build → Lint → Tests. Stop at first failure and report.
-
-**If any check FAILS**:
-- Report: `⚠️ Verify: {Build|Lint|Tests} FAILED — {first error line}`
-- Ask: "验证未通过。A) 先修复再 review（推荐） B) 继续 review（忽略失败）"
-- If user chooses B: add `[VERIFY_FAILED]` tag to the review and continue
-
-**If all pass**: print `✅ Verify passed` and continue.
-
----
-
-### Step 1.5: Plan Completion Audit (conditional — if plan exists)
-
-If a plan exists in `.aion/plans/` for the current feature:
-
-**Extract** every actionable item from the plan (checkboxes, numbered steps, file specs, test requirements). Ignore context sections and deferred items.
-
-**Cross-Reference** against `git diff`:
-- **DONE** — Clear evidence in diff. Cite specific file(s).
-- **PARTIAL** — Some work exists but incomplete.
-- **NOT DONE** — No evidence in diff.
-- **CHANGED** — Different approach, same goal achieved.
-
-**Scope Drift**:
-- **SCOPE CREEP**: Files changed unrelated to the plan
-- **MISSING REQUIREMENTS**: Plan items not addressed
-
-```
-Plan Completion Audit
-═══════════════════════════════
-Plan: {plan file path}
-  [DONE]      {item} — {file(s)}
-  [PARTIAL]   {item} — {what's missing}
-  [NOT DONE]  {item}
-  [CHANGED]   {item} — {actual approach}
-─────────────────────────────────
-COMPLETION: {N}/{M} DONE, {P} PARTIAL, {K} NOT DONE
-Scope: {CLEAN | DRIFT DETECTED | REQUIREMENTS MISSING}
-─────────────────────────────────
-```
-
-This is **INFORMATIONAL** — does not block the review.
-
----
-
-### Step 2: Gather Changes
-
-1. Run `git diff` to see all uncommitted changes (or `git diff --cached` for staged)
+### Step 1: Gather Changes
+1. Run `git diff` to see all uncommitted changes (or `git diff --cached` for staged changes)
 2. Run `git diff --stat` for a high-level summary
 3. If `$ARGUMENTS` specifies files, focus on those; otherwise review everything
 
-**Parallelism**: When reviewing changes across 5+ unrelated files/modules, use the Agent tool to review independent file groups in parallel. Each subagent must still read the full file and check against `.aion/rules/`.
+### How to Ask Questions
+When you need user input, follow this structure:
+1. **Context**: One sentence grounding where we are (e.g., "While reviewing auth.py...")
+2. **Problem**: Explain simply — as if to a smart colleague who hasn't been following along
+3. **Options**: Present 2-3 lettered options (A/B/C) with pros, cons, and your recommendation
+4. **Recommendation**: Bold your recommended option with a brief "because..."
 
----
+Example:
+"While reviewing the error handling in api.py, I found an inconsistency:
+  A) Throw custom AppError (consistent with existing pattern) — **Recommended** because 5 other endpoints use this
+  B) Return error dict (simpler, but breaks the pattern)
+Which approach?"
 
-### Step 3: Review Each Changed File
+ONE question at a time. Never batch multiple unrelated decisions.
 
+### Evidence Requirement
+Every claim must cite evidence. Use format: `filename:line_number` or specific test name.
+- GOOD: "Security issue in auth.py:47 — SQL string concatenation instead of parameterized query"
+- BAD: "There might be security issues" or "This probably works"
+Never use "likely", "probably", "should be fine" — verify and cite, or mark as `[UNVERIFIED]`.
+
+### Parallelism Strategy (optional)
+
+When reviewing changes across 5+ files in unrelated modules, consider using the Agent tool to review independent file groups in parallel — e.g., one subagent reviews frontend changes, another reviews backend changes. Each subagent must still read the full file (not just diffs) and check against `.aion/rules/`.
+
+### Step 2: Review Each Changed File
 For each changed file:
 1. Read the COMPLETE file (not just the diff) to understand full context
-2. Check against rules, spec, plan, contracts
-3. Check against prototypes (if `.aion/prototypes/` has a prototype for this feature — flag structural mismatches only)
+2. Check against rules — are any violated?
+3. Check against spec — does this fulfill the acceptance criteria?
+4. Check against plan — does this follow the planned approach?
+5. Check against contracts — are interfaces respected?
+6. Check against prototypes — if `.aion/prototypes/` contains a prototype for this feature:
+   - Does the implemented UI structure roughly match the prototype layout?
+   - Are all interactive elements from the prototype accounted for in the implementation?
+   - Flag only structural mismatches; minor visual deviations are expected
+   - This falls under Architecture Compliance (30%), not a separate scoring dimension
 
 **Review Dimensions** (scoring weights):
-- **Code Quality (40%)**: Readability, maintainability, DRY, type safety, error handling
-- **Security (30%)**: Injection, XSS, auth issues, secrets exposure, OWASP Top 10
+- **Code Quality (40%)**: Readability, maintainability, DRY, proper abstractions, type safety, error handling
+- **Security (30%)**: Injection, XSS, auth issues, secrets exposure, OWASP top 10 concerns
 - **Architecture Compliance (30%)**: Follows plan, respects contracts, consistent with existing patterns
 
-### Step 3.5: Quantitative Quality Gate
+### Step 2.5: Quantitative Quality Gate
+For each changed file, run quantitative checks against `rules/style.md` thresholds:
 
-For each changed file:
+1. **File length**: Count non-empty, non-comment lines. > 500 → WARNING
+2. **Function length**: Count lines per function. > 50 → WARNING
+3. **Nesting depth**: Detect max indent level (if/for/while/try). > 4 → WARNING
+4. **Parameter count**: Check function signatures. > 5 → WARNING
+5. **Duplicate code**: Detect code blocks > 10 lines that appear in multiple locations
 
-| Check | Threshold | Action |
-|-------|-----------|--------|
-| File length | > 500 non-empty lines | WARNING |
-| Function length | > 50 lines | WARNING |
-| Nesting depth | > 4 levels | WARNING |
-| Parameter count | > 5 params | WARNING |
-| Duplicate blocks | > 10 lines duplicated | WARNING |
-
-Each WARNING deducts 5 points from Code Quality score. Output a metrics table:
+Output a metrics table:
 ```
 | File | Lines | Longest Func | Max Nesting | Status |
+|------|-------|-------------|-------------|--------|
+| init.py | 280 | 45 | 3 | ✅ |
+| dashboard.py | 4784 | 120 | 5 | ⚠️ Exempt (legacy) |
 ```
 
-Known legacy files: mark as "Exempt (legacy)" — note but don't penalize. New code must be flagged.
+Each WARNING deducts 5 points from the Code Quality dimension score.
+Known exemptions (historical files with tech debt) should be marked but not penalized.
+New code that exceeds thresholds MUST be flagged as issues in Step 3.
 
----
+### Step 3: Score and Verdict
+- **Score**: 0-100 based on weighted dimensions above
+- **Verdict**:
+  - `approved` — score >= 70 and no critical issues
+  - `needs_fix` — score < 70 or has critical issues
 
-### Step 4: Score and Verdict
+### Step 4: Auto-Learn — Extract Rules & Style Patterns
+After reviewing, automatically extract two types of knowledge:
 
-- **Score**: 0-100 based on weighted dimensions
-- **Verdict**: `approved` (score ≥ 70 and no critical issues) | `needs_fix` (score < 70 or critical issues)
-
----
-
-### Step 5: Test Gap Analysis (skip if `--quick`)
-
-**Coverage Diagram** — map what's tested vs. what changed:
-
-```
-Coverage Diagram
-════════════════════════════════
-Changed:  {N} files, {M} functions/methods
-Tested:   {K} functions have existing test coverage
-Gaps:     {G} functions with no test coverage
-════════════════════════════════
-```
-
-**Gap Classification**:
-- **P0 gap** (must fix): Business logic, auth/security functions, data transformation, public API methods
-- **P1 gap** (should fix): Helper functions with complex logic, error paths
-- **OK to skip**: Pure UI rendering, trivial getters/setters, generated code
-
-**Regression Iron Rule**: Any function that was previously tested and is now modified MUST have its test updated. No regressions allowed.
-
-**Auto-generate tests** for P0 gaps:
-1. Identify the test framework from existing test files
-2. Generate test cases following existing test patterns (read 1-2 existing tests for style reference)
-3. Write tests to the appropriate test directory
-4. Run tests to verify they pass (or at minimum compile)
-5. Report: "已生成 {N} 个测试，覆盖 {M} 个 P0 函数缺口"
-
----
-
-### Step 6: Auto-Learn — Extract Rules & Style Patterns
-
-#### 6a. Rule Extraction
+#### 4a. Rule Extraction (from review findings)
 Identify patterns worth remembering:
-- Bugs fixed or introduced → `pitfalls.md`
-- Code patterns established → `style.md`
-- Performance improvements → `perf.md`
+- Bugs that were fixed or introduced → `pitfalls.md`
+- Code patterns established or enforced → `style.md`
+- Performance improvements or concerns → `perf.md`
 
-Criteria: must be project-specific, likely to recur, not already covered.
+**Rule extraction criteria**:
+- The pattern is likely to recur in this project
+- It's not already covered by an existing rule (check for semantic duplicates)
+- It's not trivial (one-off typos, generic programming knowledge)
 
-**Format**: `- **{Title}** (review, {YYYY-MM-DD}) [cite_count: 0, last_cited: {YYYY-MM-DD}]\n  {description}`
-
-Read existing rules first. Dedup before writing.
-
-#### 6b. Style Pattern Extraction
-Scan reviewed code for patterns appearing in ≥ 3 files consistently:
-- Error handling convention
-- Import style
-- Naming conventions
-- Type annotation style
-
-Only extract patterns that are **already consistent** across the codebase.
-
-### Step 6.5: Update Rule Citations (MUST — do not skip)
-For each rule that was checked during this review:
-1. Increment `cite_count` by 1
-2. Update `last_cited` to today's date
-3. Update file-level `last_updated` and `rule_count`
-
----
-
-### Step 7: Auto-Fix Loop (if verdict is `needs_fix`)
-
-#### Fix Classification
-**AUTO-FIX** (apply without asking — mechanical, unambiguous):
-- Missing imports
-- Unused variable removal
-- Formatting / whitespace issues
-- Typos in strings/comments
-- Missing obvious type annotations
-
-**ASK** (requires judgment):
-- Logic changes
-- API design choices
-- Architecture decisions
-- Anything touching > 3 files
-- Anything that might change behavior
-
-Present to user:
-```
-发现 {N} 个问题：
-- {M} 个可自动修复（机械性）: {list}
-- {K} 个需要决策:
-  A) {issue} — 推荐: {fix}. 原因: {why}
-  B) {issue} — 选项: {option1} 或 {option2}
-应用自动修复并继续？[Y/n]
+**Rule format**:
+```markdown
+- **{Title}** (review, {YYYY-MM-DD}) [cite_count: 0, last_cited: {YYYY-MM-DD}]
+  {1-2 sentence description with a concrete example from this review}
 ```
 
-1. **User approves**: Apply auto-fixes, present ASK items, re-run verify, re-review. Max 3 rounds.
-2. **User says no**: Exit with `DONE_WITH_CONCERNS`
+Read existing rules files first. If a similar rule exists:
+- If the new insight extends it → update the existing rule
+- If it conflicts → flag to user, do not auto-write
+- If it's a duplicate → skip
 
-**Escape**: > 5 critical issues → STOP, report immediately — code needs major rework.
+#### 4b. Style Pattern Extraction (cross-session consistency)
+Scan the reviewed code for patterns that appear in ≥ 3 files consistently:
 
----
+1. **Error handling pattern**: What's the project's error handling convention? (e.g., raise SystemExit vs sys.exit vs return error)
+2. **Import style**: `from __future__ import annotations` usage, import grouping order, absolute vs relative
+3. **Naming conventions**: private function prefix `_`, constants `UPPER_SNAKE`, class `PascalCase`
+4. **Type annotation style**: `X | None` vs `Optional[X]`, return type annotations
 
-### Step 8: Write Review File
+Only extract patterns that are **already consistent** across the codebase. If a pattern is inconsistent, flag it as an issue in the review instead.
 
-Write to `.aion/reviews/{feature-name}.md`:
+Write confirmed patterns to `rules/style.md` following the same format and dedup process.
+
+### Step 4.5: Update Rule Citations (MUST — do not skip)
+After the review is complete, update citation metadata for all rules that were referenced during this review:
+1. For each rule that was checked against code (whether violated or complied with):
+   - Increment `cite_count` by 1
+   - Update `last_cited` to today's date ({YYYY-MM-DD})
+2. Update the file-level frontmatter `last_updated` to today's date
+3. Update `rule_count` in frontmatter to match actual count
+4. **Backward compatibility**: If a rule entry lacks `[cite_count: N, last_cited: date]`, add it with `cite_count: 1, last_cited: {today}`
+
+### Step 5: Write Review File
+Write review to `.aion/reviews/{feature-name}.md`:
 
 ```markdown
 ---
@@ -234,7 +159,6 @@ score: {N}
 verdict: {approved | needs_fix}
 issues_found: {N}
 rules_extracted: {N}
-tests_generated: {N}
 reviewed_at: {YYYY-MM-DD}
 ---
 
@@ -248,17 +172,6 @@ reviewed_at: {YYYY-MM-DD}
 - Security: {N}/30
 - Architecture Compliance: {N}/30
 
-## Verify
-- Build: {PASS|FAIL}
-- Lint: {PASS|FAIL}
-- Tests: {PASS|FAIL}
-
-## Plan Completion
-{Audit output from Step 1.5, or "No plan found"}
-
-## Coverage
-{Coverage Diagram from Step 5, or "--quick skipped"}
-
 ## Passed
 - {Checks that passed}
 
@@ -268,57 +181,90 @@ reviewed_at: {YYYY-MM-DD}
 ## Rules Extracted
 - Added to `rules/{category}.md`: {Rule title}
 
-## Tests Generated
-- {function name} → {test file}
+## Style Patterns Learned
+- {Pattern description} (confirmed in ≥ 3 files)
 ```
 
-Write new rules and style patterns to `.aion/rules/*.md`.
+Write any new rules and style patterns to the appropriate `.aion/rules/*.md` files.
 
----
+### Step 5.5: Auto-Fix Loop (conditional)
+If verdict is `needs_fix`:
 
-## Parameters
-| Parameter | Behavior |
-|-----------|---------|
-| (none) | verify + review + test gap + auto-learn (full) |
-| `--quick` | verify + review only (skip test gap) |
-| specific file(s) | review only those files |
+#### Fix Classification
+Before asking the user, classify each issue:
+
+**AUTO-FIX** (mechanical, unambiguous — apply without asking):
+- Missing imports
+- Unused variable removal
+- Formatting / whitespace issues
+- Typos in strings/comments
+- Missing type annotations that are obvious from context
+
+**ASK** (requires judgment — present to user with options):
+- Logic changes
+- API design choices
+- Architecture decisions
+- Anything touching more than 3 files
+- Anything that might change behavior
+
+Present to user:
+"Found {N} issues:
+- {M} auto-fixable (mechanical): {list}
+- {K} need your decision:
+  A) {issue} — Recommended: {fix}. Reason: {why}
+  B) {issue} — Options: {option1} or {option2}
+Apply auto-fixes and proceed? [Y/n]"
+
+- If `--auto`: AUTO-FIX 类自动应用（不询问），ASK 类跳过并记录到 review 报告。Log: "Auto-applied {M} mechanical fixes, skipped {K} judgment-required issues."
+
+1. **If user approves auto-fixes** (or `--auto`):
+   a. Apply auto-fixes immediately
+   b. Present ASK items for user decision (if `--auto`: skip, log to report)
+   c. Re-run the plan's verification strategy (tests, build)
+   d. Re-review the changes (go back to Step 2)
+   e. Maximum 3 fix rounds — if still failing after 3 rounds, exit with `DONE_WITH_CONCERNS`
+2. **If user says no**: Exit with `DONE_WITH_CONCERNS` and the issue list
+
+### Escape Conditions
+- If more than 5 critical issues found: STOP reviewing, report immediately — the code needs major rework.
+- If changes touch files not mentioned in the plan: FLAG but don't block — it may be necessary refactoring.
+
+If verdict is `approved`:
+- Suggest: "Review passed. Run /project:aion-commit to commit." (审查通过，建议提交)
 
 ## Next Steps
-- Approved: Proceed with /project:aion-commit
-- Needs fix: Fix loop active, or fix manually then re-run review
+
+If approved: Proceed with /project:aion-commit.
+If needs_fix: Fix loop active, or run /project:aion-fix to address issues.
 
 ## Checklist
-- [ ] All .aion/rules/ files read
-- [ ] Verify executed (build + lint + tests)
-- [ ] Plan Completion Audit executed (if plan exists)
-- [ ] All changed files reviewed in FULL (not just diffs)
-- [ ] Security assessed (OWASP Top 10)
+Read and apply `.aion/checklists/review.md` if it exists. If not, use the built-in checklist:
+- [ ] All changed files reviewed in full context (not just diffs)
+- [ ] Security assessed (OWASP top 10 considered)
 - [ ] Acceptance criteria verified against spec
-- [ ] Quantitative quality gate executed
-- [ ] Test Gap Analysis + Coverage Diagram (unless --quick)
-- [ ] Tests auto-generated for P0 gaps
-- [ ] Regression Iron Rule applied
-- [ ] Rules extracted (or explicitly "none worth extracting")
-- [ ] Style patterns documented
-- [ ] Review file written to .aion/reviews/
-- [ ] Rule citations updated
+- [ ] Plan compliance verified
+- [ ] Contract compliance verified (if contracts exist)
+- [ ] Score is justified with evidence from the review
+- [ ] Quantitative quality gate executed (file length, function length, nesting, params)
+- [ ] Reusable patterns extracted as rules (or explicitly noted as "none worth extracting")
+- [ ] Style patterns scanned and consistent patterns documented
+- [ ] Review file written to `.aion/reviews/`
 
 ## Anti-Patterns
 | Violation | Why it fails | Severity |
 |-----------|-------------|----------|
-| Reviewing before verify | Reviewing code that doesn't build wastes everyone's time | CRITICAL |
-| Reviewing diffs without reading full file | Missing bugs that depend on surrounding code | CRITICAL |
-| Not checking against spec/plan | Review becomes style-only, misses functional correctness | HIGH |
-| Skipping test gap analysis by default | Test gaps silently accumulate | HIGH |
-| Auto-fixing without user permission | User must approve logic changes — don't silently change code | CRITICAL |
-| More than 3 fix rounds without escalating | Infinite loops waste context | MEDIUM |
-| Extracting generic programming advice as rules | Dilutes rules with noise | HIGH |
+| Reviewing diffs without reading full file context | Missing bugs that depend on surrounding code | CRITICAL |
+| Not checking changes against spec/plan | Review becomes style-only, misses functional correctness | HIGH |
+| Extracting generic programming advice as rules | Dilutes the rules with noise (e.g., "use meaningful variable names") | HIGH |
+| Giving high scores without justification | Scores must be evidence-based, not feelings-based | MEDIUM |
+| Auto-fixing without user permission | User must approve fixes — don't silently change code | CRITICAL |
+| More than 3 fix rounds without escalating | Infinite fix loops waste time; the plan or spec likely needs revision | MEDIUM |
 
 ## Output Format
-Review file at `.aion/reviews/{feature-name}.md`.
+The review file written to `.aion/reviews/{feature-name}.md` using the format defined in Step 5.
 
 ## Exit Status
 - `DONE` — Review completed with `approved` verdict
-- `DONE_WITH_CONCERNS` — `needs_fix` verdict, user declined auto-fix or max rounds exceeded
-- `BLOCKED` — No changes found, or verify failed and user chose to stop
+- `DONE_WITH_CONCERNS` — Review completed with `needs_fix` verdict and user declined auto-fix, or max fix rounds exceeded
+- `BLOCKED` — Cannot review: no changes found, or spec/plan missing for context
 - `NEEDS_CONTEXT` — Need spec or plan files to properly assess compliance

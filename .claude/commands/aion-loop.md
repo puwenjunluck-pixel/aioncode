@@ -2,13 +2,24 @@
 
 Run multi-phase workflows autonomously with fix loops and safety controls.
 
-$ARGUMENTS — Pipeline mode and options. Modes: empty/`default` (plan execute → review → commit), `full` (design → plan → execute → review → commit), `fix` (verify → review → fix loop), `verify-only` (just verify). Options: `--max-rounds N` (fix loop limit, default 3), `--skip-commit` (omit commit phase), `--auto` (skip startup confirmation, proceed immediately after environment checks pass).
+$ARGUMENTS — Pipeline mode and options. Modes: empty/`default` (实现 → verify → review → commit), `fix` (verify → review → fix loop), `verify-only` (just verify). Options: `--max-rounds N` (fix loop limit, default 3), `--skip-commit` (omit commit phase), `--auto` (auto mode: skip all intermediate confirmations, auto-apply mechanical fixes. Commit confirmation is NEVER skipped).
 
 ## Role
 
 You are a pipeline orchestrator. You execute multi-phase workflows autonomously, handle failures gracefully, and know when to stop. You run each phase inline (following the same logic as the individual commands) rather than invoking slash commands. You never commit without user confirmation, and you never loop without a stop condition.
 
 > ⚠️ **CRITICAL**: NEVER loop without a stop condition. NEVER auto-commit without user confirmation. Violating this is the #1 cause of failure for this command.
+
+### Auto Mode Behavior (when `--auto` is set)
+
+| Step | Normal Behavior | Auto Behavior | Risk |
+|------|----------------|---------------|------|
+| Step 0.4 启动确认 | 问用户确认 | 跳过（已实现） | LOW |
+| Step 2 review 阶段 | 问用户是否应用修复 | AUTO-FIX 类自动应用，ASK 类跳过记录 | MEDIUM |
+| Step 2 review >5 严重问题 | STOP | **不变，仍然 STOP** | HIGH |
+| Step 4 commit 确认 | 等用户确认 | **永不跳过**（安全底线） | HIGH |
+
+All auto-decisions are logged in the pipeline report.
 
 ## Steps
 
@@ -36,31 +47,28 @@ Parse `$ARGUMENTS` to determine the pipeline:
 
 | Mode | Phases |
 |------|--------|
-| empty / `default` | review (→ fix loop) → commit |
-| `full` | design → plan → execute → review (→ fix loop) → commit |
+| empty / `default` | 实现 → verify → review (→ fix loop) → commit |
 | `fix` | verify → review → fix (loop until pass, max N rounds) |
 | `verify-only` | verify only |
+
+> **前置条件**：default 模式需要 `.aion/plans/` 中有可用的 plan。如果没有 plan，exit `NEEDS_CONTEXT` — "没有找到实现方案。先运行 /project:aion-plan。"
 
 Parse options:
 - `--max-rounds N`: Set fix loop limit (default: 3)
 - `--skip-commit`: Remove commit from the pipeline
-- `--auto`: Skip startup confirmation, proceed immediately after environment checks pass (commit confirmation is always required regardless of this flag)
+- `--auto`: Auto mode — skip all intermediate confirmations, review 阶段 AUTO-FIX 类自动应用。Commit confirmation is NEVER skipped regardless of this flag.
 
 ### Step 2: Execute Pipeline
 
 For each phase in the selected pipeline, execute inline:
 
-**design**: Follow aion-design logic — challenge assumptions, compare options, write spec to `.aion/specs/`
-**plan**: Follow aion-plan logic — read spec, create plan, then execute steps after user confirms
-**execute**: Part of aion-plan — after plan confirmed, implement all steps with TDD where specified
-**verify**: Run build/lint/tests (same logic as aion-review Step 1)
-**review**: Follow aion-review logic — verify + review + test gap + extract rules, one-stop quality gate
-**commit**: Follow aion-commit logic — generate message, show to user, WAIT for confirmation
-
-> **Note**: `demo` is NOT included in any pipeline mode. Prototyping is an optional, interactive step between design and plan. Run `/project:aion-design --demo` manually when needed.
+**实现**: Read the latest plan from `.aion/plans/`, implement code changes step by step
+**verify**: Run build, types, lint, tests, debug audit
+**review**: Follow aion-review logic — review changes, score, extract rules. If `--auto`: AUTO-FIX classified issues are applied automatically, ASK classified issues are skipped and logged. >5 critical issues still triggers STOP regardless of `--auto`.
+**commit**: Follow aion-commit logic — generate message, show to user, **ALWAYS WAIT for confirmation** (even with `--auto`)
 
 Phase execution rules:
-- After **verify** (in fix/verify-only mode): If result is `FAIL`, enter fix loop (Step 3). Do NOT proceed to review with a failing build/tests.
+- After **verify**: If result is `FAIL`, enter fix loop (Step 3). Do NOT proceed to review with a failing build/tests.
 - After **review**: If verdict is `needs_fix`, enter fix loop (Step 3).
 - After **review**: If verdict is `approved`, proceed to next phase.
 - If any phase is `BLOCKED`, stop the entire pipeline and report.
@@ -156,10 +164,11 @@ Pipeline complete. Report saved to `.aion/monitor/`. Review the summary above.
 - Each phase runs inline with full logic (not abbreviated)
 - Fix loop has a hard stop condition (max rounds)
 - Verify always runs before review in fix loops
-- Commit ALWAYS requires user confirmation
+- Commit ALWAYS requires user confirmation (even with `--auto`)
 - Phase status reported after each phase
 - Final summary includes all phases and any remaining concerns
 - Execution report persisted to `.aion/monitor/loop-{timestamp}.md`
+- Auto-mode decisions logged in report (if `--auto`)
 
 ## Anti-Patterns
 
@@ -173,6 +182,7 @@ Pipeline complete. Report saved to `.aion/monitor/`. Review the summary above.
 | Running all phases without reporting progress | User has no visibility into what is happening | MEDIUM |
 | Skipping environment check | May run on wrong branch or with dirty state | HIGH |
 | Applying the same fix twice in the loop | Wastes rounds without progress | MEDIUM |
+| Skipping commit confirmation in `--auto` mode | Commit is the absolute safety floor — NEVER auto-commit | CRITICAL |
 
 ## Output Format
 
