@@ -1,7 +1,7 @@
 ---
 category: pitfalls
-rule_count: 9
-last_updated: 2026-03-26
+rule_count: 10
+last_updated: 2026-03-28
 ---
 
 # Pitfalls — Known gotchas and traps
@@ -44,3 +44,6 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 
 - **PyInstaller CI 构建必须显式安装 certifi** (bugfix, 2026-03-25) [cite_count: 0, last_cited: 2026-03-25]
   GitHub Actions CI 环境中 `certifi` 不在默认依赖中，`ssl.get_default_verify_paths().cafile` 在 Linux CI 上可能返回 `None`，导致 `aioncode.spec` 中 `(None, "certifi")` 元组使 PyInstaller 构建失败。`release.yml` 的 pip install 步骤必须包含 `certifi`。`aioncode.spec` 和 `network.py` 已加系统 CA 路径 fallback 防护。
+
+- **写入 ~/.claude/settings.json 必须保留现有字段** (review, 2026-03-28) [cite_count: 0, last_cited: 2026-03-28]
+  `switch_model()` 读取完整 settings.json → 修改目标字段 → 写回全量 JSON。绝不能只写入部分字段，否则会丢失用户的 permissions、hooks、statusLine 等配置。写入时使用 `json.dumps(data, indent=2)` 保持格式。

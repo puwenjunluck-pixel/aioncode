@@ -79,9 +79,9 @@ function showViewDetail(view) {
         <div class="welcome-title">选择技能查看详情</div>
         <div class="welcome-hint">点击左侧技能列表中的条目</div></div>`; break;
     case 'settings':
-      d.innerHTML = `<div class="detail-welcome"><div class="welcome-icon">⚙</div>
-        <div class="welcome-title">设置</div>
-        <div class="welcome-hint">在左侧面板中调整选项</div></div>`; break;
+      d.innerHTML = '<div class="detail-settings" id="detail-settings"></div>';
+      if (typeof showModelConfig === 'function') showModelConfig();
+      break;
   }
 }
 

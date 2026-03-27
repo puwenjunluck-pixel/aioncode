@@ -622,7 +622,7 @@ async function loadTeamDetail() {
   if (!el) return;
   const t = window._team || {};
   const members = t.team || [];
-  const models = t.models || {};
+  const models = t.models || [];
   const risk = t.risk_keywords || {};
   el.innerHTML = `
     <div class="do-section">
@@ -637,7 +637,14 @@ async function loadTeamDetail() {
           </div>
         </div>`).join('') : '<div class="empty">未配置成员</div>'}
     </div>
-    ${[['模型配置',models],['风险关键词',risk]].map(([t,d])=>`<div class="do-section"><h3 class="do-title">${t}</h3>${Object.keys(d).length?Object.entries(d).map(([k,v])=>`<div class="do-kv"><span class="do-kv-k">${esc(k)}</span><span class="do-kv-v">${esc(v)}</span></div>`).join(''):'<div class="empty">未配置</div>'}</div>`).join('')}`;
+    <div class="do-section">
+      <h3 class="do-title">模型配置 (${models.length} 自定义)</h3>
+      ${models.length ? models.map(m => `<div class="do-kv"><span class="do-kv-k">${esc(m.name||'')}</span><span class="do-kv-v">${esc(m.provider||'')} · ${esc(m.default_model||'')}</span></div>`).join('') : '<div class="empty">未配置自定义 Provider — <a href="#" onclick="switchView(\'settings\');return false" style="color:var(--accent-text)">前往设置</a></div>'}
+    </div>
+    <div class="do-section">
+      <h3 class="do-title">风险关键词</h3>
+      ${Object.keys(risk).length ? Object.entries(risk).map(([k,v])=>`<div class="do-kv"><span class="do-kv-k">${esc(k)}</span><span class="do-kv-v">${esc(String(v))}</span></div>`).join('') : '<div class="empty">未配置</div>'}
+    </div>`;
 }
 
 // ══════════════════════════════════════
@@ -750,3 +757,4 @@ async function installPlugin(name) {
   if (d.ok) { if (btn) { btn.textContent = '已安装'; btn.className = 'skill-action-btn'; } const md = await api('/api/skills/marketplace'); if (md.ok) window._marketplacePlugins = md.plugins || []; }
   else { alert('安装失败: ' + (d.message||'')); if (btn) { btn.disabled = false; btn.textContent = '安装'; } }
 }
+

@@ -1,6 +1,6 @@
 # AionCode Team Configuration
 # This file defines team members, AI models, and risk assessment keywords.
-# Managed via Dashboard (Settings → Team) or manually edited.
+# Managed via Dashboard (Settings → 模型配置) or manually edited.
 
 team: []
   # Example:
@@ -22,22 +22,25 @@ team: []
 
 models: []
   # Example:
+  # - name: openai
+  #   provider: openai-compatible
+  #   endpoint: https://api.openai.com/v1
+  #   api_key_env: OPENAI_API_KEY       # Environment variable name (never store keys in this file)
+  #   models: [gpt-4o, gpt-4-turbo, gpt-4o-mini]
+  #   default_model: gpt-4o
+
   # - name: gemini
   #   provider: google
   #   endpoint: https://generativelanguage.googleapis.com/v1beta
-  #   api_key_env: GEMINI_API_KEY       # Environment variable name (never store keys in this file)
+  #   api_key_env: GEMINI_API_KEY
+  #   models: [gemini-2.5-pro, gemini-2.0-flash]
   #   default_model: gemini-2.5-pro
-
-  # - name: gpt
-  #   provider: openai
-  #   endpoint: https://api.openai.com/v1
-  #   api_key_env: OPENAI_API_KEY
-  #   default_model: gpt-4o
 
   # - name: deepseek
   #   provider: openai-compatible
   #   endpoint: https://api.deepseek.com/v1
   #   api_key_env: DEEPSEEK_API_KEY
+  #   models: [deepseek-chat, deepseek-reasoner]
   #   default_model: deepseek-chat
 
 # Risk keywords for auto-severity assessment during bug reporting
