@@ -265,7 +265,7 @@ Only write rules that are project-specific and evidenced. If you can't find evid
 1. Read all existing rules (MANDATORY — Write Protocol Refusal Condition applies)
 2. Compare scan findings against existing rules
 3. If scan reveals conventions NOT covered by existing rules → propose additions (append only), show each candidate to user
-4. If scan reveals existing rules that may be outdated → note them but do NOT modify — suggest running `/aion-learn` to update
+4. If scan reveals existing rules that may be outdated → note them but do NOT modify — suggest user review and update manually
 5. Never overwrite or replace existing rule entries
 
 ### Step 5: Generate Intent-Specific Artifacts
@@ -515,7 +515,7 @@ Skipped (protected):
   - {file}: {reason, e.g., "rules/style.md: 3 existing rules, no new conventions found"}
 
 Suggested follow-up:
-  - {e.g., "Run /aion-learn to update potentially stale rules"}
+  - {e.g., "建议人工审查可能过时的规则并更新"}
 ```
 
 ### Step 6.5: AI Q&A — Confirm Product Design (always, when _product.md was generated/updated)
@@ -551,8 +551,8 @@ After the scan report, present the `_product.md` content to the user for confirm
 ## Next Steps
 
 Based on intent:
-- Testing → /project:aion-impl with the test plan
-- Frontend/Backend iteration → /project:aion-design for new features, or /project:aion-impl for planned changes
+- Testing → 直接编写和运行测试
+- Frontend/Backend iteration → /project:aion-design for new features, or directly implement planned changes
 - New feature → /project:aion-design to start the full workflow
 - Refactor → /project:aion-plan to plan the refactoring steps
 

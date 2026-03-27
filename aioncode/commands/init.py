@@ -167,21 +167,30 @@ def _init_project(target: Path, *, upgrade: bool = False, install_all: bool = Fa
         muted("--all: installing all commands")
     elif upgrade and project.has_aion:
         # Upgrade: check for new commands
-        from aioncode.core.profiles import read_profile
+        from aioncode.core.profiles import ALL_COMMANDS, read_profile
 
         existing_profile = read_profile(target / ".aion" / "config.yml")
         if existing_profile and "commands" in existing_profile:
             existing_cmds = existing_profile["commands"]
             if not isinstance(existing_cmds, list):
                 existing_cmds = []
+            # Filter out stale commands no longer in source
+            valid_names = {c.name for c in ALL_COMMANDS}
+            stale = [c for c in existing_cmds if c not in valid_names]
+            existing_cmds = [c for c in existing_cmds if c in valid_names]
+            if stale:
+                info(f"清理 {len(stale)} 个已删除命令: {', '.join(stale)}")
             added = _ask_upgrade_commands(existing_cmds)
-            if added:
+            if added or stale:
                 profile = InitProfile(
                     project_type=str(existing_profile.get("project_type", "fullstack")),
                     role=str(existing_profile.get("role", "fullstack")),
-                    selected_commands=existing_cmds + added,
+                    selected_commands=existing_cmds + (added or []),
                 )
-                success(f"新增 {len(added)} 个命令")
+                if added:
+                    success(f"新增 {len(added)} 个命令")
+                if not added and not stale:
+                    info("无新命令可添加")
             else:
                 info("无新命令可添加")
         else:

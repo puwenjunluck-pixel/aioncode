@@ -35,33 +35,19 @@ AionCode — AI-native development system
 
 Commands:
   Planning:
-    /project:aion-think     质疑假设，防止过度设计
+    /project:aion-scan      扫描现有项目，启动智能
     /project:aion-design    需求分析 → .aion/specs/
-    /project:aion-demo      交互式 HTML 原型（可选）→ .aion/prototypes/
-
-  Execution:
     /project:aion-plan      技术方案 → .aion/plans/
-    /project:aion-impl      分步实现代码
-    /project:aion-test      生成测试 + 覆盖率 + 性能脚本 → .aion/tests/
 
   Quality:
-    /project:aion-verify    运行 build/lint/test 验证
     /project:aion-review    代码审查 + 自动提取规则 → .aion/reviews/
-
-  Learning:
-    /project:aion-learn     深度规则提取 → .aion/rules/
-    /project:aion-save      保存对话上下文 → .aion/
-
-  Bug Tracking:
-    /project:aion-bug        Bug 管理（report/list/assign/close/reopen/stats）
-    /project:aion-crosscheck 交叉验证（用其他 AI 模型发现问题）
-    /project:aion-upgrade    版本升级（检查并升级到最新版本）
+    /project:aion-fix       Bug 修复
+    /project:aion-qa        浏览器 QA 测试
 
   Operations:
     /project:aion-commit    安全 git 提交 + changelog
-    /project:aion-status    项目智能概览（只读）
     /project:aion-loop      自动化流水线（含修复循环）
-    /project:aion-scan      扫描现有项目，启动智能
+    /project:aion-save      保存对话上下文 → .aion/
 
   Help:
     /project:aion-help      本帮助页面
@@ -77,35 +63,30 @@ Then show scenario recommendations:
 常见场景:
 
   🆕 新功能开发:
-     design → (demo) → plan → impl → (test) → verify → review → commit
-     或一键: /project:aion-loop full
+     design → plan → /project:aion-loop → commit
+     手动: design → plan → 实现 → review → commit
 
   🐛 修复 Bug:
-     think → impl → verify → review → commit
-     或一键: /project:aion-loop
-
-  🐛 测试提交 Bug → 工程师修复:
-     测试: /project:aion-bug report → git push
-     工程师: /project:aion-impl {BUG-ID} → verify → review → commit
-
-  🔍 交叉验证（多模型）:
-     /project:aion-crosscheck --model gemini --scope src/
+     /project:aion-fix → review → commit
+     或一键: /project:aion-loop fix
 
   🔄 接手老项目:
-     scan → status → (design/impl) → verify → review → commit
-     补测试: scan → test --comprehensive → verify
+     scan → design → plan → 实现 → review → commit
 
   📦 重构/优化:
-     think → design → plan → impl → verify → review → learn → commit
+     design → plan → 实现 → review → commit
 
-  🧪 补充测试:
-     test coverage → verify
-     test full → verify
+  🧪 浏览器 QA:
+     /project:aion-qa {url}
 
-  🚀 自动化执行:
-     /project:aion-loop --auto              # 跳过启动确认
-     /project:aion-loop full --max-rounds 5 # 全流程，修复5轮
-     /project:aion-loop fix                 # 只修复循环
+  🚀 自动化执行（--auto 模式）:
+     /project:aion-loop --auto              # 全自动（commit 仍需确认）
+     /project:aion-loop fix --max-rounds 5  # 修复循环，最多5轮
+     /project:aion-fix --auto               # 自动修复所有 bug
+     /project:aion-qa {url} --auto          # 自动测试+修复
+     /project:aion-review --auto            # 机械修复自动应用
+
+  ⚠️ 安全底线: --auto 永不跳过 commit 确认、>5 严重问题仍 STOP
 ```
 
 ### Step 3: Command Detail
@@ -133,29 +114,23 @@ Workflow Patterns
 ═══════════════════════════════════════
 
 1. Standard Feature Development (recommended)
-   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-   │  design  │──▶│  (demo)  │──▶│   plan   │──▶│   impl   │
-   └──────────┘   └──────────┘   └──────────┘   └──────────┘
-                                                       │
-   ┌──────────┐   ┌──────────┐   ┌──────────┐         ▼
-   │  commit  │◀──│  review  │◀──│  verify  │◀──┌──────────┐
-   └──────────┘   └──────────┘   └──────────┘   │  (test)  │
-                       │                         └──────────┘
-                       ▼
-                 ┌──────────┐
-                 │  learn   │
-                 └──────────┘
+   ┌──────────┐   ┌──────────┐   ┌──────────┐
+   │  design  │──▶│   plan   │──▶│   实现    │
+   └──────────┘   └──────────┘   └──────────┘
+                                       │
+   ┌──────────┐   ┌──────────┐         ▼
+   │  commit  │◀──│  review  │◀────────┘
+   └──────────┘   └──────────┘
 
 2. Automated Pipeline
-   /project:aion-loop              default: impl → test → verify → review → commit
-   /project:aion-loop full         全流程: design → plan → impl → test → verify → review → commit
+   /project:aion-loop              default: 实现 → verify → review → commit
    /project:aion-loop fix          修复循环: verify → review → fix (max 3 rounds)
-   /project:aion-loop --auto       跳过启动确认
+   /project:aion-loop --auto       全自动（commit 仍需确认）
+   /project:aion-loop verify-only  仅验证
 
 3. Existing Project Onboarding
-   scan → status → 了解项目 → 选择下一步
-   补测试: test --comprehensive → verify
-   新功能: design → plan → impl → verify → review → commit
+   scan → 了解项目 → 选择下一步
+   新功能: design → plan → 实现 → review → commit
 
 4. Learning Flywheel (核心价值)
    Write Code → Review → Extract Rules → Rules Loaded Next Time
@@ -170,24 +145,18 @@ Minimal one-liner per command:
 ```
 AionCode Cheat Sheet
 ═══════════════════════════════════════
-/project:aion-scan                    扫描项目，初始化智能
-/project:aion-think   {idea}          质疑假设
-/project:aion-design  {feature}       需求 → spec
-/project:aion-demo    {spec|url|img}  原型 → HTML
+/project:aion-scan     {--file}       扫描项目，初始化智能
+/project:aion-design   {feature}      需求 → spec
 /project:aion-plan                    方案 → plan
-/project:aion-impl                    实现代码
-/project:aion-test    {mode}          生成测试
-/project:aion-verify                  运行验证
-/project:aion-review                  审查 + 学习规则
-/project:aion-learn                   深度提取规则
+/project:aion-fix      {BUG-ID}       Bug 修复             --auto ✓
+/project:aion-qa       {url}          浏览器 QA 测试        --auto ✓
+/project:aion-review                  审查 + 学习规则       --auto ✓
+/project:aion-commit                  安全提交              --auto ✓
+/project:aion-loop     {mode}         自动流水线            --auto ✓
 /project:aion-save                    保存上下文
-/project:aion-commit                  安全提交
-/project:aion-status                  查看状态
-/project:aion-loop    {mode}          自动流水线
-/project:aion-bug     {mode}          Bug 管理
-/project:aion-crosscheck --model {m}  交叉验证
-/project:aion-upgrade                 版本升级
-/project:aion-help    {cmd|workflow}  本帮助
+/project:aion-help     {cmd|workflow} 本帮助
+
+⚠️ --auto 安全底线: commit 确认永不跳过 | >5 严重问题仍 STOP
 ```
 
 ## Next Steps

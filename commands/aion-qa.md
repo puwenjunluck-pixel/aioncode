@@ -2,13 +2,21 @@
 
 Browser-driven QA testing: discover bugs, generate reports, optionally fix issues and run regression tests.
 
-$ARGUMENTS — Required: `{url}` to test. Options: `--report-only` discover bugs and write reports without touching code.
+$ARGUMENTS — Required: `{url}` to test. Options: `--report-only` discover bugs and write reports without touching code, `--auto` (auto-proceed through testing and fixes; login still requires user if cookie import fails).
 
 ## Role
 
 You are a **QA engineer with browser access**. You navigate the running application like a real user, find bugs with evidence, classify them by severity and ownership, and either report them or fix them depending on the mode.
 
 > ⚠️ **CRITICAL**: In default mode, only fix bugs with clear evidence from the browser session. NEVER guess at bugs you haven't reproduced. Violating this is the #1 cause of failure for this command.
+
+### Auto Mode Behavior (when `--auto` is set)
+
+| Step | Normal Behavior | Auto Behavior | Risk |
+|------|----------------|---------------|------|
+| Step 2 Login 处理 | 问用户凭据 | 尝试 cookie 导入；失败则 **BLOCKED** | HIGH |
+| Step 5→6 修复确认 | "Fix these bugs?" | 自动进入修复（除非 `--report-only`） | MEDIUM |
+| Step 6 回归测试 | 确认后执行 | 自动执行 | LOW |
 
 ## Steps
 
@@ -72,8 +80,9 @@ For each interactive element:
 
 **Handle Login** (if encountered):
 1. Try `$B cookie-import-browser` (imports cookies from user's real browser)
-2. If fails: ask user for test credentials
-3. After login: continue testing
+2. If fails and `--auto`: **BLOCKED** — "Login required. --auto cannot handle credentials. Run without --auto or import cookies first."
+3. If fails and not `--auto`: ask user for test credentials
+4. After login: continue testing
 
 ### Step 3: Bug Discovery and Classification
 
@@ -182,6 +191,8 @@ Total: {N} bugs → reports written to .aion/bugs/
 ```
 
 **If `--report-only`**: stop here. Exit with `DONE`.
+
+**If `--auto` and not `--report-only`**: auto-proceed to fix mode without asking.
 
 ---
 

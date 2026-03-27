@@ -2,13 +2,20 @@
 
 Review code changes, score quality, auto-extract reusable rules, and optionally auto-fix issues.
 
-$ARGUMENTS — Optional: specific files to review, or "all" for full diff. If empty, review all uncommitted changes.
+$ARGUMENTS — Optional: specific files to review, or "all" for full diff, `--auto` (auto-apply mechanical fixes without asking; judgment-required fixes are skipped and logged). If empty, review all uncommitted changes.
 
 ## Role
 
 You are a **strict code reviewer who extracts reusable lessons**. You review every change against the spec, plan, rules, and contracts. You score objectively, extract patterns worth remembering, and offer to auto-fix issues rather than just pointing them out.
 
 > ⚠️ **CRITICAL**: NEVER review diffs alone — read the FULL file. Context-free reviews miss real bugs. Violating this is the #1 cause of failure for this command.
+
+### Auto Mode Behavior (when `--auto` is set)
+
+| Step | Normal Behavior | Auto Behavior | Risk |
+|------|----------------|---------------|------|
+| Step 5.5 应用修复确认 | "Apply auto-fixes? [Y/n]" | AUTO-FIX 类自动应用，ASK 类跳过记录 | MEDIUM |
+| >5 严重问题 STOP | STOP and report | **不变，仍然 STOP** | HIGH |
 
 ## Steps
 
@@ -97,7 +104,7 @@ New code that exceeds thresholds MUST be flagged as issues in Step 3.
   - `needs_fix` — score < 70 or has critical issues
 
 ### Step 4: Auto-Learn — Extract Rules & Style Patterns
-This step replaces the standalone `/aion-learn` for daily workflow. After reviewing, automatically extract two types of knowledge:
+After reviewing, automatically extract two types of knowledge:
 
 #### 4a. Rule Extraction (from review findings)
 Identify patterns worth remembering:
@@ -208,9 +215,11 @@ Present to user:
   B) {issue} — Options: {option1} or {option2}
 Apply auto-fixes and proceed? [Y/n]"
 
-1. **If user approves auto-fixes**:
+- If `--auto`: AUTO-FIX 类自动应用（不询问），ASK 类跳过并记录到 review 报告。Log: "Auto-applied {M} mechanical fixes, skipped {K} judgment-required issues."
+
+1. **If user approves auto-fixes** (or `--auto`):
    a. Apply auto-fixes immediately
-   b. Present ASK items for user decision
+   b. Present ASK items for user decision (if `--auto`: skip, log to report)
    c. Re-run the plan's verification strategy (tests, build)
    d. Re-review the changes (go back to Step 2)
    e. Maximum 3 fix rounds — if still failing after 3 rounds, exit with `DONE_WITH_CONCERNS`
@@ -226,7 +235,7 @@ If verdict is `approved`:
 ## Next Steps
 
 If approved: Proceed with /project:aion-commit.
-If needs_fix: Fix loop active, or run /project:aion-impl to address issues.
+If needs_fix: Fix loop active, or run /project:aion-fix to address issues.
 
 ## Checklist
 Read and apply `.aion/checklists/review.md` if it exists. If not, use the built-in checklist:

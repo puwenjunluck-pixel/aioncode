@@ -168,9 +168,7 @@ After the spec is written, update the global product design document:
 
 ## Next Steps
 
-If this feature has a UI component, consider running /project:aion-demo to generate an interactive prototype before planning.
-
-Otherwise, proceed with /project:aion-plan to create an implementation plan.
+Proceed with /project:aion-plan to create an implementation plan.
 
 ## Checklist
 Read and apply `.aion/checklists/design.md` if it exists. If not, use the built-in checklist:

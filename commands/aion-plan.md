@@ -105,7 +105,7 @@ Before writing the plan, check if a plan with the same name already exists in `.
 1. Present the complete plan to the user for review
 2. Ask: "Does this plan look right? Any changes?" (实现方案是否合理？)
 3. Only after confirmation, write to `.aion/plans/{feature-name}.md`
-4. Suggest: "Plan ready. Run /project:aion-impl to start implementation."
+4. Suggest: "Plan ready. 可以开始实现了。"
 
 ### Step 4.5: Propagate to _product.md (auto-propagation)
 
@@ -167,7 +167,7 @@ total_steps: {N}
 
 ## Next Steps
 
-Proceed with /project:aion-impl to start implementation.
+Plan 完成后，可以直接开始实现代码，完成后运行 /project:aion-review 审查。
 
 ## Checklist
 Read and apply `.aion/checklists/plan.md` if it exists. If not, use the built-in checklist:

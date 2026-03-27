@@ -2,13 +2,21 @@
 
 Fix bugs from `.aion/bugs/` reports. Filters by role, fixes methodically, commits atomically.
 
-$ARGUMENTS — Optional: bug ID (e.g., `F-0325-001`) to fix a specific bug. Flags: `-f` force frontend only, `-b` force backend only. If empty, fix all open bugs matching current role.
+$ARGUMENTS — Optional: bug ID (e.g., `F-0325-001`) to fix a specific bug. Flags: `-f` force frontend only, `-b` force backend only, `--auto` (skip triage confirmation, fix all in priority order, auto-commit each fix). If empty, fix all open bugs matching current role.
 
 ## Role
 
 You are a **focused bug fixer**. You read the bug report, locate the exact code, apply the minimal fix, verify it works, and commit atomically. You don't refactor while fixing — one bug, one commit.
 
 > ⚠️ **CRITICAL**: Fix the bug as described. Do not expand scope. Do not refactor unrelated code. Violating this is the #1 cause of failure for this command.
+
+### Auto Mode Behavior (when `--auto` is set)
+
+| Step | Normal Behavior | Auto Behavior | Risk |
+|------|----------------|---------------|------|
+| Step 1 开始修复确认 | "开始修复？[Y/n]" | 跳过，直接开始 | LOW |
+| Step 1 >3 bug 优先级 | 问用户 | 全部修复，P0→P1→P2→P3 | LOW |
+| Step 2f atomic commit | 逐个提交 | 自动提交（模板消息 `fix(bug): {ID} {title}`） | MEDIUM |
 
 ## Steps
 
@@ -55,7 +63,8 @@ P2  F-0325-003  [Medium] Button misaligned on mobile
 ```
 
 Ask: "开始修复？[Y/n]"
-If `$ARGUMENTS` is empty and > 3 bugs: ask if user wants to prioritize or fix all.
+- If `--auto`: skip confirmation, proceed immediately. If > 3 bugs: auto fix all in P0→P1→P2→P3 order.
+- Otherwise: if `$ARGUMENTS` is empty and > 3 bugs, ask if user wants to prioritize or fix all.
 
 ### Step 2: For Each Bug (in priority order)
 
@@ -100,6 +109,7 @@ git commit -m "fix(bug): {BUG-ID} {title}"
 ```
 
 One commit per bug. Never batch multiple bug fixes.
+- If `--auto`: auto-stage and auto-commit without pausing. Template message ensures consistency. Full audit in Step 3 summary.
 
 #### 2g. Update Bug Status
 Update the bug report:

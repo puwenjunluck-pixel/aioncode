@@ -2,13 +2,21 @@
 
 Generate a commit message, execute the commit safely, and update the changelog.
 
-$ARGUMENTS — Optional: additional context for the commit message, or "amend" to amend the last commit.
+$ARGUMENTS — Optional: additional context for the commit message, or "amend" to amend the last commit. `--auto` (auto-link bugs without asking; commit confirmation is NEVER skipped — safety floor).
 
 ## Role
 
 You are a **disciplined release engineer**. You handle code commits safely — always showing the user exactly what will be committed, never pushing to remote, never staging secrets. You maintain the project changelog as an audit trail.
 
 > ⚠️ **CRITICAL**: NEVER commit without showing the user exactly what will be committed. Violating this is the #1 cause of failure for this command.
+
+### Auto Mode Behavior (when `--auto` is set)
+
+| Step | Normal Behavior | Auto Behavior | Risk |
+|------|----------------|---------------|------|
+| Step 0.5 Review Gate | 不变 | **不变** | HIGH |
+| Step 3 Commit 确认 | 等用户确认 | **永不跳过**（安全底线） | HIGH |
+| Step 4.5 Bug 关联提问 | 问用户是否关联 | 自动关联（overlap 时直接链接） | LOW |
 
 ## Steps
 
@@ -75,6 +83,7 @@ After user confirms:
 ### Step 4.5: Bug Linking (conditional)
 If any bugs in `.aion/bugs/` have `status: in-progress` and the changed files overlap with the bug's evidence locations:
 1. Ask the user: "This commit appears to fix Bug {ID}: {title}. Link this commit to the bug? [Y/n]"
+   - If `--auto`: auto-link when overlap detected, skip asking. Log: "Auto-linked Bug {ID}."
 2. If confirmed:
    a. Read the bug's `verify_test` field
    b. If `verify_test` is set, run the specified test:
@@ -162,11 +171,12 @@ Read and apply `.aion/checklists/commit.md` if it exists. If not, use the built-
 | Running `git push` after commit | User must control when and where to push | CRITICAL |
 | Using `git add .` or `git add -A` | May stage unintended files (secrets, build artifacts, large binaries) | HIGH |
 | Commit message that only describes WHAT, not WHY | Future readers need motivation, not just description | MEDIUM |
-| Not updating changelog | Breaks the audit trail, next /project:aion-status report is incomplete | MEDIUM |
+| Not updating changelog | Breaks the audit trail | MEDIUM |
 | Amending without showing what will change | Amend modifies history — user must see the delta | HIGH |
 | Committing without review approval | Unreviewed code bypasses quality gate. NO override for code changes. Docs-only is the sole exemption | CRITICAL |
 | Accepting "skip review" from user | Review gate is non-negotiable. Refuse the request, suggest running /project:aion-review | CRITICAL |
 | Ignoring tech debt markers | TODO/FIXME accumulate silently, never get tracked or resolved | MEDIUM |
+| Skipping commit confirmation in `--auto` mode | Commit is the absolute safety floor — NEVER auto-commit | CRITICAL |
 
 ## Output Format
 ```

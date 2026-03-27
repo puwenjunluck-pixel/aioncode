@@ -241,10 +241,9 @@ def init_project(
             shutil.copy2(f, dst)
             result.updated.append(f".claude/commands/{f.name}")
 
-    # 1.5. Clean up stale aion-* command files
-    keep = selected if selected is not None else source_commands
+    # 1.5. Clean up stale aion-* command files (always based on source truth)
     for existing in sorted(cmd_dst.glob("aion-*.md")):
-        if existing.stem not in keep:
+        if existing.stem not in source_commands:
             existing.unlink()
             result.updated.append(f".claude/commands/{existing.name} (removed)")
 
