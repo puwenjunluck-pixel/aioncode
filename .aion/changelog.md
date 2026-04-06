@@ -2,6 +2,15 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-04-07 | feat: multi-platform init (Claude Code + Antigravity)
+- PlatformConfig 数据类 + PLATFORMS 映射，抽象所有平台差异
+- init 交互流新增平台检测 + 选择步骤
+- project.py 全部路径参数化：命令目录、指令文件、前缀转换、hooks/settings 条件安装
+- GEMINI.md.tpl 模板新建（Antigravity 项目指令）
+- 修复升级路径丢失 platform 的 bug（review 发现）
+- Rules learned: 1 new (pitfalls: upgrade 必须恢复完整 profile)
+- Commit: 4a2b0e1
+
 ## 2026-04-06 | feat: 命令体系升级 — superpowers 体验吸收
 
 ### Summary
