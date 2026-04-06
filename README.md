@@ -18,7 +18,7 @@
 
 ## 前提条件
 
-- [Claude Code CLI](https://claude.ai/download) — AionCode 的 18 个命令在 Claude Code 中运行
+- [Claude Code CLI](https://claude.ai/download) — AionCode 的 11 个技能命令在 Claude Code 中运行
 - Git — 项目需要是 Git 仓库
 
 ## 安装
@@ -100,7 +100,7 @@ aioncode init
 ```
 
 这会创建：
-- `.claude/commands/` — 18 个 AI 工作流命令
+- `.claude/commands/` — 11 个 AI 技能命令
 - `.claude/CLAUDE.md` — 项目索引（Claude 每次启动自动加载）
 - `.aion/` — 项目智能数据目录（建议提交到 Git）
 
@@ -111,17 +111,20 @@ aioncode init
 ```
 /project:aion-scan      扫描现有项目，建立初始规则
 /project:aion-design    需求分析 → .aion/specs/
-/project:aion-plan      技术方案 → .aion/plans/
-/project:aion-impl      按计划编写代码
-/project:aion-verify    运行构建、测试、lint
+/project:aion-plan      技术方案 → 确认后自动执行
 /project:aion-review    代码审查 + 自动提取规则
+/project:aion-qa        浏览器 QA 测试 → bug 报告
+/project:aion-fix       按角色修复 bug
+/project:aion-audit     安全 + 性能审计
 /project:aion-commit    安全提交（需 review 通过）
+/project:aion-loop      自动化流水线
+/project:aion-save      保存上下文到 .aion/
 /project:aion-help      查看所有命令和工作流
 ```
 
 **推荐工作流：**
 ```
-design → plan → impl → verify → review → commit
+design → plan（自动执行）→ review → commit
 ```
 
 ### 副驾驶面板
@@ -131,12 +134,12 @@ aioncode dashboard
 # 打开 http://localhost:19200
 ```
 
-12 个可视化视图：概览、文件、监控、缺陷、团队、需求、方案、规则、清单、测试、日志、关于。
+16 个可视化视图：概览、文件、监控、协作、需求、方案、规则、清单、缺陷、测试、日志、技能、团队、帮助、关于、设置。
 
 ## 三大支柱
 
 ### 1. 开发方法论
-18 个命令覆盖完整生命周期：需求 → 设计 → 实现 → 测试 → 审查 → 提交。每个阶段有最佳实践内置。
+11 个技能命令覆盖完整生命周期：扫描 → 设计 → 规划 → 审查 → QA → 修复 → 审计 → 提交。每个阶段有最佳实践内置。
 
 ### 2. 项目智能（核心差异化）
 `.aion/rules/` 自动积累项目知识：
@@ -157,7 +160,7 @@ aioncode dashboard
 ```
 your-project/
 ├── .claude/
-│   ├── commands/        # 18 个 AionCode 命令
+│   ├── commands/        # 11 个 AionCode 技能命令
 │   └── CLAUDE.md        # 项目索引（自动加载）
 ├── .aion/               # 项目智能数据（建议 git tracked）
 │   ├── rules/           # 自动学习的规则

@@ -22,9 +22,7 @@
 - F1（Dashboard 设计协作视图）和 G1（aion-audit）scope 大，留待后续独立 spec
 
 ### Pending
-- Dashboard API Key 内联输入功能（C1）已实现但未 review/commit
-- F1 Dashboard 设计协作视图（需独立 design 周期）
-- G1 aion-audit 安全+性能审计命令（需独立 design 周期）
+- 无（C1 已提交 525ebbd，F1 已提交 9681d02，G1 已提交 9681d02）
 
 ## 2026-03-29 | fix: Dashboard 模型切换机制修正
 

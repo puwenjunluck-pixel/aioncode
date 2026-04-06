@@ -21,8 +21,8 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 - **uninstall.sh 命令列表必须与 profiles.py 同步** (scan, 2026-03-21, updated 2026-03-26) [cite_count: 0, last_cited: 2026-03-26]
   `uninstall.sh` 硬编码命令名用于删除，增删命令时必须同步更新删除列表，否则卸载后残留命令文件。当前核心命令（v0.7 架构）：aion-scan, aion-design, aion-plan, aion-review, aion-qa, aion-fix, aion-commit, aion-loop, aion-save, aion-help。每次命令体系变更后检查 `uninstall.sh`。
 
-- **dashboard.py 路由匹配顺序敏感** (scan, 2026-03-21) [cite_count: 0, last_cited: 2026-03-21, status: deprecated]
-  ~~v0.5 已迁移至 FastAPI 路径参数，此问题不再存在。旧 `dashboard.py` 已删除。~~
+- **dashboard.py 路由匹配顺序敏感** (scan, 2026-03-21) [cite_count: 0, last_cited: 2026-03-21, status: archived]
+  v0.5 迁移至 FastAPI，旧 `dashboard.py`（4,749 行）于 v0.7.4 删除。此规则已归档。
 
 - **NEVER 反向同步 .aion/ → templates/** (discussion, 2026-03-21) [cite_count: 0, last_cited: 2026-03-22]
   禁止将 `.aion/` 下的任何文件复制回 `templates/`。`templates/` 是产品模板（给所有用户的），`.aion/` 是本项目运行时数据（仅给自己的），数据流只能单向：`templates/` → `.aion/`。违反会导致所有新安装的用户继承 AionCode 自身的项目规则。**此规则无例外，无豁免，无 override。**

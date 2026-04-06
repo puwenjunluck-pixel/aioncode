@@ -33,6 +33,7 @@ sources:
 | Skill — aion-commit | Tier 1/2/3 智能分级提交 + changelog（-y 快速提交） | 提交代码 | 已实现 | [from:code] |
 | Skill — aion-loop | 自动化流水线（full: 全流程 / fix: 修复循环 / --auto: 跳过确认） | 全自动开发循环 | 已实现 | [from:code] |
 | Skill — aion-save | 保存对话上下文到 .aion/ 和 memory | 跨会话知识保留 | 已实现 | [from:code] |
+| Skill — aion-audit | 安全+性能审计（全项目静态分析 vs 改动级 review） | 项目级审计 | 已实现 | aion-audit |
 | Skill — aion-help | 查看所有命令和工作流说明 | 快速上手 | 已实现 | [from:code] |
 | Dashboard — 概览 | 项目统计 + 最近变更历史 | 快速了解项目 | 已实现 | [from:code] |
 | Dashboard — 文件 | 浏览 .aion/ 配置文件（Markdown 渲染） | 查看规格/规则 | 已实现 | [from:code] |
@@ -40,7 +41,8 @@ sources:
 | Dashboard — 需求/方案/规则/清单/缺陷/测试/日志 | 各类数据视图 | 按分类浏览项目数据 | 已实现 | [from:code] |
 | Dashboard — 技能 | Skill 安装管理 + 官方市场 | 扩展能力 | 已实现 | skills-management |
 | Dashboard — 模型配置 | Provider 卡片管理 + 模型芯片切换 + settings.json 集成（官方/自定义） | 切换 Claude Code 使用的模型 | 已实现 | model-api-config |
-| Dashboard — 帮助 | 工作流指南 + 命令速查（10 命令）+ 常见场景 + 测试最佳实践 + FAQ | 日常查阅（高频） | 已实现 | [from:code] |
+| Dashboard — 协作 | 设计协作视图（文件中转 + 轮询 + 选项卡片渲染） | aion-design 可视化交互 | 已实现 | dashboard-brainstorm |
+| Dashboard — 帮助 | 工作流指南 + 命令速查（11 命令）+ 常见场景 + 测试最佳实践 + FAQ | 日常查阅（高频） | 已实现 | [from:code] |
 | Dashboard — 关于 | 产品介绍 + 动态版本号 + 安装升级 + 路线图 + 更新日志 | 产品身份（低频） | 已实现 | [from:code] |
 
 ## 三、核心业务流程
@@ -75,7 +77,7 @@ aion-review（审查代码 + 自动学习）→ 提取规则到 rules/ → 下�
 | dashboard.routers | 10 个 API 路由模块（projects/files/monitor/bugs/team/commands/skills/logs/browse） | REST endpoints | services | 路由→服务 |
 | dashboard.services | 7 个业务服务（project_registry/file_ops/bugs/encoding/monitor/team/stats/skills） | Python API | 文件系统 | 文件 I/O |
 | dashboard.frontend | 嵌入式 HTML/CSS/JS 前端（build_frontend.py 构建） | HTML pages | 无运行时依赖 | 内嵌 |
-| commands/ (skills) | 10 个 Markdown 命令文件（v0.7），由 Claude Code 加载执行 | Claude Code prompt | .aion/ 数据 | 文件驱动 |
+| commands/ (skills) | 11 个 Markdown 命令文件（v0.7.4），由 Claude Code 加载执行 | Claude Code prompt | .aion/ 数据 | 文件驱动 |
 | .aion/ | 项目智能数据目录（规则、规格、计划、日志、Bug、测试） | 文件系统 | 无 | 文件驱动 |
 
 ## 五、技术栈
@@ -118,7 +120,7 @@ aion-review（审查代码 + 自动学习）→ 提取规则到 rules/ → 下�
 ## 八、已知约束与限制
 - GitHub 仓库为 private，upgrade 命令需要 GITHUB_TOKEN 环境变量 [CONFIRMED]
 - 前端无构建工具（无 Node.js），所有 JS 手写，changes 需运行 build_frontend.py [CONFIRMED]
-- uninstall.sh 命令列表需与 profiles.py ALL_COMMANDS 同步（v0.7: 10 命令）[CONFIRMED]
+- uninstall.sh 动态扫描 aion-*.md，profiles.py ALL_COMMANDS 需同步（v0.7.4: 11 命令）[CONFIRMED]
 - 浏览器自动化仅限 aion-qa 和 aion-scan --url 模式（gstack browse CLI 优先，Playwright MCP fallback）[CONFIRMED]
 - commands/ 与 .claude/commands/ 必须手动同步，禁止自动复制 [CONFIRMED]
 - .aion/ 与 templates/ 数据流单向：templates/ → .aion/，禁止反向同步 [CONFIRMED]
