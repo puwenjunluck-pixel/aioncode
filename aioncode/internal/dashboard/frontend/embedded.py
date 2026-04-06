@@ -524,9 +524,9 @@ body {
 .bs-empty { text-align: center; padding: 60px 20px; }
 .bs-empty-icon { font-size: 48px; margin-bottom: 16px; }
 .bs-empty-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-.bs-empty-hint { font-size: 13px; color: var(--text-muted); }
+.bs-empty-hint { font-size: 13px; color: var(--text-tertiary); }
 .bs-empty-hint code { background: var(--bg-deep); padding: 2px 6px; border-radius: 3px; font-size: 12px; }
-.bs-screen { }
+.bs-screen { max-width: 700px; }
 .bs-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
 .bs-desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; }
 .bs-options { display: flex; flex-direction: column; gap: 12px; }
@@ -540,8 +540,8 @@ body {
 .bs-card-body { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
 .bs-pros-cons { display: flex; gap: 16px; font-size: 12px; }
 .bs-pros, .bs-cons { list-style: none; padding: 0; margin: 0; }
-.bs-pro::before { content: '✓ '; color: #34c759; }
-.bs-con::before { content: '✗ '; color: #ff3b30; }
+.bs-pro::before { content: '✓ '; color: var(--success, #34c759); }
+.bs-con::before { content: '✗ '; color: var(--danger, #ff3b30); }
 .bs-compare { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
 .bs-compare th, .bs-compare td { padding: 8px 12px; border: 1px solid var(--border); text-align: center; }
 .bs-compare th { background: var(--bg-deep); font-weight: 600; }
@@ -549,12 +549,12 @@ body {
 .bs-choose-btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; background: var(--bg-deep); border: 1px solid var(--border); color: var(--text-primary); transition: all 0.15s; }
 .bs-choose-btn:hover { border-color: var(--accent); }
 .bs-choose-btn.bs-selected { background: var(--accent); color: #fff; border-color: var(--accent); }
-.bs-hint { margin-top: 16px; font-size: 12px; color: var(--text-muted); text-align: center; }
+.bs-hint { margin-top: 16px; font-size: 12px; color: var(--text-tertiary); text-align: center; }
 .bs-hint-done { color: var(--accent); font-weight: 500; }
 .bs-info { text-align: center; padding: 60px 20px; }
 .bs-info-icon { font-size: 36px; margin-bottom: 12px; }
 .bs-info-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-.bs-info-desc { font-size: 13px; color: var(--text-muted); }
+.bs-info-desc { font-size: 13px; color: var(--text-tertiary); }
 
 </style>
 </head>
@@ -701,7 +701,7 @@ body {
       <div class="view-sidebar hidden" id="vs-brainstorm">
         <div class="sw-title">设计协作</div>
         <div class="sw-body" id="brainstorm-sidebar">
-          <p style="color:var(--text-muted);font-size:12px;padding:8px">方案选项将在右侧展示。在终端运行 aion-design 时自动激活。</p>
+          <p style="color:var(--text-tertiary);font-size:12px;padding:8px">方案选项将在右侧展示。在终端运行 aion-design 时自动激活。</p>
         </div>
       </div>
       <!-- Skills sidebar -->
@@ -2172,29 +2172,41 @@ async function saveProviders() {
 
 let _bsPollTimer = null;
 let _bsLastScreen = null;
+let _bsPollInterval = 1500;
+const _BS_ACTIVE_INTERVAL = 1500;
+const _BS_IDLE_INTERVAL = 10000;
+const _BS_MAX_BACKOFF = 30000;
 
-/** Load brainstorm view — start polling for screen updates. */
-async function loadBrainstorm() {
+function loadBrainstorm() {
   const el = document.getElementById('detail-brainstorm');
   if (!el) return;
   el.innerHTML = '<div class="bs-loading">加载中...</div>';
+  _bsLastScreen = null;
+  _bsPollInterval = _BS_ACTIVE_INTERVAL;
   _bsStopPoll();
-  await _bsFetchScreen();
-  _bsStartPoll();
+  _bsFetchScreen().then(() => _bsStartPoll());
 }
 
-/** Fetch and render current screen. */
 async function _bsFetchScreen() {
   const el = document.getElementById('detail-brainstorm');
   if (!el) { _bsStopPoll(); return; }
 
-  const d = await api(`/api/projects/${curEncoded}/brainstorm/screen`);
+  let d;
+  try {
+    d = await api(`/api/projects/${curEncoded}/brainstorm/screen`);
+  } catch {
+    _bsPollInterval = Math.min(_bsPollInterval * 2, _BS_MAX_BACKOFF);
+    _bsStartPoll();
+    return;
+  }
+
   if (!d.ok) {
     el.innerHTML = '<div class="bs-error">读取失败</div>';
     return;
   }
 
-  /* Update badge */
+  _bsPollInterval = d.active ? _BS_ACTIVE_INTERVAL : _BS_IDLE_INTERVAL;
+
   const badge = document.getElementById('b-brainstorm');
   if (badge) {
     if (d.active) { badge.style.display = ''; badge.textContent = '●'; }
@@ -2207,7 +2219,6 @@ async function _bsFetchScreen() {
     return;
   }
 
-  /* Skip re-render if screen unchanged */
   const screenStr = JSON.stringify(d.screen);
   if (screenStr === _bsLastScreen) return;
   _bsLastScreen = screenStr;
@@ -2222,22 +2233,15 @@ async function _bsFetchScreen() {
   }
 }
 
-/** Start polling every 1.5s. */
 function _bsStartPoll() {
   _bsStopPoll();
-  _bsPollTimer = setInterval(_bsFetchScreen, 1500);
+  _bsPollTimer = setInterval(_bsFetchScreen, _bsPollInterval);
 }
 
-/** Stop polling. */
 function _bsStopPoll() {
   if (_bsPollTimer) { clearInterval(_bsPollTimer); _bsPollTimer = null; }
 }
 
-/* ══════════════════════════════════════
-   Renderers
-   ══════════════════════════════════════ */
-
-/** Empty state — no active brainstorm session. */
 function _bsRenderEmpty() {
   return `<div class="bs-empty">
     <div class="bs-empty-icon">💬</div>
@@ -2246,7 +2250,6 @@ function _bsRenderEmpty() {
   </div>`;
 }
 
-/** Render options (A/B/C choice cards). */
 function _bsRenderOptions(s) {
   const multi = s.multiselect ? 'data-multi' : '';
   let html = `<div class="bs-screen">
@@ -2278,7 +2281,6 @@ function _bsRenderOptions(s) {
   return html;
 }
 
-/** Render comparison table. */
 function _bsRenderCompare(s) {
   const dims = s.dimensions || [];
   const items = s.items || [];
@@ -2311,7 +2313,6 @@ function _bsRenderCompare(s) {
   return html;
 }
 
-/** Render info/waiting state. */
 function _bsRenderInfo(s) {
   return `<div class="bs-info">
     <div class="bs-info-icon">ℹ️</div>
@@ -2320,7 +2321,6 @@ function _bsRenderInfo(s) {
   </div>`;
 }
 
-/** Placeholder for HTML type (P1). */
 function _bsRenderHtmlPlaceholder() {
   return `<div class="bs-info">
     <div class="bs-info-icon">🔮</div>
@@ -2329,11 +2329,6 @@ function _bsRenderHtmlPlaceholder() {
   </div>`;
 }
 
-/* ══════════════════════════════════════
-   Interaction
-   ══════════════════════════════════════ */
-
-/** Handle user selection — post event and show confirmation. */
 async function bsSelect(el) {
   const key = el.dataset.key;
   if (!key) return;

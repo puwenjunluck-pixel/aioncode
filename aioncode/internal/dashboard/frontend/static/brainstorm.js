@@ -2,29 +2,41 @@
 
 let _bsPollTimer = null;
 let _bsLastScreen = null;
+let _bsPollInterval = 1500;
+const _BS_ACTIVE_INTERVAL = 1500;
+const _BS_IDLE_INTERVAL = 10000;
+const _BS_MAX_BACKOFF = 30000;
 
-/** Load brainstorm view — start polling for screen updates. */
-async function loadBrainstorm() {
+function loadBrainstorm() {
   const el = document.getElementById('detail-brainstorm');
   if (!el) return;
   el.innerHTML = '<div class="bs-loading">加载中...</div>';
+  _bsLastScreen = null;
+  _bsPollInterval = _BS_ACTIVE_INTERVAL;
   _bsStopPoll();
-  await _bsFetchScreen();
-  _bsStartPoll();
+  _bsFetchScreen().then(() => _bsStartPoll());
 }
 
-/** Fetch and render current screen. */
 async function _bsFetchScreen() {
   const el = document.getElementById('detail-brainstorm');
   if (!el) { _bsStopPoll(); return; }
 
-  const d = await api(`/api/projects/${curEncoded}/brainstorm/screen`);
+  let d;
+  try {
+    d = await api(`/api/projects/${curEncoded}/brainstorm/screen`);
+  } catch {
+    _bsPollInterval = Math.min(_bsPollInterval * 2, _BS_MAX_BACKOFF);
+    _bsStartPoll();
+    return;
+  }
+
   if (!d.ok) {
     el.innerHTML = '<div class="bs-error">读取失败</div>';
     return;
   }
 
-  /* Update badge */
+  _bsPollInterval = d.active ? _BS_ACTIVE_INTERVAL : _BS_IDLE_INTERVAL;
+
   const badge = document.getElementById('b-brainstorm');
   if (badge) {
     if (d.active) { badge.style.display = ''; badge.textContent = '●'; }
@@ -37,7 +49,6 @@ async function _bsFetchScreen() {
     return;
   }
 
-  /* Skip re-render if screen unchanged */
   const screenStr = JSON.stringify(d.screen);
   if (screenStr === _bsLastScreen) return;
   _bsLastScreen = screenStr;
@@ -52,22 +63,15 @@ async function _bsFetchScreen() {
   }
 }
 
-/** Start polling every 1.5s. */
 function _bsStartPoll() {
   _bsStopPoll();
-  _bsPollTimer = setInterval(_bsFetchScreen, 1500);
+  _bsPollTimer = setInterval(_bsFetchScreen, _bsPollInterval);
 }
 
-/** Stop polling. */
 function _bsStopPoll() {
   if (_bsPollTimer) { clearInterval(_bsPollTimer); _bsPollTimer = null; }
 }
 
-/* ══════════════════════════════════════
-   Renderers
-   ══════════════════════════════════════ */
-
-/** Empty state — no active brainstorm session. */
 function _bsRenderEmpty() {
   return `<div class="bs-empty">
     <div class="bs-empty-icon">💬</div>
@@ -76,7 +80,6 @@ function _bsRenderEmpty() {
   </div>`;
 }
 
-/** Render options (A/B/C choice cards). */
 function _bsRenderOptions(s) {
   const multi = s.multiselect ? 'data-multi' : '';
   let html = `<div class="bs-screen">
@@ -108,7 +111,6 @@ function _bsRenderOptions(s) {
   return html;
 }
 
-/** Render comparison table. */
 function _bsRenderCompare(s) {
   const dims = s.dimensions || [];
   const items = s.items || [];
@@ -141,7 +143,6 @@ function _bsRenderCompare(s) {
   return html;
 }
 
-/** Render info/waiting state. */
 function _bsRenderInfo(s) {
   return `<div class="bs-info">
     <div class="bs-info-icon">ℹ️</div>
@@ -150,7 +151,6 @@ function _bsRenderInfo(s) {
   </div>`;
 }
 
-/** Placeholder for HTML type (P1). */
 function _bsRenderHtmlPlaceholder() {
   return `<div class="bs-info">
     <div class="bs-info-icon">🔮</div>
@@ -159,11 +159,6 @@ function _bsRenderHtmlPlaceholder() {
   </div>`;
 }
 
-/* ══════════════════════════════════════
-   Interaction
-   ══════════════════════════════════════ */
-
-/** Handle user selection — post event and show confirmation. */
 async function bsSelect(el) {
   const key = el.dataset.key;
   if (!key) return;

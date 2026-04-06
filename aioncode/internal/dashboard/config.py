@@ -37,6 +37,11 @@ BUGS_DIR = ".aion/bugs"
 # --- Team ---
 TEAM_FILE = ".aion/team.yml"
 
+# --- Brainstorm ---
+BRAINSTORM_DIR = ".aion/brainstorm"
+BRAINSTORM_SCREEN_FILE = "screen.json"
+BRAINSTORM_EVENTS_FILE = "events.jsonl"
+
 # --- Path resolution for commands/templates ---
 _FROZEN = getattr(sys, "frozen", False)
 

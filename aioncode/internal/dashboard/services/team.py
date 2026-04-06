@@ -15,11 +15,9 @@ _PROJECT_LOCAL_SETTINGS = ".claude/settings.local.json"
 def _read_project_settings(project_path: str) -> dict:
     """Read {project}/.claude/settings.local.json."""
     path = Path(project_path) / _PROJECT_LOCAL_SETTINGS
-    if not path.exists():
-        return {}
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
         return {}
 
 
@@ -227,13 +225,14 @@ _THIRD_PARTY_ENV_KEYS = [
 
 
 def switch_model(project_path: str, provider_name: str, model_name: str, api_key_override: str = "") -> dict:
-    """Switch active model by writing to {project}/.claude/settings.local.json (project-scoped).
+    """Switch active model by writing to ~/.claude/settings.json (global).
 
     For official Anthropic: sets model field, clears all custom env vars.
     For custom providers: sets ANTHROPIC_BASE_URL, ANTHROPIC_AUTH_TOKEN, and all model-family
     env vars so Claude Code skips its internal model-name validation.
     api_key_override takes precedence over os.environ lookup.
-    Global ~/.claude/settings.json is never modified.
+    Note: CC daemon broadcasts env vars to all sessions, so project-level isolation is not
+    achievable at runtime. Global settings is the only effective target.
     """
     settings = read_claude_settings()
     env = settings.get("env", {})
