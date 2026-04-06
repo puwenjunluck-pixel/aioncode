@@ -21,7 +21,6 @@ def _read_project_settings(project_path: str) -> dict:
         return {}
 
 
-
 def read_team_config(project_path: str) -> dict:
     """Read and parse team.yml (no external YAML dependency).
 
@@ -260,9 +259,13 @@ def switch_model(project_path: str, provider_name: str, model_name: str, api_key
         env["ANTHROPIC_BASE_URL"] = provider.get("endpoint", "")
         env["ANTHROPIC_AUTH_TOKEN"] = api_key
         # Set all model-family vars so CC skips hardcoded model-name validation
-        for key in ["ANTHROPIC_MODEL", "ANTHROPIC_SMALL_FAST_MODEL",
-                    "ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL",
-                    "ANTHROPIC_DEFAULT_HAIKU_MODEL"]:
+        for key in [
+            "ANTHROPIC_MODEL",
+            "ANTHROPIC_SMALL_FAST_MODEL",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL",
+            "ANTHROPIC_DEFAULT_OPUS_MODEL",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+        ]:
             env[key] = model_name
         env["API_TIMEOUT_MS"] = "3000000"
         env.pop("ANTHROPIC_API_KEY", None)

@@ -20,7 +20,6 @@ router = APIRouter(tags=["brainstorm"])
 
 
 class BrainstormEvent(BaseModel):
-
     type: str = "click"
     choice: str = ""
 
