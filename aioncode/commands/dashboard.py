@@ -7,6 +7,23 @@ import signal
 import sys
 
 
+def _run_server(host: str, port: int, dev: bool) -> None:
+    """Child process: run uvicorn (must be top-level for pickling)."""
+    import uvicorn
+
+    from aioncode.internal.dashboard import create_app
+
+    app = create_app(dev=dev)
+    uvicorn.run(
+        app,
+        host=host or "0.0.0.0",
+        port=port,
+        workers=1,
+        loop="asyncio",
+        log_level="warning",
+    )
+
+
 def run_dashboard(args: argparse.Namespace) -> None:
     """CLI entry point for `aioncode dashboard`.
 
@@ -24,23 +41,7 @@ def run_dashboard(args: argparse.Namespace) -> None:
     host = getattr(args, "host", "")
     dev = getattr(args, "dev", False)
 
-    def _run_server() -> None:
-        """Child process: run uvicorn."""
-        import uvicorn
-
-        from aioncode.internal.dashboard import create_app
-
-        app = create_app(dev=dev)
-        uvicorn.run(
-            app,
-            host=host or "0.0.0.0",
-            port=port,
-            workers=1,
-            loop="asyncio",
-            log_level="warning",
-        )
-
-    proc = multiprocessing.Process(target=_run_server, daemon=True)
+    proc = multiprocessing.Process(target=_run_server, args=(host, port, dev), daemon=True)
     proc.start()
 
     # Main process: print info and wait

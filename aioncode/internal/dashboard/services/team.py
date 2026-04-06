@@ -9,6 +9,19 @@ from pathlib import Path
 from aioncode.internal.dashboard.config import TEAM_FILE
 
 CLAUDE_SETTINGS_PATH = Path.home() / ".claude" / "settings.json"
+_PROJECT_LOCAL_SETTINGS = ".claude/settings.local.json"
+
+
+def _read_project_settings(project_path: str) -> dict:
+    """Read {project}/.claude/settings.local.json."""
+    path = Path(project_path) / _PROJECT_LOCAL_SETTINGS
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
 
 
 def read_team_config(project_path: str) -> dict:
@@ -32,22 +45,23 @@ def read_team_config(project_path: str) -> dict:
         if not stripped or stripped.startswith("#"):
             continue
 
-        # Section headers
-        if stripped == "team:" or stripped == "team: []":
+        # Section headers — only match top-level (non-indented) lines
+        is_top_level = line == stripped or not line[0].isspace()
+        if is_top_level and (stripped == "team:" or stripped == "team: []"):
             current_section = "team"
             current_member = None
             if current_model:
                 config["models"].append(current_model)
                 current_model = None
             continue
-        if stripped.startswith("models:"):
+        if is_top_level and stripped.startswith("models:"):
             current_section = "models"
             if current_member:
                 config["team"].append(current_member)
                 current_member = None
             current_model = None
             continue
-        if stripped.startswith("risk_keywords:"):
+        if is_top_level and stripped.startswith("risk_keywords:"):
             current_section = "risk_keywords"
             if current_member:
                 config["team"].append(current_member)
@@ -200,31 +214,59 @@ def check_env_vars(names: list[str]) -> dict[str, bool]:
     return result
 
 
-def switch_model(project_path: str, provider_name: str, model_name: str) -> dict:
-    """Switch active model by updating ~/.claude/settings.json.
+_THIRD_PARTY_ENV_KEYS = [
+    "ANTHROPIC_BASE_URL",
+    "ANTHROPIC_AUTH_TOKEN",
+    "ANTHROPIC_MODEL",
+    "ANTHROPIC_SMALL_FAST_MODEL",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+    "API_TIMEOUT_MS",
+]
 
-    For official Anthropic: sets model field, removes custom env vars.
-    For custom providers: sets ANTHROPIC_BASE_URL and ANTHROPIC_MODEL in env.
+
+def switch_model(project_path: str, provider_name: str, model_name: str, api_key_override: str = "") -> dict:
+    """Switch active model by writing to {project}/.claude/settings.local.json (project-scoped).
+
+    For official Anthropic: sets model field, clears all custom env vars.
+    For custom providers: sets ANTHROPIC_BASE_URL, ANTHROPIC_AUTH_TOKEN, and all model-family
+    env vars so Claude Code skips its internal model-name validation.
+    api_key_override takes precedence over os.environ lookup.
+    Global ~/.claude/settings.json is never modified.
     """
     settings = read_claude_settings()
     env = settings.get("env", {})
 
     if provider_name == "__official__":
         settings["model"] = model_name
-        env.pop("ANTHROPIC_BASE_URL", None)
-        env.pop("ANTHROPIC_MODEL", None)
+        # Set to empty instead of removing — running CC can't unset env vars via hot-reload,
+        # but treats empty string as falsy (same effect as unset)
+        for key in _THIRD_PARTY_ENV_KEYS:
+            env[key] = ""
+        env.pop("ANTHROPIC_API_KEY", None)
     else:
         config = read_team_config(project_path)
-        provider = None
-        for m in config.get("models", []):
-            if m.get("name") == provider_name:
-                provider = m
-                break
+        provider = next((m for m in config.get("models", []) if m.get("name") == provider_name), None)
         if not provider:
             return {"ok": False, "message": f"Provider '{provider_name}' not found"}
 
+        api_key_env_name = provider.get("api_key_env", "")
+        api_key = api_key_override or os.environ.get(api_key_env_name, "")
+        if not api_key:
+            return {"ok": False, "message": f"环境变量 '{api_key_env_name}' 未设置且未提供 API Key"}
+
+        # Clear official model field — third-party uses env vars only
+        settings.pop("model", None)
         env["ANTHROPIC_BASE_URL"] = provider.get("endpoint", "")
-        env["ANTHROPIC_MODEL"] = model_name
+        env["ANTHROPIC_AUTH_TOKEN"] = api_key
+        # Set all model-family vars so CC skips hardcoded model-name validation
+        for key in ["ANTHROPIC_MODEL", "ANTHROPIC_SMALL_FAST_MODEL",
+                    "ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL",
+                    "ANTHROPIC_DEFAULT_HAIKU_MODEL"]:
+            env[key] = model_name
+        env["API_TIMEOUT_MS"] = "3000000"
+        env.pop("ANTHROPIC_API_KEY", None)
 
     settings["env"] = env
     result = write_claude_settings(settings)
@@ -238,14 +280,29 @@ def switch_model(project_path: str, provider_name: str, model_name: str) -> dict
     return result
 
 
-def get_current_model() -> dict:
-    """Read current active model info from ~/.claude/settings.json."""
-    settings = read_claude_settings()
-    env = settings.get("env", {})
+def get_current_model(project_path: str = "") -> dict:
+    """Read current active model — project settings take precedence over global.
+
+    Returns:
+        dict with model, base_url, anthropic_model keys.
+    """
+    proj = _read_project_settings(project_path) if project_path else {}
+    proj_env = proj.get("env", {})
+
+    # Project-level overrides global
+    if proj_env.get("ANTHROPIC_BASE_URL") or proj.get("model"):
+        return {
+            "model": proj.get("model", ""),
+            "base_url": proj_env.get("ANTHROPIC_BASE_URL", ""),
+            "anthropic_model": proj_env.get("ANTHROPIC_MODEL", ""),
+        }
+
+    global_settings = read_claude_settings()
+    global_env = global_settings.get("env", {})
     return {
-        "model": settings.get("model", ""),
-        "base_url": env.get("ANTHROPIC_BASE_URL", ""),
-        "anthropic_model": env.get("ANTHROPIC_MODEL", ""),
+        "model": global_settings.get("model", ""),
+        "base_url": global_env.get("ANTHROPIC_BASE_URL", ""),
+        "anthropic_model": global_env.get("ANTHROPIC_MODEL", ""),
     }
 
 

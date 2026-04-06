@@ -29,6 +29,7 @@ class SwitchModelRequest(BaseModel):
 
     provider_name: str
     model_name: str
+    api_key: str = ""
 
 
 @router.get("/api/projects/{encoded}/team")
@@ -61,11 +62,11 @@ async def switch_model_endpoint(encoded: str, req: SwitchModelRequest) -> dict:
     if not is_admin():
         return {"ok": False, "message": "Admin only"}
     project_path = decode_project_path(encoded)
-    return switch_model(project_path, req.provider_name, req.model_name)
+    return switch_model(project_path, req.provider_name, req.model_name, req.api_key)
 
 
 @router.get("/api/projects/{encoded}/team/current-model")
 async def current_model(encoded: str) -> dict:
     """Read current active model from Claude Code settings."""
-    decode_project_path(encoded)  # validate path
-    return {"ok": True, **get_current_model()}
+    project_path = decode_project_path(encoded)
+    return {"ok": True, **get_current_model(project_path)}

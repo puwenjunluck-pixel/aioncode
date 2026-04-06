@@ -1812,12 +1812,13 @@ async function showModelConfig() {
   const providers = (window._team?.models) || [];
   const active = resolveActive(cur, providers);
 
-  let envStatus = {};
+  window._envStatus = {};
   const envNames = providers.map(p => p.api_key_env).filter(Boolean);
   if (envNames.length) {
     const envRes = await api(`/api/projects/${curEncoded}/team/check-env`, { method: 'POST', body: { names: envNames } });
-    if (envRes.ok) envStatus = envRes.env_status || {};
+    if (envRes.ok) window._envStatus = envRes.env_status || {};
   }
+  const envStatus = window._envStatus;
 
   const badge = document.getElementById('b-models');
   if (badge) badge.textContent = providers.length ? String(providers.length + 1) : '1';
@@ -1917,21 +1918,76 @@ function showModelToast(msg) {
   toast._timer = setTimeout(() => toast.classList.remove('visible'), 5000);
 }
 
-/** Switch model via API. */
+/** Switch model via API — prompts for key inline if env var is unset. */
 async function doSwitch(providerName, modelName) {
+  if (providerName !== '__official__') {
+    const providers = (window._team?.models) || [];
+    const provider = providers.find(p => p.name === providerName);
+    const envSet = provider && window._envStatus && window._envStatus[provider.api_key_env];
+    if (!envSet) {
+      showKeyInput(providerName, modelName);
+      return;
+    }
+  }
+  await execSwitch(providerName, modelName, '');
+}
+
+/** Execute the actual switch-model API call. */
+async function execSwitch(providerName, modelName, apiKey) {
   const chips = document.querySelectorAll('.model-chip');
   chips.forEach(c => c.disabled = true);
+  const body = { provider_name: providerName, model_name: modelName };
+  if (apiKey) body.api_key = apiKey;
   const d = await api(`/api/projects/${curEncoded}/team/switch-model`, {
-    method: 'POST', body: { provider_name: providerName, model_name: modelName }
+    method: 'POST', body
   });
   if (d.ok) {
     await showModelConfig();
     const label = providerName === '__official__' ? 'Anthropic 官方' : providerName;
-    showModelToast(`已切换到 ${label} / ${modelName}，重启 Claude Code 会话后生效`);
+    showModelToast(`已切换到 ${label} / ${modelName}`);
   } else {
     alert('切换失败: ' + (d.message || ''));
     chips.forEach(c => c.disabled = false);
   }
+}
+
+/** Show inline API key input when env var is not set. */
+function showKeyInput(providerName, modelName) {
+  const area = document.getElementById('model-form-area');
+  if (!area) return;
+  area.innerHTML = `<div class="model-form">
+    <div class="model-form-title">输入 API Key</div>
+    <div class="model-field">
+      <label>${esc(providerName)} 的 API Key</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="password" id="apikey-direct-input" style="flex:1" placeholder="sk-...">
+        <button class="model-btn" onclick="toggleKeyVis()" title="显示/隐藏" style="min-width:32px">*</button>
+      </div>
+      <small style="color:var(--text-muted);margin-top:4px;display:block">Key 保存在全局 ~/.claude/settings.json 的 env 字段中，不会写入 team.yml</small>
+    </div>
+    <div class="model-form-actions">
+      <button class="model-save-btn" onclick="submitKeyAndSwitch('${esc(providerName)}','${esc(modelName)}')">确认切换</button>
+      <button class="model-cancel-btn" onclick="document.getElementById('model-form-area').innerHTML=''">取消</button>
+    </div>
+  </div>`;
+  area.scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('apikey-direct-input').focus();
+}
+
+/** Toggle key input visibility. */
+function toggleKeyVis() {
+  const input = document.getElementById('apikey-direct-input');
+  if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+/** Submit key and switch model. */
+async function submitKeyAndSwitch(providerName, modelName) {
+  const input = document.getElementById('apikey-direct-input');
+  const key = input ? input.value.trim() : '';
+  if (!key) { alert('请输入 API Key'); return; }
+  document.getElementById('model-form-area').innerHTML = '';
+  await execSwitch(providerName, modelName, key);
 }
 
 /** Render provider form (add or edit). */

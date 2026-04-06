@@ -43,7 +43,12 @@ models:
 | 切换到**官方** opus/sonnet/haiku | `model` = 选中别名；**删除** `env.ANTHROPIC_BASE_URL` 和 `env.ANTHROPIC_MODEL` |
 | 切换到**自定义** Provider 的某模型 | `env.ANTHROPIC_BASE_URL` = endpoint；`env.ANTHROPIC_MODEL` = 模型名；`model` 保持不变 |
 
-API Key 不写入 settings.json，始终通过用户 shell 环境变量提供。
+API Key 通过用户 shell 环境变量或 UI inline 输入提供；inline 输入的 key 写入全局 settings.json 的 `env.ANTHROPIC_AUTH_TOKEN`（非 ANTHROPIC_API_KEY）。
+
+> **Amendment (2026-03-29)**：
+> - 切换目标由 `{project}/.claude/settings.local.json` → `~/.claude/settings.json`（全局）。原因：CC daemon 将 settings.local.json 的 env 广播给所有会话，项目级隔离不可达，改全局更透明。
+> - 第三方模型切换需同时设置五个 model-family vars（ANTHROPIC_MODEL + SMALL_FAST + DEFAULT_SONNET/OPUS/HAIKU），否则 CC 校验报错。
+> - 切回官方时，env vars 改为设空字符串 `""` 而非删除，支持热重载无重启生效。
 
 ---
 
