@@ -2,7 +2,7 @@
 
 Run multi-phase workflows autonomously with fix loops and safety controls.
 
-$ARGUMENTS — Pipeline mode and options. Modes: empty/`default` (实现 → verify → review → commit), `fix` (verify → review → fix loop), `verify-only` (just verify). Options: `--max-rounds N` (fix loop limit, default 3), `--skip-commit` (omit commit phase), `--auto` (auto mode: skip all intermediate confirmations, auto-apply mechanical fixes. Commit confirmation is NEVER skipped).
+$ARGUMENTS — Pipeline mode and options. Modes: empty/`default` (实现 → verify → review → commit), `fix` (verify → review → fix loop), `verify-only` (just verify). Options: `--max-rounds N` (fix loop limit, default 3), `--skip-commit` (omit commit phase), `--auto` (auto mode: skip all intermediate confirmations, auto-apply mechanical fixes. Commit confirmation is NEVER skipped), `--tdd` (enforce Red-Green-Refactor cycle during 实现 phase), `--worktree` (run pipeline in an isolated git worktree).
 
 ## Role
 
@@ -41,6 +41,24 @@ Run these checks before starting any pipeline:
    - If `--auto` flag is set: **skip confirmation**, proceed immediately (environment checks must still pass)
    - Otherwise: ask for confirmation before proceeding.
 
+### Step 0.5: Worktree Setup (conditional — when `--worktree` is set)
+
+1. **Create worktree**: `git worktree add .worktrees/{feature-name} -b loop/{feature-name}`
+   - Feature name derived from the plan filename or arguments
+   - If `.worktrees/` doesn't exist, create it. Verify `.worktrees/` is in `.gitignore`
+2. **Change working directory** to the new worktree
+3. **Detect and run setup**: Auto-detect project dependencies:
+   - `package.json` → `npm install`
+   - `requirements.txt` / `pyproject.toml` → `pip install -e .`
+   - `Cargo.toml` → `cargo build`
+   - `go.mod` → `go mod download`
+4. **Verify baseline**: Run the plan's verification command. If it fails, WARN but continue (baseline may already be broken).
+5. After pipeline completes (Step 4), present options:
+   - **A) Merge to original branch** → `git checkout {original}` + `git merge loop/{feature-name}` + cleanup worktree
+   - **B) Push and create PR** → `git push -u origin loop/{feature-name}` (keep worktree)
+   - **C) Keep as-is** → leave worktree for manual review
+   - **D) Discard** → `git worktree remove .worktrees/{feature-name}` (requires typed confirmation "discard")
+
 ### Step 1: Select Pipeline
 
 Parse `$ARGUMENTS` to determine the pipeline:
@@ -57,12 +75,20 @@ Parse options:
 - `--max-rounds N`: Set fix loop limit (default: 3)
 - `--skip-commit`: Remove commit from the pipeline
 - `--auto`: Auto mode — skip all intermediate confirmations, review 阶段 AUTO-FIX 类自动应用。Commit confirmation is NEVER skipped regardless of this flag.
+- `--tdd`: Enforce Red-Green-Refactor during 实现 phase (see Step 2 TDD mode)
+- `--worktree`: Create an isolated git worktree before starting (see Step 0.5)
 
 ### Step 2: Execute Pipeline
 
 For each phase in the selected pipeline, execute inline:
 
-**实现**: Read the latest plan from `.aion/plans/`, implement code changes step by step
+**实现**: Read the latest plan from `.aion/plans/`, implement code changes step by step.
+  - **If `--tdd` is set**: For each plan step that involves code changes, enforce Red-Green-Refactor:
+    1. **Red** — Write a failing test that describes the expected behavior. Run it, confirm it fails.
+    2. **Green** — Write the minimal implementation to make the test pass. Run it, confirm it passes.
+    3. **Refactor** — Clean up the code without changing behavior. Run tests again, confirm still green.
+    4. If you catch yourself writing implementation before the test, STOP, delete the implementation, write the test first.
+  - **If `--tdd` is NOT set**: Implement as normal, tests optional per plan's verification strategy.
 **verify**: Run build, types, lint, tests, debug audit
 **review**: Follow aion-review logic — review changes, score, extract rules. If `--auto`: AUTO-FIX classified issues are applied automatically, ASK classified issues are skipped and logged. >5 critical issues still triggers STOP regardless of `--auto`.
 **commit**: Follow aion-commit logic — generate message, show to user, **ALWAYS WAIT for confirmation** (even with `--auto`)
@@ -160,14 +186,17 @@ Pipeline complete. Report saved to `.aion/monitor/`. Review the summary above.
 ## Checklist
 
 - Environment checks completed before any work
+- Worktree created and setup verified (if `--worktree`)
 - Pipeline mode correctly parsed from arguments
 - Each phase runs inline with full logic (not abbreviated)
+- TDD Red-Green-Refactor enforced per plan step (if `--tdd`)
 - Fix loop has a hard stop condition (max rounds)
 - Verify always runs before review in fix loops
 - Commit ALWAYS requires user confirmation (even with `--auto`)
 - Phase status reported after each phase
 - Final summary includes all phases and any remaining concerns
 - Execution report persisted to `.aion/monitor/loop-{timestamp}.md`
+- Worktree completion option presented (if `--worktree`)
 - Auto-mode decisions logged in report (if `--auto`)
 
 ## Anti-Patterns
@@ -183,6 +212,8 @@ Pipeline complete. Report saved to `.aion/monitor/`. Review the summary above.
 | Skipping environment check | May run on wrong branch or with dirty state | HIGH |
 | Applying the same fix twice in the loop | Wastes rounds without progress | MEDIUM |
 | Skipping commit confirmation in `--auto` mode | Commit is the absolute safety floor — NEVER auto-commit | CRITICAL |
+| Writing implementation before test in `--tdd` mode | Violates Red-Green-Refactor — delete and start with the test | HIGH |
+| Auto-deleting worktree without "discard" confirmation | Worktree may contain uncommitted work — require typed confirmation | HIGH |
 
 ## Output Format
 

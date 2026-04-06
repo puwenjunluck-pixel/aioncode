@@ -178,6 +178,18 @@ Read and apply `.aion/checklists/commit.md` if it exists. If not, use the built-
 | Ignoring tech debt markers | TODO/FIXME accumulate silently, never get tracked or resolved | MEDIUM |
 | Skipping commit confirmation in `--auto` mode | Commit is the absolute safety floor — NEVER auto-commit | CRITICAL |
 
+### Rationalization Prevention
+If you catch yourself thinking any of these, STOP — you're rationalizing:
+
+| Excuse | Reality |
+|--------|---------|
+| "It's a trivial change, just commit it" | Trivial changes still need the user to see what's going in |
+| "The review already passed, no need to show files again" | Review checks quality; commit confirmation checks intent. Different gates |
+| "The user said --auto, they want speed" | --auto skips interaction, but commit confirmation is the absolute safety floor |
+| "I'll push now and the user can revert later" | `git push` is irreversible in shared repos. User owns the push decision |
+| "These are just docs/configs, no risk" | .env, credentials, API keys hide in "just configs". Always scan |
+| "The user is in a hurry, skip the changelog" | The changelog takes 5 seconds. Skipping it breaks the audit trail forever |
+
 ## Output Format
 ```
 Commit Complete

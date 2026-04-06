@@ -47,3 +47,12 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 
 - **写入 ~/.claude/settings.json 必须保留现有字段** (review, 2026-03-28) [cite_count: 0, last_cited: 2026-03-28]
   `switch_model()` 读取完整 settings.json → 修改目标字段 → 写回全量 JSON。绝不能只写入部分字段，否则会丢失用户的 permissions、hooks、statusLine 等配置。写入时使用 `json.dumps(data, indent=2)` 保持格式。
+
+- **CC 第三方模型必须同时设置所有 model-family env vars** (bugfix, 2026-03-29) [cite_count: 0, last_cited: 2026-03-29]
+  切换到第三方 Provider 时，仅设 `ANTHROPIC_MODEL` 会触发 CC 内置模型名白名单校验并报错"There's an issue with the selected model"。必须同时设置 `ANTHROPIC_SMALL_FAST_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL` 五个 vars，CC 才会跳过校验直接使用。参考：cc-switch 最佳实践。
+
+- **CC hot-reload 无法 unset env vars，清除需用空字符串** (bugfix, 2026-03-29) [cite_count: 0, last_cited: 2026-03-29]
+  切回官方 Anthropic 时不能用 `pop()` 删除 env 字段——运行中的 CC 进程已将 env var 注入进程环境，从 settings.json 中删除字段只影响下次启动，无法影响当前进程。需将字段设为 `""` 空字符串；CC JS 层以 falsy 判断（`if (baseUrl)`），空字符串等效未设置，无需重启立即生效。
+
+- **CC daemon 将 env vars 广播给所有会话，settings.local.json 无法项目级隔离** (bugfix, 2026-03-29) [cite_count: 0, last_cited: 2026-03-29]
+  Claude Code 所有打开的会话共用同一 daemon 进程。任何项目的 `.claude/settings.local.json` 中 env 变化都会立即广播给所有已连接会话——包括其他项目的终端窗口。模型切换不存在"只影响当前项目"的运行时隔离，应使用全局 `~/.claude/settings.json`，并在 UI 上说明切换是全局生效。

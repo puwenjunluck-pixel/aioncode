@@ -1,6 +1,6 @@
 ---
 product: AionCode
-updated_at: 2026-03-26
+updated_at: 2026-03-28
 generation_method: scan
 confidence: high
 sources:
@@ -39,6 +39,7 @@ sources:
 | Dashboard — 监控 | SSE 实时事件流 | 监控 Claude Code 活动 | 已实现 | [from:code] |
 | Dashboard — 需求/方案/规则/清单/缺陷/测试/日志 | 各类数据视图 | 按分类浏览项目数据 | 已实现 | [from:code] |
 | Dashboard — 技能 | Skill 安装管理 + 官方市场 | 扩展能力 | 已实现 | skills-management |
+| Dashboard — 模型配置 | Provider 卡片管理 + 模型芯片切换 + settings.json 集成（官方/自定义） | 切换 Claude Code 使用的模型 | 已实现 | model-api-config |
 | Dashboard — 帮助 | 工作流指南 + 命令速查（10 命令）+ 常见场景 + 测试最佳实践 + FAQ | 日常查阅（高频） | 已实现 | [from:code] |
 | Dashboard — 关于 | 产品介绍 + 动态版本号 + 安装升级 + 路线图 + 更新日志 | 产品身份（低频） | 已实现 | [from:code] |
 

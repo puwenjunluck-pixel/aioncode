@@ -42,14 +42,21 @@ When `$ARGUMENTS` contains `--file {path}`:
 - If `$ARGUMENTS` provides a clear description, proceed to analysis
 - If `$ARGUMENTS` is empty, ask the user: "What do you want to build? Describe the problem you're trying to solve."
 
-### Step 1.5: Challenge Assumptions (CRITICAL — do not skip)
-Before accepting the user's framing, ask yourself and the user:
-- "Is this the simplest solution to the real problem?"
-- "What's the actual problem behind this request? Are we solving the symptom or the cause?"
-- "Does this conflict with or duplicate anything in existing specs or rules?"
-- "What happens if we do nothing — how bad is it really?"
+### Step 1.5: Explore Approaches (CRITICAL — do not skip)
+Before diving into details, step back and explore the solution space together with the user. Present **2-3 viable approaches** using the "How to Ask Questions" format:
 
-Push back if the proposed approach is over-engineered, vague, or solves the wrong problem. Be respectful but direct.
+For each approach:
+- **Core idea**: One sentence describing the approach
+- **Pros**: Key advantages
+- **Cons**: Key disadvantages or risks
+- **Recommendation**: Bold the recommended option with a brief "because..."
+
+While exploring, keep these lenses active (internally, not as questions to the user):
+- Is this the simplest solution to the real problem?
+- Are we solving the symptom or the cause?
+- Does this conflict with existing specs or rules?
+
+The goal is collaborative exploration ("一起找最佳路径"), not interrogation. Let the user choose the direction before proceeding to clarifying questions.
 
 ### How to Ask Questions
 When you need user input, follow this structure:
@@ -66,13 +73,17 @@ Which approach?"
 
 ONE question at a time. Never batch multiple unrelated decisions.
 
-### Step 2: Clarifying Questions
-Ask 2-3 targeted questions to fill gaps. Focus on:
+### Step 2: Clarifying Questions (one at a time)
+Ask questions **one at a time**, following the "How to Ask Questions" format above. Pick the most important gap first, get the answer, then decide the next question based on what you learned.
+
+**Question pool** (select from, do NOT ask all at once):
 - What problem does this solve? Who is the user?
 - What are the boundaries — what is NOT in scope?
 - Are there technical constraints (existing stack, APIs, performance)?
 - What does "done" look like — how do we verify success?
-- Distinguish P0 (must-have) from P1 (nice-to-have) requirements
+- Which parts are P0 (must-have) vs P1 (nice-to-have)?
+
+**Context recall**: When you've asked 3+ questions, briefly recap confirmed decisions before the next question (one line, e.g., "到目前为止：scope 限 API 层，用 JWT，不做前端。接下来...").
 
 ### Step 3: Generate Spec
 When you have enough information, generate a structured spec.
@@ -139,11 +150,31 @@ Before writing the spec, check if a spec with the same name already exists in `.
 
 **Refusal Condition**: If existing spec was found but no diff summary was presented, this write is INVALID.
 
-### Step 4: Confirm and Write
-1. Show the complete spec to the user in the conversation for review
-2. Ask: "Does this accurately capture what you want? Any changes?" (确认需求是否准确？)
-3. Only after explicit confirmation, write to `.aion/specs/{feature-name}.md`
-4. If prototype files in `.aion/prototypes/` were referenced, note them in the References section
+### Step 3.8: Spec Self-Review (before showing to user)
+
+Before presenting the spec to the user, run an internal quality check. Fix issues inline — the user should see a reviewed version, not a draft.
+
+**Four checks**:
+1. **Placeholder scan** — Search for TBD, TODO, "to be determined", incomplete sentences, or empty sections. If found, fill them in or remove the section.
+2. **Internal consistency** — Do P0 requirements contradict each other? Do any requirements conflict with Constraints? If yes, resolve the contradiction.
+3. **Scope check** — Can this spec be covered by a single implementation plan? If it spans multiple independent subsystems, suggest splitting into separate specs.
+4. **Ambiguity check** — Is any requirement interpretable two different ways? If yes, pick the most reasonable interpretation and make it explicit.
+
+This step is internal — do NOT ask the user to review the self-review. Just fix issues and proceed.
+
+### Step 4: Section-by-Section Confirm and Write
+Present the spec **one section at a time** for review. After each section, wait for confirmation or modification before proceeding.
+
+**Confirmation sequence**:
+1. Show **Goal** → "目标准确吗？" → wait for confirmation or edits
+2. Show **Requirements (P0)** → "P0 需求完整吗？有遗漏或需要调整的？" → wait
+3. Show **Requirements (P1)** → "P1 需求合理吗？" → wait
+4. Show **Acceptance Criteria** → "验收标准是否可衡量？" → wait
+5. Show **Constraints** → "约束条件有遗漏吗？" → wait
+
+After each section, if the user requests changes, apply them immediately before moving to the next section. Once all sections are confirmed, assemble the complete spec and write to `.aion/specs/{feature-name}.md`.
+
+If prototype files in `.aion/prototypes/` were referenced, note them in the References section.
 
 ### Step 5: Update _product.md (auto-propagation)
 
@@ -168,7 +199,7 @@ After the spec is written, update the global product design document:
 
 ## Next Steps
 
-Proceed with /project:aion-plan to create an implementation plan.
+Spec 已写入 `{path}`。下一步建议运行 `/project:aion-plan` 基于此 spec 生成实现方案。plan 会自动读取刚写入的 spec，无需额外指定参数。
 
 ## Checklist
 Read and apply `.aion/checklists/design.md` if it exists. If not, use the built-in checklist:
@@ -178,8 +209,10 @@ Read and apply `.aion/checklists/design.md` if it exists. If not, use the built-
 - [ ] Acceptance criteria are measurable (not vague like "should work well")
 - [ ] Known rules/pitfalls have been checked and no conflicts exist
 - [ ] Reference documents and prototypes have been consulted (if available)
-- [ ] Assumptions have been challenged — simplest viable solution chosen
+- [ ] 2-3 approaches explored with trade-offs — user chose direction
 - [ ] Scope boundaries are explicit (what is NOT included)
+- [ ] Spec Self-Review passed (no placeholders, no contradictions, no ambiguity)
+- [ ] Spec confirmed section-by-section (Goal + P0 + P1 + AC + Constraints)
 - [ ] Existing spec checked — Write Protocol followed (version archived if updating)
 - [ ] Scope conflict checked — different scope forces different filename
 
@@ -190,8 +223,10 @@ Read and apply `.aion/checklists/design.md` if it exists. If not, use the built-
 | Ignoring `.aion/refs/` and `.aion/prototypes/` | Missing context leads to specs that contradict existing requirements | HIGH |
 | Designing what conflicts with existing rules | Repeating known mistakes wastes everyone's time | HIGH |
 | Writing spec without user confirmation | Specs must be agreed upon — unilateral writing breaks trust | CRITICAL |
-| Accepting vague requirements without pushback | "Make it better" is not a requirement — challenge it | HIGH |
-| Skipping the assumption challenge step | Over-engineering and wrong-problem-solving sneak through | MEDIUM |
+| Accepting vague requirements without pushback | "Make it better" is not a requirement — explore what they actually need | HIGH |
+| Skipping approach exploration | Over-engineering and wrong-problem-solving sneak through unchallenged | MEDIUM |
+| Batch-asking multiple questions at once | Overwhelms the user; decisions get rushed or overlooked | MEDIUM |
+| Skipping Spec Self-Review | Placeholders, contradictions, and ambiguity reach the user, eroding trust | HIGH |
 | Overwriting existing spec without version check | Loses design decision history; can't trace why requirements changed | HIGH |
 | Same filename for different scopes (api vs web) | Frontend and backend specs overwrite each other | HIGH |
 

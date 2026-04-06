@@ -2,6 +2,44 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-03-29 | fix: Dashboard 模型切换机制修正
+
+### Summary
+- 修复第三方模型切换报错"There's an issue with the selected model"：改为同时设置所有 model-family env vars（ANTHROPIC_MODEL + ANTHROPIC_SMALL/SONNET/OPUS/HAIKU_MODEL）才能绕过 CC 内置模型名白名单校验
+- 切换目标从 `{project}/.claude/settings.local.json` 改回全局 `~/.claude/settings.json`：发现 CC daemon 会将 env vars 广播给所有已连接会话，settings.local.json 无法实现运行时项目级隔离
+- 切回官方时改用空字符串 `""` 代替 pop 清除 env vars：运行中进程无法通过删除 settings.json 字段来 unset 已注入的 env var，空字符串在 CC JS 层为 falsy 等效未设置
+- 第三方 Provider 改用 ANTHROPIC_AUTH_TOKEN（非 ANTHROPIC_API_KEY），参考 cc-switch 最佳实践
+- Dashboard server 由 settings.local.json → global settings.json 全局热重载，切换立即生效无需重启
+
+### Key Conclusions
+- CC 模型名校验绕过：单设 ANTHROPIC_MODEL 不够，需五个 model-family vars 全设
+- CC env var 清除：只能覆盖（设 ""），不能删除——运行中进程的 env 无法被 settings 文件更新 unset
+- CC 全局性：settings.local.json 的 env 段同样全局生效，无"项目级模型"可言，确认采用全局 settings.json 方案
+
+### Pending
+- 无
+
+## 2026-03-28 | feat: Dashboard 模型 API 可视化配置（v0.7.3）
+
+### Summary
+- 新增 Dashboard 设置页「模型配置」功能，支持可视化管理 Provider 和切换模型
+- 内置 Anthropic 官方订阅卡片（opus/sonnet/haiku），始终置顶不可删除
+- 自定义 Provider 支持增删改，预设 OpenAI / Google / DeepSeek 一键填充
+- 切换模型自动写入 `~/.claude/settings.json`（官方模式清除 env，自定义模式设置 BASE_URL + MODEL）
+- 修复后端 `services/team.py` models 解析 bug（flat dict → list-of-objects）
+- 新增 3 个 API 端点：check-env / switch-model / current-model
+- 前端模型配置逻辑独立为 `models.js`（291 行），遵守 500 行文件上限
+- 切换后显示 toast 提示"重启 Claude Code 会话后生效"
+- 版本号 0.7.2 → 0.7.3，17 个文件变更，+1216/-43 行
+- Commit: 4df2022, Tag: v0.7.3
+
+### Key Conclusions
+- API Key 永不存储在文件中，仅存环境变量名，/check-env 仅返回 boolean
+- 切换机制复用 Claude Code 原生 settings.json，无需额外配置文件
+
+### Pending
+- 无
+
 ## 2026-03-26 | fix: 清理 .claude/commands/ 中已删除命令的残留引用
 
 ### Summary

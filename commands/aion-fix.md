@@ -2,7 +2,7 @@
 
 Fix bugs from `.aion/bugs/` reports. Filters by role, fixes methodically, commits atomically.
 
-$ARGUMENTS — Optional: bug ID (e.g., `F-0325-001`) to fix a specific bug. Flags: `-f` force frontend only, `-b` force backend only, `--auto` (skip triage confirmation, fix all in priority order, auto-commit each fix). If empty, fix all open bugs matching current role.
+$ARGUMENTS — Optional: bug ID (e.g., `F-0325-001`) to fix a specific bug. Flags: `-f` force frontend only, `-b` force backend only, `--auto` (skip triage confirmation, fix all in priority order, auto-commit each fix), `--deep` (root cause analysis mode: 4-phase investigation before fixing). If empty, fix all open bugs matching current role.
 
 ## Role
 
@@ -86,6 +86,36 @@ Before implementing the fix:
 - Check if a similar bug was fixed elsewhere (grep for fix patterns)
 - This prevents fixing the same root cause in multiple places with different approaches
 
+#### 2c.5. Root Cause Analysis (conditional — when `--deep` is set)
+
+When `--deep` flag is present, run four-phase investigation BEFORE attempting any fix:
+
+**Phase 1: Investigation** — Gather evidence, don't guess.
+- Read the full error message/stack trace
+- Reproduce the bug by tracing the code path (read caller → callee chain)
+- Check `git log` for recent changes to affected files — did a recent commit introduce this?
+- List all assumptions: "I assume X because Y"
+
+**Phase 2: Pattern Analysis** — Find what works and compare.
+- Find a similar feature or code path in the codebase that DOES work correctly
+- Diff the working code against the broken code — what's different?
+- Check if the bug exists in other similar locations (systemic vs isolated)
+
+**Phase 3: Hypothesis** — One hypothesis at a time.
+- Form a single, testable hypothesis: "The bug occurs because {X} when {Y}"
+- Design a minimal test to confirm or refute — don't fix yet, just verify the hypothesis
+- If refuted: return to Phase 1 with new evidence. Do NOT try another fix blindly.
+
+**Phase 4: Implementation** — Fix with confidence.
+- Write a failing test that reproduces the bug (this test must fail before the fix)
+- Apply the minimal fix
+- Run the test — it must now pass
+- Check for the same pattern in other locations (Phase 2 findings)
+
+**Escalation rule**: After 3 failed fix attempts on the same bug, STOP and question the architecture:
+- "Is the bug a symptom of a deeper design problem?"
+- Report to user with evidence gathered, suggest architectural discussion.
+
 #### 2d. Fix Code
 Apply the minimal change to address the root cause:
 - Fix exactly what the bug report describes
@@ -156,6 +186,7 @@ Or: use `/project:aion-commit` directly if fixes are straightforward (Tier 1/2 m
 - [ ] Bug scope filtered correctly
 - [ ] Each bug: code located before fixing
 - [ ] Each bug: Reuse Scan performed
+- [ ] Each bug: Root Cause Analysis completed (if `--deep`)
 - [ ] Each bug: verify_test run (if specified)
 - [ ] Each bug: atomic commit with ID in message
 - [ ] Each bug: status updated to `fixed`
@@ -171,6 +202,8 @@ Or: use `/project:aion-commit` directly if fixes are straightforward (Tier 1/2 m
 | Skipping verify_test | Bug may still be broken in a different way | HIGH |
 | Role bypass without explicit `-f`/`-b` flag | Designer/tester accidentally modifying code | MEDIUM |
 | Fixing > 3 files for a "simple" bug | Scope has exploded — stop and confirm with user | MEDIUM |
+| Guessing the fix without root cause analysis (`--deep`) | Symptom fixes mask underlying issues; bug recurs in a different form | HIGH |
+| Trying a 4th fix on the same bug in `--deep` mode | 3 failures = likely architectural issue. Escalate, don't persist | MEDIUM |
 
 ## Output Format
 Bug status updated in `.aion/bugs/`, atomic commits per fix, summary shown in conversation.

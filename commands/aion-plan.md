@@ -60,17 +60,33 @@ The compression ratio: ~3x for research, ~30x for features, ~50x for tests, ~100
 Do NOT cut corners with "// TODO" or "handle other cases" — implement them now.
 
 ### Step 2: Design Steps with Dependencies
-Create an ordered list of implementation steps. For each step:
-- What to do (description)
-- Which files to create or modify
-- Dependencies (what must be done first)
-- Estimated complexity (small / medium / large)
+Create an ordered list of implementation steps. Each step must be scoped to **one file or one function-level change** — no monolithic "implement the feature" steps.
+
+**Step format** (use for each step):
+```
+### Step N: {Title}
+- **What**: One sentence — what this step accomplishes
+- **Files**: Exact files to create or modify
+- **How**: 2-3 sentences on implementation approach (function/method level, no code blocks)
+- **Verify**: Concrete check — command to run, output to expect, or condition to confirm
+- **Dependencies**: Which prior steps must be done first, or "None"
+- **Complexity**: small | medium | large
+```
+
+**Granularity rules**:
+- Each step targets one file or one cohesive function group
+- Every step MUST have a `Verify` field — no unverifiable steps
+
+**Forbidden descriptions** (these are too vague — expand them):
+- "Similar to Step N" — repeat the specifics; executor may read steps out of order
+- "Add appropriate error handling" — specify which errors and how to handle them
+- "Write tests" / "Add tests for the above" — specify which cases and assertions
+- "Update as needed" / "Make necessary changes" — list the exact changes
 
 Principles:
 - **Minimal changes**: Reuse existing patterns, avoid unnecessary refactoring
 - **Correct order**: Dependencies must be satisfied before dependent steps
 - **Avoid known pitfalls**: Reference rules where relevant
-- **Small steps**: Each step should be completable and verifiable independently
 
 ### Step 3: Define Verification Strategy
 Define how the implementation will be verified:
@@ -100,6 +116,17 @@ Before writing the plan, check if a plan with the same name already exists in `.
 3. Write new plan to `.aion/plans/{name}.md` with `version: {N+1}`
 4. Ask user for `change_reason` (required, cannot be empty): "What changed? (e.g., '需求变更：增加了权限控制')"
 5. Maximum 10 archived versions per plan. If exceeded, warn user and suggest cleanup
+
+### Step 3.8: Plan Self-Review (before showing to user)
+
+Before presenting the plan to the user, run an internal quality check. Fix issues inline — the user should see a reviewed version, not a draft.
+
+**Three checks**:
+1. **Spec coverage** — Walk through each P0 requirement in the spec. For each, identify the implementing step(s). If a requirement has no corresponding step, add the missing step.
+2. **Step completeness** — For each step, verify it handles edge cases and error conditions relevant to that step (not just the happy path). If a step says "modify function X" but doesn't mention what happens when X receives invalid input, add that detail.
+3. **Name consistency** — Verify that file names, function names, and variable names referenced in later steps match exactly what was defined in earlier steps. Mismatches (e.g., `clearLayers()` in Step 2 vs `clearFullLayers()` in Step 5) are bugs — fix them.
+
+This step is internal — do NOT ask the user to review the self-review. Just fix issues and proceed.
 
 ### Step 4: Confirm and Write
 1. Present the complete plan to the user for review
@@ -146,9 +173,11 @@ total_steps: {N}
 ## Implementation Steps
 
 ### Step 1: {Title}
-- **Description**: {What to do}
-- **Files**: {Which files to create/modify}
-- **Dependencies**: {What must be done first, or "None"}
+- **What**: {One sentence — what this step accomplishes}
+- **Files**: {Exact files to create or modify}
+- **How**: {2-3 sentences on implementation approach, function/method level}
+- **Verify**: {Concrete check — command, output, or condition}
+- **Dependencies**: {Prior steps required, or "None"}
 - **Complexity**: {small | medium | large}
 - **Status**: Not started
 
@@ -174,9 +203,12 @@ Read and apply `.aion/checklists/plan.md` if it exists. If not, use the built-in
 - [ ] Codebase has been explored — existing patterns understood
 - [ ] All P0 requirements from the spec are covered by at least one step
 - [ ] Steps are ordered with correct dependencies
+- [ ] Each step is scoped to one file or one function-level change
+- [ ] Each step has a verify field with concrete check method
+- [ ] No vague descriptions ("similar to Step N", "add error handling", "write tests")
+- [ ] Plan Self-Review passed (spec coverage, step completeness, name consistency)
 - [ ] Rules have been consulted to avoid known issues
 - [ ] Verification strategy is defined with concrete commands
-- [ ] Each step has clear file targets and description
 - [ ] Risks are identified with mitigations
 - [ ] Existing plan checked — version archived if updating
 
@@ -187,10 +219,25 @@ Read and apply `.aion/checklists/plan.md` if it exists. If not, use the built-in
 | Ignoring existing patterns | Creating inconsistent code that's harder to maintain | HIGH |
 | No verification strategy | No way to know if implementation actually works | HIGH |
 | Monolithic steps ("implement the feature") | Steps that are too large can't be tracked or verified | MEDIUM |
+| Vague step descriptions ("add error handling", "similar to Step N") | Executor must guess intent; results diverge from plan | HIGH |
+| Steps without verify field | No way to confirm a step was done correctly before moving on | MEDIUM |
+| Skipping Plan Self-Review | Spec gaps and name inconsistencies reach the user, cause rework | HIGH |
 | Ignoring contracts | Breaking interface agreements causes integration failures | HIGH |
 | Not referencing rules in the plan | Known pitfalls will be repeated during implementation | MEDIUM |
 | Overwriting existing plan without archiving | Loses design decision history; can't trace why approach changed | HIGH |
 | Empty change_reason when versioning | Version history is useless without context on what changed | MEDIUM |
+
+### Rationalization Prevention
+If you catch yourself thinking any of these, STOP — you're rationalizing:
+
+| Excuse | Reality |
+|--------|---------|
+| "I know this codebase well enough, no need to read code" | You know what you remember. The code knows what actually exists |
+| "The spec is clear, the plan writes itself" | Clear specs still need codebase exploration — existing patterns dictate HOW |
+| "I'll figure out the details during implementation" | Vague plans produce vague implementations. Specify now or debug later |
+| "This step is obvious, no need for a verify field" | If it's obvious, writing the verify takes 10 seconds. If it's not, you just proved why you need it |
+| "It's similar to Step N, no need to repeat" | The executor may read steps out of order. Repeat the specifics |
+| "Adding error handling details will bloat the plan" | Missing error handling in the plan means missing error handling in the code |
 
 ## Output Format
 The plan file written to `.aion/plans/{feature-name}.md` using the format defined in Step 4.
