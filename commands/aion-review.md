@@ -54,20 +54,26 @@ Every claim must cite evidence. Use format: `filename:line_number` or specific t
 - BAD: "There might be security issues" or "This probably works"
 Never use "likely", "probably", "should be fine" — verify and cite, or mark as `[UNVERIFIED]`.
 
-### Parallelism Strategy (optional, platform-aware)
+### Parallelism Strategy (optional)
 
 When reviewing changes across 5+ files or across independent concerns, parallelize:
 
-**Claude Code**: Use the Agent tool to dispatch subagents:
+<!-- PLATFORM:claude -->
+Use the Agent tool to dispatch subagents:
 - **By stage**: One subagent runs Stage A (Spec Compliance), another runs Stage B (Code Quality + Security)
 - **By module**: One subagent reviews frontend changes, another reviews backend changes
 - Each subagent must still read the full file (not just diffs) and check against `.aion/rules/`
-
-**Antigravity**: Use Manager View to visually dispatch review agents — same split strategies (by stage or by module), but agents are visible in the orchestration panel. Each agent reports findings as Artifacts.
+<!-- /PLATFORM:claude -->
+<!-- PLATFORM:antigravity -->
+Use Manager View to visually dispatch review agents:
+- **By stage**: One agent runs Stage A (Spec Compliance), another runs Stage B (Code Quality + Security)
+- **By module**: One agent reviews frontend changes, another reviews backend changes
+- Each agent reports findings as Artifacts. All agents must read the full file and check against `.aion/rules/`.
+<!-- /PLATFORM:antigravity -->
 
 ### Step 2: Two-Stage Review
 
-Review is split into two independent stages. Both read the COMPLETE file (not just diffs). When parallelizing (see Parallelism Strategy above), dispatch these as two parallel agents (Claude Code: Agent tool subagents; Antigravity: Manager View agents).
+Review is split into two independent stages. Both read the COMPLETE file (not just diffs). When parallelizing (see Parallelism Strategy above), dispatch these as two parallel agents.
 
 #### Stage A: Spec Compliance (30% — "Are we building the right thing?")
 For each changed file:
@@ -92,7 +98,7 @@ For each changed file:
 **Output**: Issues list with severity and suggested fixes.
 
 #### Merging Results
-After both stages complete, merge findings into a single review. If stages were run in parallel (subagents or Manager View agents), read both outputs and deduplicate before scoring.
+After both stages complete, merge findings into a single review. If stages were run in parallel, read both outputs and deduplicate before scoring.
 
 ### Step 2.5: Quantitative Quality Gate
 For each changed file, run quantitative checks against `rules/style.md` thresholds:

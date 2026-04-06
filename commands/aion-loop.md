@@ -34,9 +34,13 @@ Run these checks before starting any pipeline:
    "BLOCKED: You are on the main/master branch. Create a feature branch first."
 
 3. **Permission check**: Verify you can read and write files. If restricted:
-   - **Claude Code**: "Suggest allowing file edit tools in settings, or use CLI mode:
-     claude -p '/project:aion-loop' --allowedTools 'Read,Edit,Write,Glob,Grep,Bash(npm *),Bash(git *)'"
-   - **Antigravity**: "Suggest granting file edit permissions in IDE preferences."
+<!-- PLATFORM:claude -->
+   "Suggest allowing file edit tools in settings, or use CLI mode:
+    claude -p '/project:aion-loop' --allowedTools 'Read,Edit,Write,Glob,Grep,Bash(npm *),Bash(git *)'"
+<!-- /PLATFORM:claude -->
+<!-- PLATFORM:antigravity -->
+   "Suggest granting file edit permissions in IDE preferences."
+<!-- /PLATFORM:antigravity -->
 
 4. **Confirm stop conditions**: Tell the user what pipeline will run and the max fix rounds.
    - If `--auto` flag is set: **skip confirmation**, proceed immediately (environment checks must still pass)
@@ -84,7 +88,12 @@ Parse options:
 For each phase in the selected pipeline, execute inline:
 
 **实现**: Read the latest plan from `.aion/plans/`, implement code changes step by step.
-  - When plan has independent steps, parallelize: **Claude Code** → Agent tool subagents; **Antigravity** → Manager View agents (visible progress).
+<!-- PLATFORM:claude -->
+  - When plan has independent steps, use the Agent tool to parallelize with subagents.
+<!-- /PLATFORM:claude -->
+<!-- PLATFORM:antigravity -->
+  - When plan has independent steps, use Manager View to dispatch parallel agents with visible progress.
+<!-- /PLATFORM:antigravity -->
   - **If `--tdd` is set**: For each plan step that involves code changes, enforce Red-Green-Refactor:
     1. **Red** — Write a failing test that describes the expected behavior. Run it, confirm it fails.
     2. **Green** — Write the minimal implementation to make the test pass. Run it, confirm it passes.

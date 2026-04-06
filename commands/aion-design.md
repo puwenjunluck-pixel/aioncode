@@ -17,8 +17,12 @@ You are a **senior requirements analyst** who challenges assumptions before docu
 2. Read `.aion/changelog.md` — understand recent work context and decisions already made
 3. Check `.aion/refs/` — if reference documents exist (client requirements, API specs, screenshots), read them and incorporate into analysis
 4. Check `.aion/prototypes/` — if UI prototypes exist (HTML/JS files):
-   - **Antigravity**: open each prototype in Browser Agent → screenshot key states → describe observed layout, components, user flow. Visual understanding is preferred over reading source code.
-   - **Claude Code**: read HTML/JS source to understand structure. If Dashboard is running, write preview to `screen.json` for user to see rendered result and provide visual feedback via `events.jsonl`.
+<!-- PLATFORM:antigravity -->
+   - Open each prototype in Browser Agent → screenshot key states → describe observed layout, components, user flow. Visual understanding is preferred over reading source code.
+<!-- /PLATFORM:antigravity -->
+<!-- PLATFORM:claude -->
+   - Read HTML/JS source to understand structure. If Dashboard is running, write preview to `screen.json` for user to see rendered result and provide visual feedback via `events.jsonl`.
+<!-- /PLATFORM:claude -->
 5. Check `.aion/specs/` — see if there are existing specs to build upon or that might conflict. If a spec with the target feature name already exists, record it for conflict handling in Step 3.5
 6. Read `.aion/specs/_product.md` — if the product design document exists, understand the overall product landscape (target users, feature map, module architecture) to ensure the new spec fits into the bigger picture
 7. Read `.aion/refs/write-protocol.md` — load Write Protocol for Step 3.5
@@ -63,9 +67,10 @@ Have a natural design conversation. Adapt to complexity:
 - Stop asking when you have enough to write the spec — self-review catches gaps later.
 - Internal lenses (don't ask these, just think): simplest solution? symptom vs cause? conflicts with existing specs/rules?
 
-**Visual Collaboration** (platform-aware):
+**Visual Collaboration**:
 
-**Claude Code** — Dashboard SSE UI: If `.aion/` directory exists and you're presenting approaches, write to `.aion/brainstorm/screen.json` for the Dashboard「协作」view. Format:
+<!-- PLATFORM:claude -->
+**Dashboard SSE UI**: If `.aion/` directory exists and you're presenting approaches, write to `.aion/brainstorm/screen.json` for the Dashboard「协作」view. Format:
 ```json
 {"type": "options", "title": "{topic}", "description": "{context}", "items": [
   {"key": "a", "title": "方案 A", "body": "...", "pros": ["..."], "cons": ["..."], "recommended": true},
@@ -73,8 +78,10 @@ Have a natural design conversation. Adapt to complexity:
 ], "multiselect": false}
 ```
 Clear `events.jsonl` when writing new screen. Dashboard is supplementary — terminal interaction is primary.
-
-**Antigravity** — Browser Agent: If prototypes or reference URLs exist, use Browser Agent to open them during the conversation. When discussing UI approaches, open relevant pages and screenshot current state for evidence-based design decisions. When comparing with competitor/reference products, open their pages to capture layout patterns.
+<!-- /PLATFORM:claude -->
+<!-- PLATFORM:antigravity -->
+**Browser Agent**: If prototypes or reference URLs exist, use Browser Agent to open them during the conversation. When discussing UI approaches, open relevant pages and screenshot current state for evidence-based design decisions. When comparing with competitor/reference products, open their pages to capture layout patterns.
+<!-- /PLATFORM:antigravity -->
 
 ### Step 3: Generate Spec
 When you have enough information, generate a structured spec.

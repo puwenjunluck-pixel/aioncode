@@ -250,12 +250,12 @@ def init_project(
                 result.skipped.append(f"{cmd_rel}/{f.name}")
                 continue
             dst = cmd_dst / f.name
+            content = f.read_text(encoding="utf-8")
+            # Strip platform-specific blocks for the other platform
+            content = _strip_platform_blocks(content, platform_cfg.name)
             if needs_prefix_transform:
-                content = f.read_text(encoding="utf-8")
                 content = content.replace(src_prefix, tgt_prefix)
-                dst.write_text(content, encoding="utf-8")
-            else:
-                shutil.copy2(f, dst)
+            dst.write_text(content, encoding="utf-8")
             result.updated.append(f"{cmd_rel}/{f.name}")
 
     # 1.5. Clean up stale aion-* command files (always based on source truth)
@@ -380,6 +380,28 @@ def init_project(
     result.ok = True
     result.message = f"{'Upgraded' if upgrade else 'Initialized'} .aion/ in {target}"
     return result
+
+
+def _strip_platform_blocks(content: str, keep_platform: str) -> str:
+    """Strip platform-specific blocks, keeping only the target platform's content.
+
+    Blocks are delimited by <!-- PLATFORM:name --> and <!-- /PLATFORM:name -->.
+    The kept platform's delimiters are also removed, leaving clean content.
+    """
+    import re
+
+    # Remove blocks for OTHER platforms (keep_platform's blocks are preserved)
+    def _remove_other(m: re.Match) -> str:
+        plat = m.group(1)
+        return "" if plat != keep_platform else m.group(2)
+
+    content = re.sub(
+        r"<!-- PLATFORM:(\w+) -->\n?(.*?)<!-- /PLATFORM:\1 -->\n?",
+        _remove_other,
+        content,
+        flags=re.DOTALL,
+    )
+    return content
 
 
 def _check_gitignore(gitignore_path: Path) -> list[str]:

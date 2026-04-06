@@ -78,10 +78,14 @@ When `$ARGUMENTS` contains `--file {path}`:
 Explore the running application through a browser to discover UI structure, navigation flows, and dynamic content that static code analysis cannot reveal.
 
 **Prerequisites check**:
-1. Detect browser backend (priority order):
-   - **Antigravity Browser Agent**: built-in, always available on Antigravity platform — preferred
-   - **Playwright MCP**: check for MCP tools (`playwright_navigate`, `playwright_click`, `playwright_screenshot`)
-   - **Neither available**: skip to Static UI Analysis
+1. Detect browser backend:
+<!-- PLATFORM:antigravity -->
+   - Browser Agent is built-in and always available — proceed directly.
+<!-- /PLATFORM:antigravity -->
+<!-- PLATFORM:claude -->
+   - Check for Playwright MCP tools (`playwright_navigate`, `playwright_click`, `playwright_screenshot`)
+   - If not available: skip to Static UI Analysis
+<!-- /PLATFORM:claude -->
 2. Determine target URL:
    - If `--url` specified in `$ARGUMENTS` → use that
    - If not → try to detect from code: `package.json` scripts (dev/start), Docker config, Python server config
@@ -139,7 +143,9 @@ Explore the running application through a browser to discover UI structure, navi
 4. Read API call patterns in frontend code → infer data fetching
 5. Output: Static UI Analysis Report (same structure, marked `[from:static]`)
 
-> Note: Static analysis misses dynamic content, JS-rendered elements, and actual runtime states. Suggest user provides `--url` for better results. Antigravity users have Browser Agent built-in — no extra setup needed.
+<!-- PLATFORM:claude -->
+> Note: Static analysis misses dynamic content, JS-rendered elements, and actual runtime states. Suggest user provides `--url` with Playwright MCP for better results.
+<!-- /PLATFORM:claude -->
 
 ### Step 2: Determine Intent
 
