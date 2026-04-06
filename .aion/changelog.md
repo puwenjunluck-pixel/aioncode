@@ -2,6 +2,30 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-04-06 | feat: 命令体系升级 — superpowers 体验吸收
+
+### Summary
+- 对比 superpowers 14 个 skill 与 AionCode 10 命令体系，识别 7 项可借鉴能力（F1-F7）+ 1 项 gstack 遗留（G1）
+- 升级 6 个命令文件，实现 F2-F7：
+  - aion-design: 方案共创（Explore Approaches）+ 逐段确认 + Spec Self-Review
+  - aion-plan: 步骤粒度强化（What/How/Verify）+ Plan Self-Review + 禁止短语
+  - aion-review: 双阶段 Review（Spec Compliance + Code Quality）+ Rationalization Prevention + Receiving Code Review
+  - aion-commit: Rationalization Prevention（6 条借口表）
+  - aion-loop: --tdd（Red-Green-Refactor）+ --worktree（隔离工作树 + 四选一完成）
+  - aion-fix: --deep（四阶段根因分析 + 3 次失败升级）
+- 14 文件变更，+613/-53 行
+- Commit: 5ffb0a6
+
+### Key Conclusions
+- superpowers 强在流程纪律（TDD/Debug/Review），AionCode 强在知识积累（rules/product doc/QA）
+- 两者互补，本次吸收了 superpowers 的方法论优势，保留了 AionCode 的项目智能特色
+- F1（Dashboard 设计协作视图）和 G1（aion-audit）scope 大，留待后续独立 spec
+
+### Pending
+- Dashboard API Key 内联输入功能（C1）已实现但未 review/commit
+- F1 Dashboard 设计协作视图（需独立 design 周期）
+- G1 aion-audit 安全+性能审计命令（需独立 design 周期）
+
 ## 2026-03-29 | fix: Dashboard 模型切换机制修正
 
 ### Summary
