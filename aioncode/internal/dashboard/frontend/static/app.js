@@ -74,6 +74,9 @@ function showViewDetail(view) {
       d.innerHTML = `<div class="detail-welcome"><div class="welcome-icon">⏱</div>
         <div class="welcome-title">选择日志条目查看详情</div>
         <div class="welcome-hint">点击左侧变更日志列表</div></div>`; break;
+    case 'brainstorm':
+      d.innerHTML = '<div class="detail-brainstorm" id="detail-brainstorm"></div>';
+      if (typeof loadBrainstorm === 'function') loadBrainstorm(); break;
     case 'skills':
       d.innerHTML = `<div class="detail-welcome"><div class="welcome-icon">◆</div>
         <div class="welcome-title">选择技能查看详情</div>

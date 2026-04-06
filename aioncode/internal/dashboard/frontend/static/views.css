@@ -231,3 +231,41 @@
 .model-cancel-btn:hover { background: var(--bg-hover); }
 .model-toast { padding: 8px 14px; border-radius: 5px; font-size: 11px; color: var(--text-secondary); background: var(--accent-dim); border: 1px solid var(--accent); opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.3s, max-height 0.3s; }
 .model-toast.visible { opacity: 1; max-height: 40px; margin-bottom: 12px; }
+
+/* === Brainstorm collaboration view === */
+.detail-brainstorm { padding: 24px; max-width: 800px; }
+.bs-loading, .bs-error { color: var(--text-muted); padding: 40px; text-align: center; }
+.bs-empty { text-align: center; padding: 60px 20px; }
+.bs-empty-icon { font-size: 48px; margin-bottom: 16px; }
+.bs-empty-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.bs-empty-hint { font-size: 13px; color: var(--text-muted); }
+.bs-empty-hint code { background: var(--bg-deep); padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+.bs-screen { }
+.bs-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.bs-desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; }
+.bs-options { display: flex; flex-direction: column; gap: 12px; }
+.bs-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.bs-card:hover { border-color: var(--accent); }
+.bs-card.bs-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); background: var(--accent-dim); }
+.bs-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.bs-card-key { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 4px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.bs-card-title { font-weight: 600; font-size: 14px; }
+.bs-rec { font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 1px 6px; margin-left: auto; }
+.bs-card-body { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.bs-pros-cons { display: flex; gap: 16px; font-size: 12px; }
+.bs-pros, .bs-cons { list-style: none; padding: 0; margin: 0; }
+.bs-pro::before { content: '✓ '; color: #34c759; }
+.bs-con::before { content: '✗ '; color: #ff3b30; }
+.bs-compare { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+.bs-compare th, .bs-compare td { padding: 8px 12px; border: 1px solid var(--border); text-align: center; }
+.bs-compare th { background: var(--bg-deep); font-weight: 600; }
+.bs-dim { text-align: left; font-weight: 500; }
+.bs-choose-btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; background: var(--bg-deep); border: 1px solid var(--border); color: var(--text-primary); transition: all 0.15s; }
+.bs-choose-btn:hover { border-color: var(--accent); }
+.bs-choose-btn.bs-selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+.bs-hint { margin-top: 16px; font-size: 12px; color: var(--text-muted); text-align: center; }
+.bs-hint-done { color: var(--accent); font-weight: 500; }
+.bs-info { text-align: center; padding: 60px 20px; }
+.bs-info-icon { font-size: 36px; margin-bottom: 12px; }
+.bs-info-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.bs-info-desc { font-size: 13px; color: var(--text-muted); }

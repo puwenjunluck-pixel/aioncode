@@ -518,6 +518,44 @@ body {
 .model-toast { padding: 8px 14px; border-radius: 5px; font-size: 11px; color: var(--text-secondary); background: var(--accent-dim); border: 1px solid var(--accent); opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.3s, max-height 0.3s; }
 .model-toast.visible { opacity: 1; max-height: 40px; margin-bottom: 12px; }
 
+/* === Brainstorm collaboration view === */
+.detail-brainstorm { padding: 24px; max-width: 800px; }
+.bs-loading, .bs-error { color: var(--text-muted); padding: 40px; text-align: center; }
+.bs-empty { text-align: center; padding: 60px 20px; }
+.bs-empty-icon { font-size: 48px; margin-bottom: 16px; }
+.bs-empty-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.bs-empty-hint { font-size: 13px; color: var(--text-muted); }
+.bs-empty-hint code { background: var(--bg-deep); padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+.bs-screen { }
+.bs-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.bs-desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; }
+.bs-options { display: flex; flex-direction: column; gap: 12px; }
+.bs-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.bs-card:hover { border-color: var(--accent); }
+.bs-card.bs-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); background: var(--accent-dim); }
+.bs-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.bs-card-key { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 4px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.bs-card-title { font-weight: 600; font-size: 14px; }
+.bs-rec { font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 1px 6px; margin-left: auto; }
+.bs-card-body { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.bs-pros-cons { display: flex; gap: 16px; font-size: 12px; }
+.bs-pros, .bs-cons { list-style: none; padding: 0; margin: 0; }
+.bs-pro::before { content: '✓ '; color: #34c759; }
+.bs-con::before { content: '✗ '; color: #ff3b30; }
+.bs-compare { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+.bs-compare th, .bs-compare td { padding: 8px 12px; border: 1px solid var(--border); text-align: center; }
+.bs-compare th { background: var(--bg-deep); font-weight: 600; }
+.bs-dim { text-align: left; font-weight: 500; }
+.bs-choose-btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; background: var(--bg-deep); border: 1px solid var(--border); color: var(--text-primary); transition: all 0.15s; }
+.bs-choose-btn:hover { border-color: var(--accent); }
+.bs-choose-btn.bs-selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+.bs-hint { margin-top: 16px; font-size: 12px; color: var(--text-muted); text-align: center; }
+.bs-hint-done { color: var(--accent); font-weight: 500; }
+.bs-info { text-align: center; padding: 60px 20px; }
+.bs-info-icon { font-size: 36px; margin-bottom: 12px; }
+.bs-info-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.bs-info-desc { font-size: 13px; color: var(--text-muted); }
+
 </style>
 </head>
 <body>
@@ -566,6 +604,10 @@ body {
   <button class="rail-btn" data-view="changelog" onclick="switchView('changelog')" aria-label="日志">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zM0 8a8 8 0 1116 0A8 8 0 010 8zm8-4.5v5l3.5 2-.5.87L7 9.13V3.5h1z"/></svg>
     <span class="tip">日志</span>
+  </button>
+  <button class="rail-btn" data-view="brainstorm" onclick="switchView('brainstorm')" aria-label="协作">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1C4.13 1 1 3.58 1 6.75c0 1.83 1.08 3.45 2.75 4.5L3 14.5l3.5-2.1c.49.07.99.1 1.5.1 3.87 0 7-2.58 7-5.75S11.87 1 8 1z"/></svg>
+    <span class="tip">协作</span><span class="badge" id="b-brainstorm" style="display:none"></span>
   </button>
   <!-- Bottom -->
   <div class="rail-sep"></div>
@@ -654,6 +696,13 @@ body {
       <div class="view-sidebar hidden" id="vs-changelog">
         <div class="sw-title">变更日志 <span class="sw-badge" id="b-changelog">—</span></div>
         <div class="sw-body" id="changelog-list"></div>
+      </div>
+      <!-- Brainstorm sidebar -->
+      <div class="view-sidebar hidden" id="vs-brainstorm">
+        <div class="sw-title">设计协作</div>
+        <div class="sw-body" id="brainstorm-sidebar">
+          <p style="color:var(--text-muted);font-size:12px;padding:8px">方案选项将在右侧展示。在终端运行 aion-design 时自动激活。</p>
+        </div>
       </div>
       <!-- Skills sidebar -->
       <div class="view-sidebar hidden" id="vs-skills">
@@ -787,6 +836,9 @@ function showViewDetail(view) {
       d.innerHTML = `<div class="detail-welcome"><div class="welcome-icon">⏱</div>
         <div class="welcome-title">选择日志条目查看详情</div>
         <div class="welcome-hint">点击左侧变更日志列表</div></div>`; break;
+    case 'brainstorm':
+      d.innerHTML = '<div class="detail-brainstorm" id="detail-brainstorm"></div>';
+      if (typeof loadBrainstorm === 'function') loadBrainstorm(); break;
     case 'skills':
       d.innerHTML = `<div class="detail-welcome"><div class="welcome-icon">◆</div>
         <div class="welcome-title">选择技能查看详情</div>
@@ -2111,6 +2163,198 @@ async function saveProviders() {
     showModelConfig();
   } else {
     alert('保存失败: ' + (d.message || ''));
+  }
+}
+
+</script>
+<script>
+/* AionCode Dashboard — Brainstorm collaboration view */
+
+let _bsPollTimer = null;
+let _bsLastScreen = null;
+
+/** Load brainstorm view — start polling for screen updates. */
+async function loadBrainstorm() {
+  const el = document.getElementById('detail-brainstorm');
+  if (!el) return;
+  el.innerHTML = '<div class="bs-loading">加载中...</div>';
+  _bsStopPoll();
+  await _bsFetchScreen();
+  _bsStartPoll();
+}
+
+/** Fetch and render current screen. */
+async function _bsFetchScreen() {
+  const el = document.getElementById('detail-brainstorm');
+  if (!el) { _bsStopPoll(); return; }
+
+  const d = await api(`/api/projects/${curEncoded}/brainstorm/screen`);
+  if (!d.ok) {
+    el.innerHTML = '<div class="bs-error">读取失败</div>';
+    return;
+  }
+
+  /* Update badge */
+  const badge = document.getElementById('b-brainstorm');
+  if (badge) {
+    if (d.active) { badge.style.display = ''; badge.textContent = '●'; }
+    else { badge.style.display = 'none'; }
+  }
+
+  if (!d.active || !d.screen) {
+    el.innerHTML = _bsRenderEmpty();
+    _bsLastScreen = null;
+    return;
+  }
+
+  /* Skip re-render if screen unchanged */
+  const screenStr = JSON.stringify(d.screen);
+  if (screenStr === _bsLastScreen) return;
+  _bsLastScreen = screenStr;
+
+  const s = d.screen;
+  switch (s.type) {
+    case 'options': el.innerHTML = _bsRenderOptions(s); break;
+    case 'compare': el.innerHTML = _bsRenderCompare(s); break;
+    case 'info':    el.innerHTML = _bsRenderInfo(s); break;
+    case 'html':    el.innerHTML = _bsRenderHtmlPlaceholder(); break;
+    default:        el.innerHTML = `<div class="bs-error">未知类型: ${esc(s.type)}</div>`;
+  }
+}
+
+/** Start polling every 1.5s. */
+function _bsStartPoll() {
+  _bsStopPoll();
+  _bsPollTimer = setInterval(_bsFetchScreen, 1500);
+}
+
+/** Stop polling. */
+function _bsStopPoll() {
+  if (_bsPollTimer) { clearInterval(_bsPollTimer); _bsPollTimer = null; }
+}
+
+/* ══════════════════════════════════════
+   Renderers
+   ══════════════════════════════════════ */
+
+/** Empty state — no active brainstorm session. */
+function _bsRenderEmpty() {
+  return `<div class="bs-empty">
+    <div class="bs-empty-icon">💬</div>
+    <div class="bs-empty-title">当前无设计协作会话</div>
+    <div class="bs-empty-hint">运行 <code>/project:aion-design</code> 开始设计，方案选项将在此展示。</div>
+  </div>`;
+}
+
+/** Render options (A/B/C choice cards). */
+function _bsRenderOptions(s) {
+  const multi = s.multiselect ? 'data-multi' : '';
+  let html = `<div class="bs-screen">
+    <h2 class="bs-title">${esc(s.title)}</h2>
+    ${s.description ? `<p class="bs-desc">${esc(s.description)}</p>` : ''}
+    <div class="bs-options" ${multi}>`;
+
+  for (const item of (s.items || [])) {
+    const rec = item.recommended ? '<span class="bs-rec">推荐</span>' : '';
+    const pros = (item.pros || []).map(p => `<li class="bs-pro">${esc(p)}</li>`).join('');
+    const cons = (item.cons || []).map(c => `<li class="bs-con">${esc(c)}</li>`).join('');
+    html += `<div class="bs-card" data-key="${esc(item.key)}" onclick="bsSelect(this)">
+      <div class="bs-card-head">
+        <span class="bs-card-key">${esc(item.key.toUpperCase())}</span>
+        <span class="bs-card-title">${esc(item.title)}</span>
+        ${rec}
+      </div>
+      ${item.body ? `<p class="bs-card-body">${esc(item.body)}</p>` : ''}
+      ${pros || cons ? `<div class="bs-pros-cons">
+        ${pros ? `<ul class="bs-pros">${pros}</ul>` : ''}
+        ${cons ? `<ul class="bs-cons">${cons}</ul>` : ''}
+      </div>` : ''}
+    </div>`;
+  }
+
+  html += `</div>
+    <div class="bs-hint" id="bs-hint">点击选择方案，然后回到终端继续</div>
+  </div>`;
+  return html;
+}
+
+/** Render comparison table. */
+function _bsRenderCompare(s) {
+  const dims = s.dimensions || [];
+  const items = s.items || [];
+
+  let thead = '<th></th>' + items.map(i => `<th>${esc(i.title)}</th>`).join('');
+  let tbody = '';
+  for (const dim of dims) {
+    tbody += `<tr><td class="bs-dim">${esc(dim)}</td>`;
+    for (const item of items) {
+      const val = (item.scores || {})[dim] || '';
+      tbody += `<td>${esc(val)}</td>`;
+    }
+    tbody += '</tr>';
+  }
+
+  let html = `<div class="bs-screen">
+    <h2 class="bs-title">${esc(s.title)}</h2>
+    <table class="bs-compare"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>
+    <div class="bs-options">`;
+
+  for (const item of items) {
+    html += `<button class="bs-choose-btn" data-key="${esc(item.key)}" onclick="bsSelect(this)">
+      选择 ${esc(item.title)}
+    </button>`;
+  }
+
+  html += `</div>
+    <div class="bs-hint" id="bs-hint">点击选择方案，然后回到终端继续</div>
+  </div>`;
+  return html;
+}
+
+/** Render info/waiting state. */
+function _bsRenderInfo(s) {
+  return `<div class="bs-info">
+    <div class="bs-info-icon">ℹ️</div>
+    <div class="bs-info-title">${esc(s.title || '')}</div>
+    ${s.description ? `<div class="bs-info-desc">${esc(s.description)}</div>` : ''}
+  </div>`;
+}
+
+/** Placeholder for HTML type (P1). */
+function _bsRenderHtmlPlaceholder() {
+  return `<div class="bs-info">
+    <div class="bs-info-icon">🔮</div>
+    <div class="bs-info-title">HTML 渲染即将支持</div>
+    <div class="bs-info-desc">自由 HTML 内容（mockup、wireframe）将在后续版本中支持。</div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════
+   Interaction
+   ══════════════════════════════════════ */
+
+/** Handle user selection — post event and show confirmation. */
+async function bsSelect(el) {
+  const key = el.dataset.key;
+  if (!key) return;
+
+  /* Visual feedback */
+  const container = el.closest('.bs-options');
+  if (container && !container.hasAttribute('data-multi')) {
+    container.querySelectorAll('.bs-card, .bs-choose-btn').forEach(c => c.classList.remove('bs-selected'));
+  }
+  el.classList.add('bs-selected');
+
+  /* Post event to backend */
+  await api(`/api/projects/${curEncoded}/brainstorm/event`, {
+    method: 'POST', body: { type: 'click', choice: key }
+  });
+
+  /* Update hint */
+  const hint = document.getElementById('bs-hint');
+  if (hint) {
+    hint.textContent = `已选择 ${key.toUpperCase()}，请回到终端继续`;
+    hint.classList.add('bs-hint-done');
   }
 }
 

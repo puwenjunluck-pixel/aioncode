@@ -56,6 +56,10 @@
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zM0 8a8 8 0 1116 0A8 8 0 010 8zm8-4.5v5l3.5 2-.5.87L7 9.13V3.5h1z"/></svg>
     <span class="tip">日志</span>
   </button>
+  <button class="rail-btn" data-view="brainstorm" onclick="switchView('brainstorm')" aria-label="协作">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1C4.13 1 1 3.58 1 6.75c0 1.83 1.08 3.45 2.75 4.5L3 14.5l3.5-2.1c.49.07.99.1 1.5.1 3.87 0 7-2.58 7-5.75S11.87 1 8 1z"/></svg>
+    <span class="tip">协作</span><span class="badge" id="b-brainstorm" style="display:none"></span>
+  </button>
   <!-- Bottom -->
   <div class="rail-sep"></div>
   <button class="rail-btn" data-view="skills" onclick="switchView('skills')" aria-label="技能">
@@ -144,6 +148,13 @@
         <div class="sw-title">变更日志 <span class="sw-badge" id="b-changelog">—</span></div>
         <div class="sw-body" id="changelog-list"></div>
       </div>
+      <!-- Brainstorm sidebar -->
+      <div class="view-sidebar hidden" id="vs-brainstorm">
+        <div class="sw-title">设计协作</div>
+        <div class="sw-body" id="brainstorm-sidebar">
+          <p style="color:var(--text-muted);font-size:12px;padding:8px">方案选项将在右侧展示。在终端运行 aion-design 时自动激活。</p>
+        </div>
+      </div>
       <!-- Skills sidebar -->
       <div class="view-sidebar hidden" id="vs-skills">
         <div class="sw-title">技能管理 <span class="sw-badge" id="b-skills">--</span></div>
@@ -202,5 +213,6 @@
 <script src="/static/app.js"></script>
 <script src="/static/views.js"></script>
 <script src="/static/models.js"></script>
+<script src="/static/brainstorm.js"></script>
 </body>
 </html>

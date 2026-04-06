@@ -29,20 +29,8 @@ Before writing a single line of the plan:
 3. Identify existing patterns: how similar features are implemented, what abstractions exist, what the code style looks like
 4. Note: if you skip this step, the plan WILL be wrong. Read code first, design second.
 
-### How to Ask Questions
-When you need user input, follow this structure:
-1. **Context**: One sentence grounding where we are (e.g., "While reviewing the data model...")
-2. **Problem**: Explain simply — as if to a smart colleague who hasn't been following along
-3. **Options**: Present 2-3 lettered options (A/B/C) with pros, cons, and your recommendation
-4. **Recommendation**: Bold your recommended option with a brief "because..."
-
-Example:
-"While planning the database migration, I found two valid approaches:
-  A) Incremental migration with backward compatibility — **Recommended** because it avoids downtime
-  B) Full schema rewrite (cleaner, but requires maintenance window)
-Which approach?"
-
-ONE question at a time. Never batch multiple unrelated decisions.
+### Asking Questions
+When you need user input: ONE question at a time, A/B/C format with recommendation. Only ask when you genuinely don't know — most technical decisions you can make from the code you just read.
 
 ### Evidence Requirement
 Every claim about the codebase must cite evidence. Use format: `filename:line_number` or specific function/class name.
@@ -128,11 +116,11 @@ Before presenting the plan to the user, run an internal quality check. Fix issue
 
 This step is internal — do NOT ask the user to review the self-review. Just fix issues and proceed.
 
-### Step 4: Confirm and Write
+### Step 4: Confirm, Write, and Execute
 1. Present the complete plan to the user for review
-2. Ask: "Does this plan look right? Any changes?" (实现方案是否合理？)
+2. Ask: "方案是否合理？确认后直接开始实现。"
 3. Only after confirmation, write to `.aion/plans/{feature-name}.md`
-4. Suggest: "Plan ready. 可以开始实现了。"
+4. **Immediately begin execution** — implement each step in order, following the plan's steps and verification strategy. Update each step's Status from "Not started" to "Done" as completed. Do NOT wait for the user to say "开始" — confirmation of the plan IS the go signal.
 
 ### Step 4.5: Propagate to _product.md (auto-propagation)
 
@@ -196,7 +184,7 @@ total_steps: {N}
 
 ## Next Steps
 
-Plan 完成后，可以直接开始实现代码，完成后运行 /project:aion-review 审查。
+实现完成后，运行 /project:aion-review 审查，然后 /project:aion-commit 提交。
 
 ## Checklist
 Read and apply `.aion/checklists/plan.md` if it exists. If not, use the built-in checklist:

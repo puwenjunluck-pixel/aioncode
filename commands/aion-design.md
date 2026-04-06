@@ -42,48 +42,35 @@ When `$ARGUMENTS` contains `--file {path}`:
 - If `$ARGUMENTS` provides a clear description, proceed to analysis
 - If `$ARGUMENTS` is empty, ask the user: "What do you want to build? Describe the problem you're trying to solve."
 
-### Step 1.5: Explore Approaches (CRITICAL — do not skip)
-Before diving into details, step back and explore the solution space together with the user. Present **2-3 viable approaches** using the "How to Ask Questions" format:
+### Step 2: Guided Exploration
 
-For each approach:
-- **Core idea**: One sentence describing the approach
-- **Pros**: Key advantages
-- **Cons**: Key disadvantages or risks
-- **Recommendation**: Bold the recommended option with a brief "because..."
+Have a natural design conversation. Adapt to complexity:
 
-While exploring, keep these lenses active (internally, not as questions to the user):
-- Is this the simplest solution to the real problem?
-- Are we solving the symptom or the cause?
-- Does this conflict with existing specs or rules?
+**Simple/clear request** (user described it well, obvious approach):
+→ Skip to proposing a design. Don't ask questions you can answer from context.
 
-The goal is collaborative exploration ("一起找最佳路径"), not interrogation. Let the user choose the direction before proceeding to clarifying questions.
+**Ambiguous request** (multiple valid approaches):
+→ Propose 2-3 approaches with trade-offs (A/B/C format + recommendation), let user choose.
 
-### How to Ask Questions
-When you need user input, follow this structure:
-1. **Context**: One sentence grounding where we are (e.g., "While analyzing the auth requirements...")
-2. **Problem**: Explain simply — as if to a smart colleague who hasn't been following along
-3. **Options**: Present 2-3 lettered options (A/B/C) with pros, cons, and your recommendation
-4. **Recommendation**: Bold your recommended option with a brief "because..."
+**Unclear request** (gaps in understanding):
+→ Ask ONE question at a time. Only ask what you genuinely don't know. Prefer multiple-choice over open-ended.
 
-Example:
-"While designing the auth module, I found two valid approaches:
-  A) JWT tokens (stateless, scales better) — **Recommended** because the app is multi-server
-  B) Session cookies (simpler, but requires sticky sessions)
-Which approach?"
+**Rules**:
+- ONE question per message. Never batch.
+- If you've asked 3+ questions, recap confirmed decisions in one line before the next.
+- Stop asking when you have enough to write the spec — self-review catches gaps later.
+- Internal lenses (don't ask these, just think): simplest solution? symptom vs cause? conflicts with existing specs/rules?
 
-ONE question at a time. Never batch multiple unrelated decisions.
+**Dashboard Collaboration** (optional): If `.aion/` directory exists and you're presenting approaches, also write them to `.aion/brainstorm/screen.json` for the Dashboard「协作」view. Detection: check if `.aion/` exists (Dashboard may or may not be running — file writing is harmless either way). If Dashboard is not available, this step is silently skipped.
 
-### Step 2: Clarifying Questions (one at a time)
-Ask questions **one at a time**, following the "How to Ask Questions" format above. Pick the most important gap first, get the answer, then decide the next question based on what you learned.
-
-**Question pool** (select from, do NOT ask all at once):
-- What problem does this solve? Who is the user?
-- What are the boundaries — what is NOT in scope?
-- Are there technical constraints (existing stack, APIs, performance)?
-- What does "done" look like — how do we verify success?
-- Which parts are P0 (must-have) vs P1 (nice-to-have)?
-
-**Context recall**: When you've asked 3+ questions, briefly recap confirmed decisions before the next question (one line, e.g., "到目前为止：scope 限 API 层，用 JWT，不做前端。接下来...").
+When writing to Dashboard, format as:
+```json
+{"type": "options", "title": "{topic}", "description": "{context}", "items": [
+  {"key": "a", "title": "方案 A", "body": "...", "pros": ["..."], "cons": ["..."], "recommended": true},
+  {"key": "b", "title": "方案 B", "body": "...", "pros": ["..."], "cons": ["..."]}
+], "multiselect": false}
+```
+Clear `events.jsonl` when writing new screen. Dashboard is supplementary — terminal interaction is primary.
 
 ### Step 3: Generate Spec
 When you have enough information, generate a structured spec.
@@ -162,19 +149,12 @@ Before presenting the spec to the user, run an internal quality check. Fix issue
 
 This step is internal — do NOT ask the user to review the self-review. Just fix issues and proceed.
 
-### Step 4: Section-by-Section Confirm and Write
-Present the spec **one section at a time** for review. After each section, wait for confirmation or modification before proceeding.
-
-**Confirmation sequence**:
-1. Show **Goal** → "目标准确吗？" → wait for confirmation or edits
-2. Show **Requirements (P0)** → "P0 需求完整吗？有遗漏或需要调整的？" → wait
-3. Show **Requirements (P1)** → "P1 需求合理吗？" → wait
-4. Show **Acceptance Criteria** → "验收标准是否可衡量？" → wait
-5. Show **Constraints** → "约束条件有遗漏吗？" → wait
-
-After each section, if the user requests changes, apply them immediately before moving to the next section. Once all sections are confirmed, assemble the complete spec and write to `.aion/specs/{feature-name}.md`.
-
-If prototype files in `.aion/prototypes/` were referenced, note them in the References section.
+### Step 4: Confirm and Write
+1. Show the **complete spec** to the user in one message
+2. Ask: "确认无误？有需要调整的地方吗？"
+3. If user requests changes, apply them and show the revised spec
+4. Only after explicit confirmation, write to `.aion/specs/{feature-name}.md`
+5. If prototype files in `.aion/prototypes/` were referenced, note them in References
 
 ### Step 5: Update _product.md (auto-propagation)
 
@@ -209,10 +189,10 @@ Read and apply `.aion/checklists/design.md` if it exists. If not, use the built-
 - [ ] Acceptance criteria are measurable (not vague like "should work well")
 - [ ] Known rules/pitfalls have been checked and no conflicts exist
 - [ ] Reference documents and prototypes have been consulted (if available)
-- [ ] 2-3 approaches explored with trade-offs — user chose direction
+- [ ] Approaches explored when ambiguous — user chose direction (skipped if obvious)
 - [ ] Scope boundaries are explicit (what is NOT included)
 - [ ] Spec Self-Review passed (no placeholders, no contradictions, no ambiguity)
-- [ ] Spec confirmed section-by-section (Goal + P0 + P1 + AC + Constraints)
+- [ ] Complete spec shown and confirmed by user
 - [ ] Existing spec checked — Write Protocol followed (version archived if updating)
 - [ ] Scope conflict checked — different scope forces different filename
 
@@ -224,8 +204,9 @@ Read and apply `.aion/checklists/design.md` if it exists. If not, use the built-
 | Designing what conflicts with existing rules | Repeating known mistakes wastes everyone's time | HIGH |
 | Writing spec without user confirmation | Specs must be agreed upon — unilateral writing breaks trust | CRITICAL |
 | Accepting vague requirements without pushback | "Make it better" is not a requirement — explore what they actually need | HIGH |
-| Skipping approach exploration | Over-engineering and wrong-problem-solving sneak through unchallenged | MEDIUM |
+| Asking questions you can answer from context | Wastes user time; read the code/docs first | MEDIUM |
 | Batch-asking multiple questions at once | Overwhelms the user; decisions get rushed or overlooked | MEDIUM |
+| Forcing 2-3 approaches when the answer is obvious | Not every problem needs option exploration; adapt to complexity | MEDIUM |
 | Skipping Spec Self-Review | Placeholders, contradictions, and ambiguity reach the user, eroding trust | HIGH |
 | Overwriting existing spec without version check | Loses design decision history; can't trace why requirements changed | HIGH |
 | Same filename for different scopes (api vs web) | Frontend and backend specs overwrite each other | HIGH |

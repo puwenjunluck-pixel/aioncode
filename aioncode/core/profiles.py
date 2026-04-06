@@ -26,6 +26,7 @@ ALL_COMMANDS: list[CommandInfo] = [
     CommandInfo("aion-commit", "安全提交", core=True),
     CommandInfo("aion-loop", "自动流水线"),
     CommandInfo("aion-save", "上下文保存"),
+    CommandInfo("aion-audit", "安全+性能审计"),
 ]
 
 CORE_COMMANDS: frozenset[str] = frozenset(c.name for c in ALL_COMMANDS if c.core)
@@ -36,9 +37,9 @@ _SHARED = {"aion-scan", "aion-save"}
 ROLE_PRESETS: dict[str, frozenset[str]] = {
     "designer": _SHARED | {"aion-design"},
     "frontend": _SHARED | {"aion-design", "aion-qa", "aion-fix"},
-    "backend": _SHARED | {"aion-design", "aion-plan", "aion-qa", "aion-fix"},
+    "backend": _SHARED | {"aion-design", "aion-plan", "aion-qa", "aion-fix", "aion-audit"},
     "tester": _SHARED | {"aion-qa", "aion-fix"},
-    "fullstack": _SHARED | {"aion-design", "aion-plan", "aion-qa", "aion-fix", "aion-loop"},
+    "fullstack": _SHARED | {"aion-design", "aion-plan", "aion-qa", "aion-fix", "aion-loop", "aion-audit"},
 }
 
 

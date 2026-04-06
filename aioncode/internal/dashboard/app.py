@@ -74,6 +74,7 @@ def create_app(*, dev: bool = False) -> FastAPI:
 def _register_routers(app: FastAPI) -> None:
     """Register all API routers."""
     from aioncode.internal.dashboard.routers import (
+        brainstorm,
         browse,
         bugs,
         commands,
@@ -94,3 +95,4 @@ def _register_routers(app: FastAPI) -> None:
     app.include_router(skills.router)
     app.include_router(browse.router)
     app.include_router(logs.router)
+    app.include_router(brainstorm.router)
