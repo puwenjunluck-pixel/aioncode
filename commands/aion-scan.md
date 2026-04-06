@@ -2,7 +2,7 @@
 
 Scan an existing project to bootstrap AionCode intelligence. Analyze codebase structure, conventions, and test coverage, then generate tailored artifacts based on user intent.
 
-$ARGUMENTS — Optional: intent keyword(s) to skip the interactive question. E.g., "test", "frontend", "backend", "feature", "refactor". If empty, scan first then ask. Options: `--file {path}` import external documents (.docx/.pdf/.md/.txt/.pptx/.xlsx) as supplementary context for the scan. `--url {target_url}` specify the running application URL for browser exploration (requires Playwright MCP).
+$ARGUMENTS — Optional: intent keyword(s) to skip the interactive question. E.g., "test", "frontend", "backend", "feature", "refactor". If empty, scan first then ask. Options: `--file {path}` import external documents (.docx/.pdf/.md/.txt/.pptx/.xlsx) as supplementary context for the scan. `--url {target_url}` specify the running application URL for browser exploration (Antigravity Browser Agent or Playwright MCP).
 
 ## Role
 
@@ -73,19 +73,22 @@ When `$ARGUMENTS` contains `--file {path}`:
 3. **Merge with scan data**: Use extracted information to supplement the Deep Scan findings. Mark supplemented items `[from:file]`.
 4. **Report**: "从 {N} 个文件中导入了补充上下文：{N} 项需求, {N} 个模块, {N} 个 API 端点"
 
-### Step 1.7: Browser Exploration (conditional — Playwright MCP + running service)
+### Step 1.7: Browser Exploration (conditional — browser backend + running service)
 
 Explore the running application through a browser to discover UI structure, navigation flows, and dynamic content that static code analysis cannot reveal.
 
 **Prerequisites check**:
-1. Check for Playwright MCP availability (look for browser-control MCP tools: `playwright_navigate`, `playwright_click`, `playwright_screenshot`)
+1. Detect browser backend (priority order):
+   - **Antigravity Browser Agent**: built-in, always available on Antigravity platform — preferred
+   - **Playwright MCP**: check for MCP tools (`playwright_navigate`, `playwright_click`, `playwright_screenshot`)
+   - **Neither available**: skip to Static UI Analysis
 2. Determine target URL:
    - If `--url` specified in `$ARGUMENTS` → use that
    - If not → try to detect from code: `package.json` scripts (dev/start), Docker config, Python server config
-   - If cannot determine → ask user: "检测到 Playwright MCP，是否有可访问的开发环境？请提供 URL（如 http://localhost:3000）"
+   - If cannot determine → ask user: "检测到浏览器后端，是否有可访问的开发环境？请提供 URL（如 http://localhost:3000）"
 3. Verify URL is reachable (HTTP GET, check for 200/301/302)
 
-**If Playwright MCP available AND URL reachable** → Live Exploration:
+**If browser backend available AND URL reachable** → Live Exploration:
 
 1. **Navigate to home page**, take full-page screenshot
 2. **Map navigation structure**:
@@ -128,7 +131,7 @@ Explore the running application through a browser to discover UI structure, navi
 - {path to each screenshot with description}
 ```
 
-**If NO Playwright MCP OR URL not reachable** → Static UI Analysis:
+**If NO browser backend OR URL not reachable** → Static UI Analysis:
 
 1. Read HTML templates / JSX / Vue / Svelte files → extract page structure
 2. Read frontend router config → extract navigation/URL map
@@ -136,7 +139,7 @@ Explore the running application through a browser to discover UI structure, navi
 4. Read API call patterns in frontend code → infer data fetching
 5. Output: Static UI Analysis Report (same structure, marked `[from:static]`)
 
-> Note: Static analysis misses dynamic content, JS-rendered elements, and actual runtime states. Suggest user provides `--url` for better results.
+> Note: Static analysis misses dynamic content, JS-rendered elements, and actual runtime states. Suggest user provides `--url` for better results. Antigravity users have Browser Agent built-in — no extra setup needed.
 
 ### Step 2: Determine Intent
 

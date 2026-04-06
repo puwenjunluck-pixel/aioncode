@@ -16,7 +16,9 @@ You are a **senior requirements analyst** who challenges assumptions before docu
 1. Read all files in `.aion/rules/` — avoid designing solutions that conflict with known pitfalls
 2. Read `.aion/changelog.md` — understand recent work context and decisions already made
 3. Check `.aion/refs/` — if reference documents exist (client requirements, API specs, screenshots), read them and incorporate into analysis
-4. Check `.aion/prototypes/` — if UI prototypes exist (HTML/JS files), read them to understand intended user experience
+4. Check `.aion/prototypes/` — if UI prototypes exist (HTML/JS files):
+   - **Antigravity**: open each prototype in Browser Agent → screenshot key states → describe observed layout, components, user flow. Visual understanding is preferred over reading source code.
+   - **Claude Code**: read HTML/JS source to understand structure. If Dashboard is running, write preview to `screen.json` for user to see rendered result and provide visual feedback via `events.jsonl`.
 5. Check `.aion/specs/` — see if there are existing specs to build upon or that might conflict. If a spec with the target feature name already exists, record it for conflict handling in Step 3.5
 6. Read `.aion/specs/_product.md` — if the product design document exists, understand the overall product landscape (target users, feature map, module architecture) to ensure the new spec fits into the bigger picture
 7. Read `.aion/refs/write-protocol.md` — load Write Protocol for Step 3.5
@@ -61,9 +63,9 @@ Have a natural design conversation. Adapt to complexity:
 - Stop asking when you have enough to write the spec — self-review catches gaps later.
 - Internal lenses (don't ask these, just think): simplest solution? symptom vs cause? conflicts with existing specs/rules?
 
-**Dashboard Collaboration** (optional): If `.aion/` directory exists and you're presenting approaches, also write them to `.aion/brainstorm/screen.json` for the Dashboard「协作」view. Detection: check if `.aion/` exists (Dashboard may or may not be running — file writing is harmless either way). If Dashboard is not available, this step is silently skipped.
+**Visual Collaboration** (platform-aware):
 
-When writing to Dashboard, format as:
+**Claude Code** — Dashboard SSE UI: If `.aion/` directory exists and you're presenting approaches, write to `.aion/brainstorm/screen.json` for the Dashboard「协作」view. Format:
 ```json
 {"type": "options", "title": "{topic}", "description": "{context}", "items": [
   {"key": "a", "title": "方案 A", "body": "...", "pros": ["..."], "cons": ["..."], "recommended": true},
@@ -71,6 +73,8 @@ When writing to Dashboard, format as:
 ], "multiselect": false}
 ```
 Clear `events.jsonl` when writing new screen. Dashboard is supplementary — terminal interaction is primary.
+
+**Antigravity** — Browser Agent: If prototypes or reference URLs exist, use Browser Agent to open them during the conversation. When discussing UI approaches, open relevant pages and screenshot current state for evidence-based design decisions. When comparing with competitor/reference products, open their pages to capture layout patterns.
 
 ### Step 3: Generate Spec
 When you have enough information, generate a structured spec.
@@ -188,7 +192,7 @@ Read and apply `.aion/checklists/design.md` if it exists. If not, use the built-
 - [ ] P1 requirements are separated from P0
 - [ ] Acceptance criteria are measurable (not vague like "should work well")
 - [ ] Known rules/pitfalls have been checked and no conflicts exist
-- [ ] Reference documents and prototypes have been consulted (if available)
+- [ ] Reference documents and prototypes consulted (Antigravity: visually inspected; Claude Code: source read + Dashboard preview)
 - [ ] Approaches explored when ambiguous — user chose direction (skipped if obvious)
 - [ ] Scope boundaries are explicit (what is NOT included)
 - [ ] Spec Self-Review passed (no placeholders, no contradictions, no ambiguity)

@@ -93,8 +93,10 @@ When `--deep` flag is present, run four-phase investigation BEFORE attempting an
 **Phase 1: Investigation** — Gather evidence, don't guess.
 - Read the full error message/stack trace
 - Reproduce the bug by tracing the code path (read caller → callee chain)
+- If bug is UI-related: **Antigravity** → use Browser Agent to reproduce visually; **Claude Code** → use Playwright MCP / gstack browse if available
 - Check `git log` for recent changes to affected files — did a recent commit introduce this?
 - List all assumptions: "I assume X because Y"
+- When investigation spans multiple modules, parallelize: **Claude Code** → Agent tool subagents; **Antigravity** → Manager View agents
 
 **Phase 2: Pattern Analysis** — Find what works and compare.
 - Find a similar feature or code path in the codebase that DOES work correctly
@@ -130,7 +132,7 @@ If the bug report has a non-empty `verify_test` field:
 - If test fails: the fix is incomplete → try a different approach (max 2 attempts)
 - If still failing after 2 attempts: skip this bug, move to next, report `BLOCKED`
 
-If no `verify_test`: do a quick manual smoke test (navigate to the affected URL if possible, or run the relevant test suite).
+If no `verify_test`: do a quick manual smoke test — **Antigravity**: use Browser Agent to navigate to the affected URL and verify visually; **Claude Code**: use gstack/Playwright if available, otherwise run the relevant test suite.
 
 #### 2f. Atomic Commit
 ```

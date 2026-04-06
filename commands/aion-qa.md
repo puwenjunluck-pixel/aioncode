@@ -37,11 +37,15 @@ You are a **QA engineer with browser access**. You navigate the running applicat
 
 Check in priority order:
 
-1. **gstack browse** (preferred): `~/.claude/skills/gstack/browse/dist/browse status 2>/dev/null`
+1. **Antigravity Browser Agent** (Antigravity platform only): built-in, zero config
+   - Detection: if running inside Antigravity IDE, browser subagent is always available
+   - Use native browser agent for all navigation, screenshots, DOM interaction, console reading
+   - Skip gstack/Playwright detection — Browser Agent is always preferred on Antigravity
+2. **gstack browse** (Claude Code preferred): `~/.claude/skills/gstack/browse/dist/browse status 2>/dev/null`
    - If available: set `B=~/.claude/skills/gstack/browse/dist/browse`, use ARIA-based navigation
-2. **Playwright MCP** (fallback): check for MCP tools (`playwright_navigate`, `playwright_click`)
+3. **Playwright MCP** (Claude Code fallback): check for MCP tools (`playwright_navigate`, `playwright_click`)
    - If available: use Playwright for navigation
-3. **Neither**: exit with `BLOCKED` — "需要浏览器后端。安装 gstack browse 或配置 Playwright MCP。"
+4. **None available**: exit with `BLOCKED` — "需要浏览器后端。安装 gstack browse 或配置 Playwright MCP。"
 
 Verify URL is reachable before starting. If not reachable: report URL and exit with `BLOCKED`.
 
@@ -49,7 +53,15 @@ Verify URL is reachable before starting. If not reachable: report URL and exit w
 
 Navigate the app systematically. For each page/feature:
 
-**Using gstack browse** (preferred):
+**Using Antigravity Browser Agent** (Antigravity platform):
+- Navigate: open URL in browser agent
+- Screenshot: capture page state as visual evidence (save to `.aion/refs/screenshots/`)
+- Interact: click buttons, fill forms, scroll, select dropdowns
+- Console: read JS console for errors and warnings
+- DOM: inspect element state, attributes, computed styles
+- Record: screenshot after each significant interaction for evidence
+
+**Using gstack browse** (Claude Code preferred):
 ```
 $B goto {url}
 $B screenshot                  # Visual evidence
@@ -62,7 +74,7 @@ For each interactive element:
 - Fill forms: `$B fill @e{N} "{value}"`
 - Record result: `$B screenshot`, `$B text @e{N}`
 
-**Using Playwright MCP** (fallback):
+**Using Playwright MCP** (Claude Code fallback):
 - Navigate to each page, take screenshot
 - Interact with forms, buttons, navigation
 - Record results with screenshots
@@ -79,10 +91,11 @@ For each interactive element:
 - [ ] Core user journeys end-to-end
 
 **Handle Login** (if encountered):
-1. Try `$B cookie-import-browser` (imports cookies from user's real browser)
-2. If fails and `--auto`: **BLOCKED** — "Login required. --auto cannot handle credentials. Run without --auto or import cookies first."
-3. If fails and not `--auto`: ask user for test credentials
-4. After login: continue testing
+1. **Antigravity**: use browser agent to interact with login form directly (user provides credentials when prompted)
+2. **gstack**: try `$B cookie-import-browser` (imports cookies from user's real browser)
+3. If fails and `--auto`: **BLOCKED** — "Login required. --auto cannot handle credentials. Run without --auto or import cookies first."
+4. If fails and not `--auto`: ask user for test credentials
+5. After login: continue testing
 
 ### Step 3: Bug Discovery and Classification
 
@@ -209,7 +222,8 @@ For each bug to fix:
 3. **Reuse Scan** — search for similar fix patterns in codebase
 4. **Fix the code** — minimal change to address the root cause
 5. **Verify fix** — re-navigate to the bug URL, reproduce the steps, confirm resolved
-   - If using gstack: `$B goto {url}`, navigate to trigger the bug
+   - Antigravity: use browser agent to navigate and verify
+   - gstack/Playwright: `$B goto {url}`, navigate to trigger the bug
    - If fix confirmed: ✅
    - If not fixed: try alternative approach (max 2 attempts per bug)
 6. **Atomic commit**: `fix(bug): {BUG-ID} {title}`
@@ -247,7 +261,7 @@ Regression: {PASS | issues found: list}
 - After fix mode: run `/project:aion-review` to review the fixes, then `/project:aion-commit`
 
 ## Checklist
-- [ ] Browser backend detected and verified
+- [ ] Browser backend detected (Antigravity Agent / gstack / Playwright)
 - [ ] URL reachable before starting
 - [ ] All pages/features tested systematically
 - [ ] Bugs classified by severity and type (F/B/X)
