@@ -22,10 +22,29 @@ from aioncode.utils.console import (
 
 
 def _ask_project_profile() -> InitProfile:
-    """Interactive project setup: ask project type, role, select commands."""
-    from aioncode.core.profiles import ALL_COMMANDS, CORE_COMMANDS, get_recommended
+    """Interactive project setup: ask platform, project type, role, select commands."""
+    import shutil
+
+    from aioncode.core.profiles import (
+        ALL_COMMANDS,
+        CORE_COMMANDS,
+        PLATFORMS,
+        get_recommended,
+    )
 
     header("Project Setup")
+
+    # 0. Platform detection + selection
+    detected = [n for n, cfg in PLATFORMS.items() if shutil.which(cfg.cli_binary)]
+    platform_labels = [cfg.label for cfg in PLATFORMS.values()]
+    platform_keys = list(PLATFORMS.keys())
+    default_plat = platform_keys.index(detected[0]) + 1 if detected else 1
+    if detected:
+        info(f"检测到：{', '.join(PLATFORMS[d].label for d in detected)}")
+    else:
+        warning("未检测到 Claude Code 或 Antigravity CLI（仍可手动选择）")
+    plat_idx = choose_one("目标平台：", platform_labels, default=default_plat)
+    platform = platform_keys[plat_idx - 1]
 
     # 1. Project type
     project_types = [
@@ -66,6 +85,7 @@ def _ask_project_profile() -> InitProfile:
         project_type=project_type,
         role=role,
         selected_commands=selected_commands,
+        platform=platform,
     )
 
 
@@ -181,17 +201,16 @@ def _init_project(target: Path, *, upgrade: bool = False, install_all: bool = Fa
             if stale:
                 info(f"清理 {len(stale)} 个已删除命令: {', '.join(stale)}")
             added = _ask_upgrade_commands(existing_cmds)
-            if added or stale:
-                profile = InitProfile(
-                    project_type=str(existing_profile.get("project_type", "fullstack")),
-                    role=str(existing_profile.get("role", "fullstack")),
-                    selected_commands=existing_cmds + (added or []),
-                )
-                if added:
-                    success(f"新增 {len(added)} 个命令")
-                if not added and not stale:
-                    info("无新命令可添加")
-            else:
+            # Always construct profile from existing config to preserve platform
+            profile = InitProfile(
+                project_type=str(existing_profile.get("project_type", "fullstack")),
+                role=str(existing_profile.get("role", "fullstack")),
+                selected_commands=existing_cmds + (added or []),
+                platform=str(existing_profile.get("platform", "claude")),
+            )
+            if added:
+                success(f"新增 {len(added)} 个命令")
+            elif not stale:
                 info("无新命令可添加")
         else:
             # No profile saved — ask full setup
@@ -233,14 +252,20 @@ def _init_project(target: Path, *, upgrade: bool = False, install_all: bool = Fa
     )
 
     # --- Suggestions ---
+    from aioncode.core.profiles import DEFAULT_PLATFORM, PLATFORMS
+
+    platform_name = profile.platform if profile else DEFAULT_PLATFORM
+    platform_cfg = PLATFORMS.get(platform_name, PLATFORMS[DEFAULT_PLATFORM])
+    prefix = platform_cfg.cmd_prefix
+
     print()
     header("Next Steps")
-    info("1. Open Claude Code in your project")
-    info("2. Run: /project:aion-help")
+    info(f"1. Open {platform_cfg.label} in your project")
+    info(f"2. Run: {prefix}aion-help")
     if project.is_new:
-        info("3. Start with: /project:aion-design")
+        info(f"3. Start with: {prefix}aion-design")
     else:
-        info("3. Start with: /project:aion-scan")
+        info(f"3. Start with: {prefix}aion-scan")
 
     if project.existing_docs:
         print()

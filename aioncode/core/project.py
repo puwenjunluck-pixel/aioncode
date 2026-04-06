@@ -183,6 +183,7 @@ class InitProfile:
     project_type: str = "fullstack"
     role: str = "fullstack"
     selected_commands: list[str] = field(default_factory=list)
+    platform: str = "claude"
 
 
 def init_project(
@@ -226,26 +227,42 @@ def init_project(
     result.source_version = get_source_version()
     result.project = detect_project(target)
 
-    # 1. Copy commands to .claude/commands/ (filtered by profile)
-    cmd_dst = target / ".claude" / "commands"
+    # Resolve platform config
+    from aioncode.core.profiles import DEFAULT_PLATFORM, PLATFORMS
+
+    platform_name = profile.platform if profile else DEFAULT_PLATFORM
+    platform_cfg = PLATFORMS.get(platform_name, PLATFORMS[DEFAULT_PLATFORM])
+
+    # 1. Copy commands to platform-specific directory (filtered by profile)
+    cmd_dst = target / platform_cfg.cmd_dir
     cmd_dst.mkdir(parents=True, exist_ok=True)
+    cmd_rel = platform_cfg.cmd_dir  # for result messages
     selected = set(profile.selected_commands) if profile else None
     source_commands = set()
+    # Prefix transform: source uses /project: (Claude Code), convert for target platform
+    src_prefix = "/project:"
+    tgt_prefix = platform_cfg.cmd_prefix
+    needs_prefix_transform = src_prefix != tgt_prefix
     if commands_dir.is_dir():
         for f in sorted(commands_dir.glob("*.md")):
             source_commands.add(f.stem)
             if selected is not None and f.stem not in selected:
-                result.skipped.append(f".claude/commands/{f.name}")
+                result.skipped.append(f"{cmd_rel}/{f.name}")
                 continue
             dst = cmd_dst / f.name
-            shutil.copy2(f, dst)
-            result.updated.append(f".claude/commands/{f.name}")
+            if needs_prefix_transform:
+                content = f.read_text(encoding="utf-8")
+                content = content.replace(src_prefix, tgt_prefix)
+                dst.write_text(content, encoding="utf-8")
+            else:
+                shutil.copy2(f, dst)
+            result.updated.append(f"{cmd_rel}/{f.name}")
 
     # 1.5. Clean up stale aion-* command files (always based on source truth)
     for existing in sorted(cmd_dst.glob("aion-*.md")):
         if existing.stem not in source_commands:
             existing.unlink()
-            result.updated.append(f".claude/commands/{existing.name} (removed)")
+            result.updated.append(f"{cmd_rel}/{existing.name} (removed)")
 
     # 2. Scaffold .aion/ (never overwrite existing files)
     aion_src = templates_dir / "aion"
@@ -268,46 +285,55 @@ def init_project(
         if not dir_path.is_dir():
             dir_path.mkdir(parents=True, exist_ok=True)
 
-    # 2.5. Install bundled skills to ~/.claude/skills/ (never overwrite)
-    _install_bundled_skills(templates_dir, result)
+    # 2.5. Install bundled skills (never overwrite)
+    _install_bundled_skills(templates_dir, platform_cfg, result)
 
-    # 3. Install hooks & settings (only if not existing)
-    claude_dir = target / ".claude"
-    claude_dir.mkdir(parents=True, exist_ok=True)
+    # 3. Install hooks & settings (Claude Code only)
+    if platform_cfg.has_hooks or platform_cfg.has_settings:
+        platform_dir = target / platform_cfg.cmd_dir.split("/")[0]  # .claude or .agent
+        platform_dir.mkdir(parents=True, exist_ok=True)
 
-    hooks_src = templates_dir / "claude-hooks.json"
-    hooks_dst = claude_dir / "hooks.json"
-    if hooks_src.is_file():
-        if hooks_dst.is_file():
-            result.skipped.append(".claude/hooks.json")
-        else:
-            shutil.copy2(hooks_src, hooks_dst)
-            result.created.append(".claude/hooks.json")
+    if platform_cfg.has_hooks:
+        hooks_src = templates_dir / "claude-hooks.json"
+        hooks_dst = target / ".claude" / "hooks.json"
+        if hooks_src.is_file():
+            if hooks_dst.is_file():
+                result.skipped.append(".claude/hooks.json")
+            else:
+                hooks_dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(hooks_src, hooks_dst)
+                result.created.append(".claude/hooks.json")
 
-    settings_src = templates_dir / "claude-settings.json"
-    settings_dst = claude_dir / "settings.local.json"
-    if settings_src.is_file():
-        if settings_dst.is_file():
-            result.skipped.append(".claude/settings.local.json")
-        else:
-            shutil.copy2(settings_src, settings_dst)
-            result.created.append(".claude/settings.local.json")
+    if platform_cfg.has_settings:
+        settings_src = templates_dir / "claude-settings.json"
+        settings_dst = target / ".claude" / "settings.local.json"
+        if settings_src.is_file():
+            if settings_dst.is_file():
+                result.skipped.append(".claude/settings.local.json")
+            else:
+                settings_dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(settings_src, settings_dst)
+                result.created.append(".claude/settings.local.json")
 
-    # 4. CLAUDE.md merge
-    claude_md_path = claude_dir / "CLAUDE.md"
-    tpl_path = templates_dir / "CLAUDE.md.tpl"
+    # 4. Project instructions merge (CLAUDE.md or GEMINI.md)
+    instructions_path = target / platform_cfg.instructions_file
+    tpl_path = templates_dir / platform_cfg.instructions_tpl
     if tpl_path.is_file():
         from aioncode.utils.integrity import merge_claude_md
 
         tpl_content = tpl_path.read_text(encoding="utf-8")
-        existing = claude_md_path.read_text(encoding="utf-8") if claude_md_path.is_file() else None
+        # Apply prefix transform to template content
+        if needs_prefix_transform:
+            tpl_content = tpl_content.replace(src_prefix, tgt_prefix)
+        instructions_path.parent.mkdir(parents=True, exist_ok=True)
+        existing = instructions_path.read_text(encoding="utf-8") if instructions_path.is_file() else None
         merge_result = merge_claude_md(existing, tpl_content)
-        claude_md_path.write_text(merge_result.content, encoding="utf-8")
+        instructions_path.write_text(merge_result.content, encoding="utf-8")
 
         if merge_result.action == "created":
-            result.created.append(".claude/CLAUDE.md")
+            result.created.append(platform_cfg.instructions_file)
         else:
-            result.updated.append(".claude/CLAUDE.md")
+            result.updated.append(platform_cfg.instructions_file)
 
         for warning in merge_result.warnings:
             result.warnings.append(warning)
@@ -338,6 +364,7 @@ def init_project(
             profile.project_type,
             profile.role,
             profile.selected_commands,
+            platform=platform_name,
         )
 
     # 6. Gitignore update
@@ -363,18 +390,27 @@ def _check_gitignore(gitignore_path: Path) -> list[str]:
     return list(GITIGNORE_ENTRIES)
 
 
-def _install_bundled_skills(templates_dir: Path, result: InitResult) -> None:
-    """Install bundled skills to ~/.claude/skills/ (never overwrite existing)."""
+def _install_bundled_skills(templates_dir: Path, platform_cfg: object, result: InitResult) -> None:
+    """Install bundled skills to platform-specific global skills directory."""
+    from aioncode.core.profiles import PlatformConfig
+
     skills_src = templates_dir / "skills"
     if not skills_src.is_dir():
         return
-    user_skills_dir = Path.home() / ".claude" / "skills"
+    if isinstance(platform_cfg, PlatformConfig):
+        global_dir = platform_cfg.global_dir
+        skills_subdir = platform_cfg.skills_dir
+    else:
+        global_dir = Path.home() / ".claude"
+        skills_subdir = "skills"
+    user_skills_dir = global_dir / skills_subdir
+    display_prefix = f"~/{global_dir.relative_to(Path.home())}/{skills_subdir}"
     for skill_dir in sorted(skills_src.iterdir()):
         if not skill_dir.is_dir():
             continue
         dst = user_skills_dir / skill_dir.name
         if dst.exists():
-            result.skipped.append(f"~/.claude/skills/{skill_dir.name}/")
+            result.skipped.append(f"{display_prefix}/{skill_dir.name}/")
             continue
         dst.mkdir(parents=True, exist_ok=True)
         for f in sorted(skill_dir.rglob("*")):
@@ -383,4 +419,4 @@ def _install_bundled_skills(templates_dir: Path, result: InitResult) -> None:
             dst_file = dst / f.relative_to(skill_dir)
             dst_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(f, dst_file)
-        result.created.append(f"~/.claude/skills/{skill_dir.name}/")
+        result.created.append(f"{display_prefix}/{skill_dir.name}/")

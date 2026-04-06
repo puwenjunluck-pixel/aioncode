@@ -1,7 +1,7 @@
 ---
 category: pitfalls
-rule_count: 10
-last_updated: 2026-03-28
+rule_count: 11
+last_updated: 2026-04-07
 ---
 
 # Pitfalls — Known gotchas and traps
@@ -56,3 +56,6 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 
 - **CC daemon 将 env vars 广播给所有会话，settings.local.json 无法项目级隔离** (bugfix, 2026-03-29) [cite_count: 0, last_cited: 2026-03-29]
   Claude Code 所有打开的会话共用同一 daemon 进程。任何项目的 `.claude/settings.local.json` 中 env 变化都会立即广播给所有已连接会话——包括其他项目的终端窗口。模型切换不存在"只影响当前项目"的运行时隔离，应使用全局 `~/.claude/settings.json`，并在 UI 上说明切换是全局生效。
+
+- **upgrade 路径必须从 config 恢复完整 profile（含 platform）** (review, 2026-04-07) [cite_count: 0, last_cited: 2026-04-07]
+  `init.py` upgrade 分支在无新命令时曾跳过 profile 构建，导致 `project.py` 使用 DEFAULT_PLATFORM 默认值。Antigravity 用户升级时命令会错误安装到 `.claude/commands/`。修复：始终从 `read_profile()` 结果构建 InitProfile，即使命令列表未变化。

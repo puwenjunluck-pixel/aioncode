@@ -1,9 +1,58 @@
-"""Command profiles — role-based command recommendations and profile persistence."""
+"""Command profiles — role-based command recommendations, platform config, and profile persistence."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+
+
+@dataclass(frozen=True)
+class PlatformConfig:
+    """Platform-specific paths and conventions."""
+
+    name: str
+    label: str
+    cmd_dir: str
+    instructions_file: str
+    instructions_tpl: str
+    cmd_prefix: str
+    cli_binary: str
+    global_dir_name: str = ".claude"  # relative to $HOME
+    skills_dir: str = "skills"  # relative to global_dir
+    has_hooks: bool = True
+    has_settings: bool = True
+
+    @property
+    def global_dir(self) -> Path:
+        return Path.home() / self.global_dir_name
+
+
+PLATFORMS: dict[str, PlatformConfig] = {
+    "claude": PlatformConfig(
+        name="claude",
+        label="Claude Code",
+        cmd_dir=".claude/commands",
+        instructions_file=".claude/CLAUDE.md",
+        instructions_tpl="CLAUDE.md.tpl",
+        cmd_prefix="/project:",
+        cli_binary="claude",
+    ),
+    "antigravity": PlatformConfig(
+        name="antigravity",
+        label="Google Antigravity",
+        cmd_dir=".agent/workflows",
+        instructions_file="GEMINI.md",
+        instructions_tpl="GEMINI.md.tpl",
+        cmd_prefix="/",
+        cli_binary="antigravity",
+        global_dir_name=".gemini",
+        skills_dir="antigravity/skills",
+        has_hooks=False,
+        has_settings=False,
+    ),
+}
+
+DEFAULT_PLATFORM = "claude"
 
 
 @dataclass(frozen=True)
@@ -61,6 +110,8 @@ def read_profile(config_path: Path) -> dict[str, str | list[str]] | None:
         stripped = line.strip()
         if stripped.startswith("project_type:"):
             result["project_type"] = stripped.split(":", 1)[1].strip().strip('"')
+        elif stripped.startswith("platform:") and line.startswith("  "):
+            result["platform"] = stripped.split(":", 1)[1].strip().strip('"')
         elif stripped.startswith("role:") and "profile" not in line:
             # Only capture role under profile section (indented)
             if line.startswith("  "):
@@ -81,6 +132,7 @@ def write_profile(
     project_type: str,
     role: str,
     commands: list[str],
+    platform: str = DEFAULT_PLATFORM,
 ) -> None:
     """Append or update profile + commands section in config.yml."""
     lines: list[str] = []
@@ -105,6 +157,7 @@ def write_profile(
     lines.append("profile:")
     lines.append(f'  project_type: "{project_type}"')
     lines.append(f'  role: "{role}"')
+    lines.append(f'  platform: "{platform}"')
     lines.append("")
     lines.append("commands:")
     lines.append("  installed:")

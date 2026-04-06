@@ -26,7 +26,8 @@ def _mock_init_interactive():
     """Return a stack of patches that bypass all interactive prompts in init."""
     return [
         patch("aioncode.commands.init.confirm", return_value=True),
-        patch("aioncode.commands.init.choose_one", return_value=3),
+        # Sequential returns: platform=1 (Claude Code), project_type=3 (fullstack), role=5 (fullstack)
+        patch("aioncode.commands.init.choose_one", side_effect=[1, 3, 5]),
         patch("aioncode.commands.init.toggle_select", side_effect=lambda items: [s for _, _, s in items]),
     ]
 
