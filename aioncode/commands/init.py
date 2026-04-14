@@ -263,7 +263,7 @@ def _init_project(target: Path, *, upgrade: bool = False, install_all: bool = Fa
     info(f"1. Open {platform_cfg.label} in your project")
     info(f"2. Run: {prefix}aion-help")
     if project.is_new:
-        info(f"3. Start with: {prefix}aion-design")
+        info(f"3. Start with: {prefix}aion-think")
     else:
         info(f"3. Start with: {prefix}aion-scan")
 

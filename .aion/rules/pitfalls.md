@@ -1,7 +1,7 @@
 ---
 category: pitfalls
-rule_count: 11
-last_updated: 2026-04-07
+rule_count: 12
+last_updated: 2026-04-14
 ---
 
 # Pitfalls — Known gotchas and traps
@@ -19,7 +19,10 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 -->
 
 - **uninstall.sh 命令列表必须与 profiles.py 同步** (scan, 2026-03-21, updated 2026-03-26) [cite_count: 0, last_cited: 2026-03-26]
-  `uninstall.sh` 硬编码命令名用于删除，增删命令时必须同步更新删除列表，否则卸载后残留命令文件。当前核心命令（v0.7 架构）：aion-scan, aion-design, aion-plan, aion-review, aion-qa, aion-fix, aion-commit, aion-loop, aion-save, aion-help。每次命令体系变更后检查 `uninstall.sh`。
+  `uninstall.sh` 硬编码命令名用于删除，增删命令时必须同步更新删除列表，否则卸载后残留命令文件。当前核心命令（v0.7 架构）：aion-scan, aion-think, aion-plan, aion-review, aion-qa, aion-fix, aion-commit, aion-loop, aion-save, aion-help。每次命令体系变更后检查 `uninstall.sh`。
+
+- **命令 rename 必须跨层扫描七件套** (review, 2026-04-14) [cite_count: 1, last_cited: 2026-04-14]
+  rename 一个 `aion-*` 命令时,grep 需覆盖 7 层,少一层就会让新用户 init 后命中旧命令:(1) `commands/aion-*.md` 命令定义 + 内部 `/project:aion-*` 引用;(2) `aioncode/core/profiles.py` 的 CommandInfo + ROLE_PRESETS;(3) `aioncode/commands/init.py` 的安装 hint;(4) `aioncode/internal/templates/CLAUDE.md.tpl` + `GEMINI.md.tpl`(新项目默认 CLAUDE.md);(5) `aioncode/internal/templates/aion/checklists/*.md`(命令对应 checklist,可能需要 git mv);(6) dashboard `static/*.js` + `*.html` 然后重跑 `build_frontend.py` 同步 `embedded.py`;(7) `install.sh` + 本文件 uninstall 规则的命令列表注释。Verify:`grep -rn "aion-{旧名}" commands/ aioncode/core/ aioncode/commands/ install.sh aioncode/internal/templates/` 必须为 0。v0.7.6 surgical fusion 第一轮 review 只查了 `.aion/` 和 `commands/`,漏掉 profiles.py 等 6 层,Iron Law 2 反面教材。
 
 - **dashboard.py 路由匹配顺序敏感** (scan, 2026-03-21) [cite_count: 0, last_cited: 2026-03-21, status: archived]
   v0.5 迁移至 FastAPI，旧 `dashboard.py`（4,749 行）于 v0.7.4 删除。此规则已归档。

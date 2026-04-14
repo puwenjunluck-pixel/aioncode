@@ -1,6 +1,6 @@
-# Design Checklist
+# Think Checklist
 
-<!-- Customize this checklist for your project. Used by /aion-design. -->
+<!-- Customize this checklist for your project. Used by /aion-think. -->
 
 ## Requirements Clarity
 - [ ] Goal can be stated in one sentence

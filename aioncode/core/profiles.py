@@ -67,8 +67,8 @@ class CommandInfo:
 ALL_COMMANDS: list[CommandInfo] = [
     CommandInfo("aion-help", "帮助与引导", core=True),
     CommandInfo("aion-scan", "项目扫描"),
-    CommandInfo("aion-design", "需求设计"),
-    CommandInfo("aion-plan", "修订方案"),
+    CommandInfo("aion-think", "讨论 · 碰撞 · 思考"),
+    CommandInfo("aion-plan", "实现规划"),
     CommandInfo("aion-review", "代码审查", core=True),
     CommandInfo("aion-qa", "浏览器 QA 测试"),
     CommandInfo("aion-fix", "Bug 修复"),
@@ -84,11 +84,11 @@ CORE_COMMANDS: frozenset[str] = frozenset(c.name for c in ALL_COMMANDS if c.core
 _SHARED = {"aion-scan", "aion-save"}
 
 ROLE_PRESETS: dict[str, frozenset[str]] = {
-    "designer": _SHARED | {"aion-design"},
-    "frontend": _SHARED | {"aion-design", "aion-qa", "aion-fix"},
-    "backend": _SHARED | {"aion-design", "aion-plan", "aion-qa", "aion-fix", "aion-audit"},
+    "designer": _SHARED | {"aion-think"},
+    "frontend": _SHARED | {"aion-think", "aion-qa", "aion-fix"},
+    "backend": _SHARED | {"aion-think", "aion-plan", "aion-qa", "aion-fix", "aion-audit"},
     "tester": _SHARED | {"aion-qa", "aion-fix"},
-    "fullstack": _SHARED | {"aion-design", "aion-plan", "aion-qa", "aion-fix", "aion-loop", "aion-audit"},
+    "fullstack": _SHARED | {"aion-think", "aion-plan", "aion-qa", "aion-fix", "aion-loop", "aion-audit"},
 }
 
 

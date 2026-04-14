@@ -438,7 +438,7 @@ echo "  Next steps:"
 echo "    1. Open Claude Code in your project"
 echo "    2. Run: /project:aion-status"
 if [ "$IS_NEW_PROJECT" = true ]; then
-    echo "    3. Start with: /project:aion-design"
+    echo "    3. Start with: /project:aion-think"
 else
     echo "    3. Start with: /project:aion-scan"
 fi
