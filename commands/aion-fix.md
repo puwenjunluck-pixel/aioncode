@@ -1,8 +1,22 @@
 # /project:aion-fix — Bug 修复
 
+<!-- 本命令 Iron Law + 4-phase debugging 综合 superpowers:systematic-debugging 精髓。
+     See .aion/CREDITS.md -->
+
 Fix bugs from `.aion/bugs/` reports. Filters by role, fixes methodically, commits atomically.
 
 $ARGUMENTS — Optional: bug ID (e.g., `F-0325-001`) to fix a specific bug. Flags: `-f` force frontend only, `-b` force backend only, `--auto` (skip triage confirmation, fix all in priority order, auto-commit each fix), `--deep` (root cause analysis mode: 4-phase investigation before fixing). If empty, fix all open bugs matching current role.
+
+## Iron Laws (不可协商 — 见 `.aion/rules/metacognition.md`)
+
+```
+1. NO FIX WITHOUT ROOT CAUSE — 修任何 bug 之前,MUST 完成 Phase 1 的根因调查
+2. ONE BUG ONE COMMIT — 原子提交,绝不 batch 多个 bug 到一个 commit
+3. VERIFY BEFORE CLAIM — 声称"修好"之前,MUST 跑原始复现用例看到它现在通过
+4. 3+ FIXES FAIL → QUESTION ARCHITECTURE — 同一 bug 失败 3 次 = 架构问题,停下来讨论,不要第 4 次
+```
+
+> 💡 **强烈建议默认启用 `--deep`** — 即使 bug 看起来简单。simple bug 有 simple 根因,走流程 2 分钟,跳过流程的代价是症状式修复→ bug 以另一形式回归。只有当 bug **极度明确**(例如已知 typo、已知空指针)且**无疑义**时,才省略 `--deep`。
 
 ## Role
 
@@ -135,12 +149,23 @@ Apply the minimal change to address the root cause:
 - Do NOT add features while fixing
 - Read the full file before editing (Implementation Rule: Read First)
 
-#### 2e. Run Verify Test (if specified)
+#### 2e. Run Verify Test (Iron Law 3)
+
+> **NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION** — 声称"修好"之前,必须在本轮跑过原始复现用例看到它通过。
+
 If the bug report has a non-empty `verify_test` field:
 - Run the specified test: `{verify_test command}`
 - **Must pass 100%** before marking fixed
 - If test fails: the fix is incomplete → try a different approach (max 2 attempts)
 - If still failing after 2 attempts: skip this bug, move to next, report `BLOCKED`
+
+**红-绿回归验证**(推荐):
+1. 先跑原始复现用例看到**失败**(red)
+2. 应用 fix
+3. 再跑看到**通过**(green)
+4. 可选:临时 revert fix,确认用例又失败 → restore fix → 再次通过 — 证明 fix 真的起作用
+
+不跑 red→green 的"测试"可能是空 assertion,**没证明力**。
 
 <!-- PLATFORM:antigravity -->
 If no `verify_test`: use Browser Agent to navigate to the affected URL and verify visually.

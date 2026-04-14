@@ -36,12 +36,13 @@ AionCode — AI-native development system
 Commands:
   Planning:
     /project:aion-scan      扫描现有项目，启动智能
-    /project:aion-design    需求分析 → .aion/specs/
-    /project:aion-plan      技术方案 → .aion/plans/
+    /project:aion-think     讨论 · 碰撞 · 思考 · 目标对齐 → .aion/specs/
+                            (think 完成会主动建议进入 plan，无需手动触发)
+    /project:aion-plan      修改已有 plan（主路径由 think 主动衔接）→ .aion/plans/
 
   Quality:
-    /project:aion-review    代码审查 + 自动提取规则 → .aion/reviews/
-    /project:aion-fix       Bug 修复
+    /project:aion-review    代码审查 + Verification Gate + 自动提取规则 → .aion/reviews/
+    /project:aion-fix       Bug 修复（推荐 --deep 启用 4-phase 根因分析）
     /project:aion-qa        浏览器 QA 测试
 
   Operations:
@@ -63,18 +64,18 @@ Then show scenario recommendations:
 常见场景:
 
   🆕 新功能开发:
-     design → plan → /project:aion-loop → commit
-     手动: design → plan → 实现 → review → commit
+     think → plan(主动建议) → 实现 → review → commit
+     或一键: think → /project:aion-loop → commit
 
   🐛 修复 Bug:
-     /project:aion-fix → review → commit
+     /project:aion-fix --deep → review → commit
      或一键: /project:aion-loop fix
 
   🔄 接手老项目:
-     scan → design → plan → 实现 → review → commit
+     scan → think → plan(主动建议) → 实现 → review → commit
 
   📦 重构/优化:
-     design → plan → 实现 → review → commit
+     think → plan(主动建议) → 实现 → review → commit
 
   🧪 浏览器 QA:
      /project:aion-qa {url}
@@ -82,11 +83,12 @@ Then show scenario recommendations:
   🚀 自动化执行（--auto 模式）:
      /project:aion-loop --auto              # 全自动（commit 仍需确认）
      /project:aion-loop fix --max-rounds 5  # 修复循环，最多5轮
-     /project:aion-fix --auto               # 自动修复所有 bug
+     /project:aion-fix --auto --deep        # 自动修复 + 根因分析
      /project:aion-qa {url} --auto          # 自动测试+修复
      /project:aion-review --auto            # 机械修复自动应用
 
-  ⚠️ 安全底线: --auto 永不跳过 commit 确认、>5 严重问题仍 STOP
+  ⚠️ 安全底线: --auto 永不跳过 commit 确认、>5 严重问题仍 STOP、
+              Verification Gate 不通过不 approve
 ```
 
 ### Step 3: Command Detail
@@ -115,12 +117,15 @@ Workflow Patterns
 
 1. Standard Feature Development (recommended)
    ┌──────────┐   ┌──────────┐   ┌──────────┐
-   │  design  │──▶│   plan   │──▶│   实现    │
+   │  think   │──▶│  plan    │──▶│   实现    │
+   │(10-phase)│   │(主动建议)│   │           │
    └──────────┘   └──────────┘   └──────────┘
                                        │
    ┌──────────┐   ┌──────────┐         ▼
    │  commit  │◀──│  review  │◀────────┘
-   └──────────┘   └──────────┘
+   └──────────┘   │(Verify   │
+                  │  Gate)   │
+                  └──────────┘
 
 2. Automated Pipeline
    /project:aion-loop              default: 实现 → verify → review → commit
@@ -130,7 +135,7 @@ Workflow Patterns
 
 3. Existing Project Onboarding
    scan → 了解项目 → 选择下一步
-   新功能: design → plan → 实现 → review → commit
+   新功能: think → plan(主动建议) → 实现 → review → commit
 
 4. Learning Flywheel (核心价值)
    Write Code → Review → Extract Rules → Rules Loaded Next Time
@@ -146,22 +151,23 @@ Minimal one-liner per command:
 AionCode Cheat Sheet
 ═══════════════════════════════════════
 /project:aion-scan     {--file}       扫描项目，初始化智能
-/project:aion-design   {feature}      需求 → spec
-/project:aion-plan                    方案 → plan
-/project:aion-fix      {BUG-ID}       Bug 修复             --auto ✓
-/project:aion-qa       {url}          浏览器 QA 测试        --auto ✓
-/project:aion-review                  审查 + 学习规则       --auto ✓
-/project:aion-commit                  安全提交              --auto ✓
-/project:aion-loop     {mode}         自动流水线            --auto ✓
+/project:aion-think    {feature}      讨论/碰撞/思考 → spec (10-phase)
+/project:aion-plan                    修改已有 plan (主路径由 think 主动衔接)
+/project:aion-fix      {BUG-ID}       Bug 修复 (--deep 根因分析)  --auto ✓
+/project:aion-qa       {url}          浏览器 QA 测试               --auto ✓
+/project:aion-review                  审查 + Verify Gate + 学规则   --auto ✓
+/project:aion-commit                  安全提交                     --auto ✓
+/project:aion-loop     {mode}         自动流水线                   --auto ✓
 /project:aion-save                    保存上下文
 /project:aion-help     {cmd|workflow} 本帮助
 
 ⚠️ --auto 安全底线: commit 确认永不跳过 | >5 严重问题仍 STOP
+               | Verification Gate 不通过不 approve
 ```
 
 ## Next Steps
 
-Choose a command to get started. For new projects, try `/project:aion-design`. For existing projects, try `/project:aion-scan`.
+Choose a command to get started. For new projects, try `/project:aion-think`. For existing projects, try `/project:aion-scan`.
 
 ## Checklist
 - [ ] Help mode correctly determined from arguments

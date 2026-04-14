@@ -1,8 +1,21 @@
 # /project:aion-review — 代码审查
 
+<!-- 本命令 Iron Law + Verification Gate 综合 superpowers:verification-before-completion 精髓。
+     See .aion/CREDITS.md -->
+
 Review code changes, score quality, auto-extract reusable rules, and optionally auto-fix issues.
 
 $ARGUMENTS — Optional: specific files to review, or "all" for full diff, `--auto` (auto-apply mechanical fixes without asking; judgment-required fixes are skipped and logged). If empty, review all uncommitted changes.
+
+## Iron Laws (不可协商 — 见 `.aion/rules/metacognition.md`)
+
+```
+1. NO REVIEW WITHOUT READING FULL FILE (not just diff)
+2. NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
+   — 在本次 review session 跑过验证命令,才能判 "通过"。上次的结果不算。
+3. NO APPROVAL WITHOUT SPEC COVERAGE CHECK
+   — 每条 P0 必须指向实现它的代码;缺失 = major issue。
+```
 
 ## Role
 
@@ -121,11 +134,33 @@ Each WARNING deducts 5 points from the Code Quality dimension score.
 Known exemptions (historical files with tech debt) should be marked but not penalized.
 New code that exceeds thresholds MUST be flagged as issues in Step 3.
 
+### Step 2.8: Verification Gate (Iron Law 2)
+
+**打分前必须跑验证命令**。不能基于"上次跑过" / "应该能过" / "linter 干净"来判断。
+
+1. **识别**:什么命令能证明"代码真的能跑"?(`pytest` / `npm test` / `make build` / 具体 E2E)
+2. **执行**:在本次 review session 里跑一遍,**不是依赖历史结果**
+3. **阅读**:看完整输出、exit code、failure count
+4. **记录**:在 review 报告 `Verification` 段列出实际命令和结果
+
+**对照表**(来自 `.aion/rules/metacognition.md`):
+
+| 声明 | 需要的证据 |
+|---|---|
+| "测试通过" | 测试命令输出 `0 failures` |
+| "构建成功" | 构建命令 `exit 0` |
+| "Bug 修好了" | 原始复现用例现在通过(可选:红-绿循环) |
+| "需求全部满足" | 逐条 P0 checklist 核对 |
+
+**未跑验证 = 不能 approve**。verdict 直接降为 `needs_fix` 或 `DONE_WITH_CONCERNS`。
+
+若项目没有可运行的测试/构建(例如纯文档/配置变更),在 review 报告明确标记 "Verification: N/A — pure doc/config",并说明判断依据。
+
 ### Step 3: Score and Verdict
 - **Score**: 0-100 based on weighted dimensions above
 - **Verdict**:
-  - `approved` — score >= 70 and no critical issues
-  - `needs_fix` — score < 70 or has critical issues
+  - `approved` — score >= 70 and no critical issues **and Verification Gate passed**
+  - `needs_fix` — score < 70 or has critical issues or Verification Gate failed
 
 ### Step 4: Auto-Learn — Extract Rules & Style Patterns
 After reviewing, automatically extract two types of knowledge:
@@ -268,6 +303,7 @@ Read and apply `.aion/checklists/review.md` if it exists. If not, use the built-
 - [ ] Acceptance criteria verified against spec
 - [ ] Plan compliance verified
 - [ ] Contract compliance verified (if contracts exist)
+- [ ] **Verification Gate 执行**:本次 review session 跑过验证命令(Iron Law 2)
 - [ ] Score is justified with evidence from the review
 - [ ] Quantitative quality gate executed (file length, function length, nesting, params)
 - [ ] Reusable patterns extracted as rules (or explicitly noted as "none worth extracting")

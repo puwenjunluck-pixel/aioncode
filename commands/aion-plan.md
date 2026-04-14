@@ -1,8 +1,20 @@
 # /project:aion-plan — 实现规划
 
+<!-- 本命令结构 + bite-sized step 模板综合 AionCode 原有 plan 流程 + superpowers:writing-plans 精髓。
+     See .aion/CREDITS.md -->
+
 Create a technical implementation plan based on requirement specs, grounded in actual codebase exploration.
 
 $ARGUMENTS — Optional: spec file name or feature description. If empty, use the most recent spec in `.aion/specs/`.
+
+## 触发方式 (v0.7.6 起)
+
+本命令支持**两种触发路径**:
+
+1. **主动建议触发(主路径)** — 由 `aion-think` Phase 10 自动衔接,或用户说"进入 plan / 生成 plan / 写 plan"时 AI 主动调用本流程,**不需要用户显式输入命令**
+2. **显式命令触发(修改路径)** — `/project:aion-plan {spec-name}` 用于**修改已有 plan**(主路径用于初次生成)
+
+无论哪种触发,流程不变 — 下方 Steps 描述的就是完整流程。
 
 ## Role
 
@@ -138,53 +150,35 @@ After the plan is written, check if it introduces changes that should be reflect
 
 **Filename**: `.aion/plans/{feature-name}.md` — match the spec file name.
 
-**Format**:
-```markdown
----
-status: completed
-created_at: {YYYY-MM-DD}
-spec: {spec filename}
-version: {N}
-previous_version: {N-1 or null}
-change_reason: "{reason for this version, or null for v1}"
-author: {current user from team.yml, or "unknown"}
-scope: {api|web|mobile|infra|full}
-current_step: 0
-total_steps: {N}
----
+**Format**: 严格按 `.aion/rules/plan-template.md` 生成(含 frontmatter / Goal / Architecture / Tech Stack / File Structure / Implementation Tasks with bite-sized Steps / Verification Strategy / Risks)。
 
-# Plan: {Feature Name}
+**核心要求**(`plan-template.md` 的精髓):
+- 每个 Step 是 2-5 分钟动作(不是"实现整个 X")
+- 改代码的 Step 必须有完整代码块,不能是占位符
+- 每个 Step 有明确 `Verify`(命令 + 预期输出)
+- TDD 节奏:Write failing test → Run (fail) → Implement → Run (pass) → Commit
+- 禁忌:TBD / "similar to Task N" / "add error handling" / "write tests"(无代码)
 
-## Architecture Decisions
-- {Key technical choices and rationale}
+生成 plan 后,必须执行下方 Step 3.8(Plan Self-Review)已在生成前完成;落盘后执行 Step 5(Execution Handoff)。
 
-## Implementation Steps
+### Step 5: Execution Handoff
 
-### Step 1: {Title}
-- **What**: {One sentence — what this step accomplishes}
-- **Files**: {Exact files to create or modify}
-- **How**: {2-3 sentences on implementation approach, function/method level}
-- **Verify**: {Concrete check — command, output, or condition}
-- **Dependencies**: {Prior steps required, or "None"}
-- **Complexity**: {small | medium | large}
-- **Status**: Not started
+Plan 落盘后,向用户提供执行选项:
 
-### Step 2: {Title}
-...
+> "Plan 已保存到 `.aion/plans/{filename}.md`。两种执行方式:
+>
+> **(a) Subagent-Driven(推荐)** — 每个 task 派一个新 subagent,task 间 review,快速迭代
+> **(b) Inline Execution** — 本会话内逐 task 执行,checkpoint 分批 review
+>
+> 选哪个?"
 
-## Verification Strategy
-- **Method**: {unit_test | integration_test | manual_check | build_check}
-- **Coverage**: {What to test}
-- **Commands**: {How to run verification}
-- **Success criteria**: {What passing looks like}
-
-## Risks
-- {Known risk and mitigation}
-```
+**若用户选 (a)**:按 `commands/aion-loop.md` 启动并行 agent 分发,或用 Agent 工具手动派发。
+**若用户选 (b)**:本会话继续,逐 task 执行,每 task 完成后汇报并 pause 供 review。
+**若用户暂不想执行**:退出 DONE。保留 plan 供后续触发。
 
 ## Next Steps
 
-实现完成后，运行 /project:aion-review 审查，然后 /project:aion-commit 提交。
+实现完成后,运行 `/project:aion-review` 审查,然后 `/project:aion-commit` 提交。
 
 ## Checklist
 Read and apply `.aion/checklists/plan.md` if it exists. If not, use the built-in checklist:
@@ -228,10 +222,10 @@ If you catch yourself thinking any of these, STOP — you're rationalizing:
 | "Adding error handling details will bloat the plan" | Missing error handling in the plan means missing error handling in the code |
 
 ## Output Format
-The plan file written to `.aion/plans/{feature-name}.md` using the format defined in Step 4.
+The plan file written to `.aion/plans/{feature-name}.md` using the format defined in `.aion/rules/plan-template.md` (referenced from Step 4's Format section).
 
 ## Exit Status
 - `DONE` — Plan written to `.aion/plans/` after user confirmation
 - `DONE_WITH_CONCERNS` — Plan written but has identified risks the user accepted
-- `BLOCKED` — Cannot plan: spec is incomplete or contradictory, needs /project:aion-design first
+- `BLOCKED` — Cannot plan: spec is incomplete or contradictory, needs /project:aion-think first
 - `NEEDS_CONTEXT` — Need to understand more of the codebase or missing contract definitions

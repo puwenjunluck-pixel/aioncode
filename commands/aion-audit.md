@@ -214,7 +214,7 @@ low: {N}
 
 审计完成。如需修复发现的问题：
 - 安全问题：直接修复，运行 `/project:aion-review` 审查后提交
-- 性能问题：用 `/project:aion-design` 评估是否需要重构，或直接修复小问题
+- 性能问题：用 `/project:aion-think` 评估是否需要重构，或直接修复小问题
 - 定期审计建议：每次大版本发布前运行一次
 
 ## Checklist

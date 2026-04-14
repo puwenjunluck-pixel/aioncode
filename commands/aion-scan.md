@@ -561,8 +561,8 @@ After the scan report, present the `_product.md` content to the user for confirm
 
 Based on intent:
 - Testing → 直接编写和运行测试
-- Frontend/Backend iteration → /project:aion-design for new features, or directly implement planned changes
-- New feature → /project:aion-design to start the full workflow
+- Frontend/Backend iteration → /project:aion-think for new features, or directly implement planned changes
+- New feature → /project:aion-think to start the full workflow
 - Refactor → /project:aion-plan to plan the refactoring steps
 
 ## Checklist
