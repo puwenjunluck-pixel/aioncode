@@ -324,7 +324,7 @@ target_url: http://localhost:19200
 
     <h3>七、与开发者协作</h3>
     ${_tbl(['QA 负责','开发者负责'],[
-      ['运行 <code>aion-qa --report-only {url}</code> 发现 Bug','用 <code>aion-design</code> 写需求规格'],
+      ['运行 <code>aion-qa --report-only {url}</code> 发现 Bug','用 <code>aion-think</code> 讨论需求规格'],
       ['审核 <code>.aion/bugs/</code> 中的 Bug 报告','用 <code>aion-plan</code> 规划实现方案'],
       ['在 <code>.aion/tests/e2e/</code> 补充测试场景','用 <code>aion-fix {BUG-ID}</code> 修复 Bug'],
       ['用 <code>aion-review --quick</code> 快速验收','用 <code>aion-review</code> 全量质量检查']
@@ -430,8 +430,8 @@ function renderHelpPage() {
 
     <h2 id="help-workflow">工作流指南</h2>
     <p><strong>新功能开发：</strong></p>
-    ${_flow(['design','plan','[OK→执行]','review','commit'])}
-    <p style="margin-top:6px;font-size:12px;color:var(--text-tertiary)">design 内含：挑战假设 + 方案对比 + spec。plan 确认后直接执行代码。</p>
+    ${_flow(['think','plan(主动建议)','[OK→执行]','review','commit'])}
+    <p style="margin-top:6px;font-size:12px;color:var(--text-tertiary)">think 内含：10-phase 讨论碰撞挑战 + spec。think 完成后主动建议进入 plan。</p>
     <p style="margin-top:12px"><strong>Bug 修复：</strong></p>
     ${_flow(['qa --report-only','fix','review','commit'])}
     <p style="margin-top:6px;font-size:12px;color:var(--text-tertiary)">或：<code>aion-qa {url}</code> 一键测试+修复。</p>
@@ -442,8 +442,8 @@ function renderHelpPage() {
     <h2 id="help-commands">命令速查</h2>
     ${_tbl(['阶段','命令','说明'],[
       ['准备','<code>aion-scan</code>','扫描项目 + 浏览器探索（--url）+ 文档导入（--file）→ 产品设计文档'],
-      ['设计','<code>aion-design</code>','挑战假设 + 需求分析 + 方案对比 + spec（--demo 生成原型，--file 导入文档）'],
-      ['规划','<code>aion-plan</code>','技术方案 + Scope Challenge + ASCII 图，用户确认后直接执行'],
+      ['讨论','<code>aion-think</code>','10-phase 协作思考：探索→澄清→方案→挑战→逐步批准→spec（--file 导入文档）'],
+      ['规划','<code>aion-plan</code>','bite-sized task 实现计划（由 aion-think 主动建议触发；命令用于修改已有 plan）'],
       ['质量','<code>aion-review</code>','verify + 代码审查 + test gap 一站式（--quick 只跑 verify+review）'],
       ['QA','<code>aion-qa</code>','浏览器 QA 测试 → bug 报告（--report-only 只报告不修复）'],
       ['修复','<code>aion-fix</code>','按角色修复 .aion/bugs/ 中的 bug（-f 前端 / -b 后端 / 指定 ID）'],
@@ -456,14 +456,14 @@ function renderHelpPage() {
 
     <h2 id="help-scenarios">常见场景</h2>
     ${_tbl(['场景','操作流程'],[
-      ['加新功能','design → plan → [OK→执行] → review → commit'],
+      ['加新功能','think → plan(主动建议) → [OK→执行] → review → commit'],
       ['修 Bug（测试报告）','qa --report-only {url} → fix → review → commit'],
       ['修 Bug（全自动）','qa {url}（自动测试+修复）→ review → commit'],
       ['小改动','直接改 → commit -y（Tier 1 自动放行）'],
-      ['导入外部需求','design --file 需求.docx → 自动提取需求+生成 spec'],
-      ['接手旧项目','scan → design/plan → review → commit'],
+      ['导入外部需求','think --file 需求.docx → 自动提取需求+生成 spec'],
+      ['接手旧项目','scan → think → plan(主动建议) → review → commit'],
       ['补充测试','review（自动发现 test gap + 生成测试）'],
-      ['全自动流水线','loop full --auto（design → plan → 执行 → review → commit）'],
+      ['全自动流水线','loop full --auto（think → plan → 执行 → review → commit）'],
     ])}
 
     ${_renderTestingGuide()}
@@ -494,7 +494,7 @@ function renderHelpPage() {
       ['.aion/ 要提交 Git 吗？','建议提交。rules/specs/plans/bugs 是团队共享知识。sessions.jsonl 和 monitor/ 已在 .gitignore 排除。'],
       ['如何升级？','执行 <code>aioncode upgrade</code> 更新工具，再执行 <code>aioncode init</code> 更新项目命令文件（自动清理已移除的旧命令）。'],
       ['review 不通过能提交吗？','不能（Tier 3）。aion-commit 的 Tier 3 需要 review 通过。docs-only 改动自动判定为 Tier 1，可直接提交。'],
-      ['design 和 plan 有什么区别？','<code>aion-design</code> 是需求层：挑战假设 + 分析需求 + 方案对比 → spec。<code>aion-plan</code> 是实现层：技术方案 → 用户确认后直接执行代码。'],
+      ['think 和 plan 有什么区别？','<code>aion-think</code> 是讨论层：10-phase 探索/澄清/挑战 → spec。<code>aion-plan</code> 是实现层:bite-sized task 计划 → 执行。think 完成后主动建议进入 plan，无需手动触发。'],
       ['init 可以只安装部分命令吗？','可以。<code>aioncode init</code> 交互式安装根据角色（设计师/前端/后端/测试/全栈）推荐命令，你可以自由增减。'],
       ['什么是 Tier 1/2/3 提交？','Tier 1（微小改动）自动放行，Tier 2（小改动）内联轻量审查，Tier 3（大改动/安全路径）需要完整 review 通过。commit -y 强制走 Tier 1。'],
       ['--file 支持哪些格式？','支持 .docx、.pdf、.md、.pptx、.xlsx，通过 markitdown 自动转为 Markdown 后提取需求。'],

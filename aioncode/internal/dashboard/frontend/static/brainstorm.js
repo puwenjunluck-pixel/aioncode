@@ -76,7 +76,7 @@ function _bsRenderEmpty() {
   return `<div class="bs-empty">
     <div class="bs-empty-icon">💬</div>
     <div class="bs-empty-title">当前无设计协作会话</div>
-    <div class="bs-empty-hint">运行 <code>/project:aion-design</code> 开始设计，方案选项将在此展示。</div>
+    <div class="bs-empty-hint">运行 <code>/project:aion-think</code> 开始讨论，方案选项将在此展示。</div>
   </div>`;
 }
 

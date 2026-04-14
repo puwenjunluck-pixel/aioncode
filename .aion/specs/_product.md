@@ -1,6 +1,6 @@
 ---
 product: AionCode
-updated_at: 2026-03-28
+updated_at: 2026-04-07
 generation_method: scan
 confidence: high
 sources:
@@ -10,7 +10,7 @@ sources:
 # 产品设计文档
 
 ## 一、产品定位
-- **目标用户**：使用 Claude Code 的开发者和测试人员，需要让 AI 编程有章可循而非随意生成 [CONFIRMED]
+- **目标用户**：使用 Claude Code 或 Google Antigravity 的开发者和测试人员，需要让 AI 编程有章可循而非随意生成 [CONFIRMED]
 - **核心价值**：为 AI 辅助开发建立结构化知识体系（规则、规格、计划），实现知识沉淀 → 规则驱动 → 质量可控的开发闭环 [CONFIRMED]
 - **产品形态**：CLI 工具 + Web Dashboard（副驾驶面板）+ Claude Code Skill 命令集 [CONFIRMED]
 - **商业模式**：当前闭源，稳定后考虑开源 [CONFIRMED]
@@ -18,7 +18,7 @@ sources:
 ## 二、功能地图
 | 模块 | 功能 | 用户场景 | 状态 | 对应 plan |
 |------|------|---------|------|-----------|
-| CLI — init | 项目初始化：创建 .aion/ 目录、模板、规则 | 新项目接入 AionCode | 已实现 | [from:code] |
+| CLI — init | 项目初始化：多平台支持（Claude Code / Antigravity），平台检测+选择，命令按平台裁剪安装 | 新项目接入 AionCode | 已实现 | multi-platform-init |
 | CLI — upgrade | 自动检测+下载+替换二进制（支持 GITHUB_TOKEN） | 更新到最新版本 | 已实现 | github-token-auth |
 | CLI — dashboard | 启动 Web 副驾驶面板（双进程架构） | 可视化查看项目状态 | 已实现 | dashboard-polish |
 | CLI — doctor | 环境诊断（Python、git、路径、权限） | 排查安装问题 | 已实现 | [from:code] |
@@ -67,7 +67,7 @@ aion-review（审查代码 + 自动学习）→ 提取规则到 rules/ → 下�
 ## 四、模块架构
 | 模块 | 职责 | 对外接口 | 依赖 | 解耦方式 |
 |------|------|---------|------|---------|
-| core | 项目检测、初始化、版本管理（纯逻辑，无副作用） | Python API | 无外部依赖 | 函数调用 |
+| core | 项目检测、初始化、版本管理、多平台配置（PlatformConfig + 命令裁剪）（纯逻辑，无副作用） | Python API | 无外部依赖 | 函数调用 |
 | commands | CLI 命令封装（init/upgrade/dashboard/doctor/version/clean/install/uninstall） | argparse CLI | core, utils | CLI → core |
 | utils.console | Rich 终端渲染（颜色、表格、进度条） | Python API | rich | 函数调用 |
 | utils.platform | 跨平台检测（OS、架构、路径、权限） | Python API | 无 | 函数调用 |
@@ -77,7 +77,7 @@ aion-review（审查代码 + 自动学习）→ 提取规则到 rules/ → 下�
 | dashboard.routers | 10 个 API 路由模块（projects/files/monitor/bugs/team/commands/skills/logs/browse） | REST endpoints | services | 路由→服务 |
 | dashboard.services | 7 个业务服务（project_registry/file_ops/bugs/encoding/monitor/team/stats/skills） | Python API | 文件系统 | 文件 I/O |
 | dashboard.frontend | 嵌入式 HTML/CSS/JS 前端（build_frontend.py 构建） | HTML pages | 无运行时依赖 | 内嵌 |
-| commands/ (skills) | 11 个 Markdown 命令文件（v0.7.4），由 Claude Code 加载执行 | Claude Code prompt | .aion/ 数据 | 文件驱动 |
+| commands/ (skills) | 11 个 Markdown 命令文件（v0.7.5），源文件含 `<!-- PLATFORM:name -->` 标记，安装时按平台裁剪，由 Claude Code 或 Antigravity 加载执行 | AI prompt | .aion/ 数据 | 文件驱动 |
 | .aion/ | 项目智能数据目录（规则、规格、计划、日志、Bug、测试） | 文件系统 | 无 | 文件驱动 |
 
 ## 五、技术栈
@@ -93,7 +93,7 @@ aion-review（审查代码 + 自动学习）→ 提取规则到 rules/ → 下�
 | 测试 | pytest + httpx | pytest>=7.0 | 标准 Python 测试框架 [CONFIRMED] |
 | Lint | Ruff | >=0.4 | 极快的 Python linter，替代 flake8+isort [CONFIRMED] |
 | CI/CD | GitHub Actions | - | 私有仓库，3 平台矩阵构建 [CONFIRMED] |
-| AI 集成 | Claude Code Skills | Markdown 命令 | 无 SDK 依赖，纯 prompt 驱动 [CONFIRMED] |
+| AI 集成 | Claude Code Skills / Antigravity Workflows | Markdown 命令 | 无 SDK 依赖，纯 prompt 驱动，多平台支持 [CONFIRMED] |
 
 ## 六、数据模型（核心实体）
 | 实体 | 字段概要 | 关系 | 存储方式 |

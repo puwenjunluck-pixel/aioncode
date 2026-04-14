@@ -2,14 +2,48 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
-## 2026-04-07 | feat: multi-platform init (Claude Code + Antigravity)
+## 2026-04-14 | feat: surgical superpowers fusion v0.7.6
+
+### Summary
+手术刀般吸收 superpowers 的纪律层(metacognition / Iron Laws / Verification Gate / 10-phase brainstorming / bite-sized plan / 4-phase debugging),同时保留 AionCode 骨架(命令结构 / `.aion/` 状态层 / 平台裁剪 / 中文工作流)。aion-design 整体重命名为 aion-think,语感从"命令式设计"转为"协作式思考碰撞"。
+
+### 核心改动
+- **rename**: `aion-design` → `aion-think`(git mv 保留历史)
+- **新增规则模板**(抄录 superpowers,不依赖其包):
+  - `.aion/rules/metacognition.md` — Iron Laws + 红旗表 + 合理化阻断表
+  - `.aion/rules/spec-template.md` — 融合 AionCode P0/P1 + superpowers Architecture/Error Handling/Testing Strategy
+  - `.aion/rules/plan-template.md` — bite-sized TDD step + 完整代码 + Verify + No Placeholders
+- **aion-think 10-phase**: 探索 / 辅助角色 / 澄清 / 方案 / **挑战(AionCode 私加)** / 逐步批准 / 写 spec / 自审 / 用户复核 / 主动建议 plan
+- **aion-plan 主动建议触发**: 由 aion-think Phase 10 自动衔接,命令保留仅用于修改已有 plan
+- **aion-review Iron Laws + Verification Gate**: Step 2.8 强制在本次 session 跑验证命令才能 approve
+- **aion-fix Iron Laws + 4-phase 根因分析**: 推荐默认 `--deep`
+- **CREDITS.md**: 明确 superpowers(MIT)归属 + 借鉴/不借鉴对照表 + 升级追踪策略
+- **rename 跨层传播**: profiles.py / init.py / install.sh / CLAUDE.md.tpl / GEMINI.md.tpl / checklists(design.md → think.md)/ dashboard UI(views.js/brainstorm.js/index.html/embedded.py rebuilt)
+
+### Rules learned: 1 new
+- pitfalls: **命令 rename 必须跨层扫描七件套** — surgical fusion 第一轮 review 只查 `.aion/` 和 `commands/`,漏掉 profiles.py 等 6 层,Iron Law 2 反面教材
+
+### Verification
+- `/project:aion-review` 两轮:第一轮 62/100 needs_fix(发现 rename 残留)→ 修复 16 文件 → 第二轮 93/100 approved
+- profiles.py / init.py / embedded.py 实跑 import + 断言通过
+- PLATFORM 标签配对 ✓(think 6/6, fix 6/6, review 2/2)
+
+### 归属
+本次纪律层改编基于 Obra Works 的 [superpowers](https://github.com/obra/superpowers) (MIT License v5.0.7)。详见 `.aion/CREDITS.md`。
+
+---
+
+## 2026-04-07 | feat: 多平台支持 v0.7.5 (Claude Code + Antigravity)
 - PlatformConfig 数据类 + PLATFORMS 映射，抽象所有平台差异
 - init 交互流新增平台检测 + 选择步骤
 - project.py 全部路径参数化：命令目录、指令文件、前缀转换、hooks/settings 条件安装
 - GEMINI.md.tpl 模板新建（Antigravity 项目指令）
 - 修复升级路径丢失 platform 的 bug（review 发现）
+- 6 命令加入平台感知段：Browser Agent (qa/scan/design/fix) + Manager View (review/loop/fix)
+- `<!-- PLATFORM:name -->` 标记 + `_strip_platform_blocks()` 裁剪，安装时只保留目标平台内容
+- 策略决策：同一套命令，不同 IDE 走各自最优路径（不是 if-else，是按平台裁剪）
 - Rules learned: 1 new (pitfalls: upgrade 必须恢复完整 profile)
-- Commit: 4a2b0e1
+- Commits: 4a2b0e1, c9b402a, 64bb267, a3e5b13
 
 ## 2026-04-06 | feat: 命令体系升级 — superpowers 体验吸收
 
