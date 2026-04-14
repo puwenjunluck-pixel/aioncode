@@ -1,8 +1,22 @@
 # /project:aion-fix — Bug 修复
 
+<!-- 本命令 Iron Law + 4-phase debugging 综合 superpowers:systematic-debugging 精髓。
+     See .aion/CREDITS.md -->
+
 Fix bugs from `.aion/bugs/` reports. Filters by role, fixes methodically, commits atomically.
 
-$ARGUMENTS — Optional: bug ID (e.g., `F-0325-001`) to fix a specific bug. Flags: `-f` force frontend only, `-b` force backend only, `--auto` (skip triage confirmation, fix all in priority order, auto-commit each fix). If empty, fix all open bugs matching current role.
+$ARGUMENTS — Optional: bug ID (e.g., `F-0325-001`) to fix a specific bug. Flags: `-f` force frontend only, `-b` force backend only, `--auto` (skip triage confirmation, fix all in priority order, auto-commit each fix), `--deep` (root cause analysis mode: 4-phase investigation before fixing). If empty, fix all open bugs matching current role.
+
+## Iron Laws (不可协商 — 见 `.aion/rules/metacognition.md`)
+
+```
+1. NO FIX WITHOUT ROOT CAUSE — 修任何 bug 之前,MUST 完成 Phase 1 的根因调查
+2. ONE BUG ONE COMMIT — 原子提交,绝不 batch 多个 bug 到一个 commit
+3. VERIFY BEFORE CLAIM — 声称"修好"之前,MUST 跑原始复现用例看到它现在通过
+4. 3+ FIXES FAIL → QUESTION ARCHITECTURE — 同一 bug 失败 3 次 = 架构问题,停下来讨论,不要第 4 次
+```
+
+> 💡 **强烈建议默认启用 `--deep`** — 即使 bug 看起来简单。simple bug 有 simple 根因,走流程 2 分钟,跳过流程的代价是症状式修复→ bug 以另一形式回归。只有当 bug **极度明确**(例如已知 typo、已知空指针)且**无疑义**时,才省略 `--deep`。
 
 ## Role
 
@@ -86,6 +100,38 @@ Before implementing the fix:
 - Check if a similar bug was fixed elsewhere (grep for fix patterns)
 - This prevents fixing the same root cause in multiple places with different approaches
 
+#### 2c.5. Root Cause Analysis (conditional — when `--deep` is set)
+
+When `--deep` flag is present, run four-phase investigation BEFORE attempting any fix:
+
+**Phase 1: Investigation** — Gather evidence, don't guess.
+- Read the full error message/stack trace
+- Reproduce the bug by tracing the code path (read caller → callee chain)
+- If bug is UI-related: use Playwright MCP / gstack browse if available to reproduce
+- Check `git log` for recent changes to affected files — did a recent commit introduce this?
+- List all assumptions: "I assume X because Y"
+- When investigation spans multiple modules, use Agent tool subagents to parallelize
+
+**Phase 2: Pattern Analysis** — Find what works and compare.
+- Find a similar feature or code path in the codebase that DOES work correctly
+- Diff the working code against the broken code — what's different?
+- Check if the bug exists in other similar locations (systemic vs isolated)
+
+**Phase 3: Hypothesis** — One hypothesis at a time.
+- Form a single, testable hypothesis: "The bug occurs because {X} when {Y}"
+- Design a minimal test to confirm or refute — don't fix yet, just verify the hypothesis
+- If refuted: return to Phase 1 with new evidence. Do NOT try another fix blindly.
+
+**Phase 4: Implementation** — Fix with confidence.
+- Write a failing test that reproduces the bug (this test must fail before the fix)
+- Apply the minimal fix
+- Run the test — it must now pass
+- Check for the same pattern in other locations (Phase 2 findings)
+
+**Escalation rule**: After 3 failed fix attempts on the same bug, STOP and question the architecture:
+- "Is the bug a symptom of a deeper design problem?"
+- Report to user with evidence gathered, suggest architectural discussion.
+
 #### 2d. Fix Code
 Apply the minimal change to address the root cause:
 - Fix exactly what the bug report describes
@@ -93,14 +139,25 @@ Apply the minimal change to address the root cause:
 - Do NOT add features while fixing
 - Read the full file before editing (Implementation Rule: Read First)
 
-#### 2e. Run Verify Test (if specified)
+#### 2e. Run Verify Test (Iron Law 3)
+
+> **NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION** — 声称"修好"之前,必须在本轮跑过原始复现用例看到它通过。
+
 If the bug report has a non-empty `verify_test` field:
 - Run the specified test: `{verify_test command}`
 - **Must pass 100%** before marking fixed
 - If test fails: the fix is incomplete → try a different approach (max 2 attempts)
 - If still failing after 2 attempts: skip this bug, move to next, report `BLOCKED`
 
-If no `verify_test`: do a quick manual smoke test (navigate to the affected URL if possible, or run the relevant test suite).
+**红-绿回归验证**(推荐):
+1. 先跑原始复现用例看到**失败**(red)
+2. 应用 fix
+3. 再跑看到**通过**(green)
+4. 可选:临时 revert fix,确认用例又失败 → restore fix → 再次通过 — 证明 fix 真的起作用
+
+不跑 red→green 的"测试"可能是空 assertion,**没证明力**。
+
+If no `verify_test`: use gstack/Playwright if available to verify, otherwise run the relevant test suite.
 
 #### 2f. Atomic Commit
 ```
@@ -156,6 +213,7 @@ Or: use `/project:aion-commit` directly if fixes are straightforward (Tier 1/2 m
 - [ ] Bug scope filtered correctly
 - [ ] Each bug: code located before fixing
 - [ ] Each bug: Reuse Scan performed
+- [ ] Each bug: Root Cause Analysis completed (if `--deep`)
 - [ ] Each bug: verify_test run (if specified)
 - [ ] Each bug: atomic commit with ID in message
 - [ ] Each bug: status updated to `fixed`
@@ -171,6 +229,8 @@ Or: use `/project:aion-commit` directly if fixes are straightforward (Tier 1/2 m
 | Skipping verify_test | Bug may still be broken in a different way | HIGH |
 | Role bypass without explicit `-f`/`-b` flag | Designer/tester accidentally modifying code | MEDIUM |
 | Fixing > 3 files for a "simple" bug | Scope has exploded — stop and confirm with user | MEDIUM |
+| Guessing the fix without root cause analysis (`--deep`) | Symptom fixes mask underlying issues; bug recurs in a different form | HIGH |
+| Trying a 4th fix on the same bug in `--deep` mode | 3 failures = likely architectural issue. Escalate, don't persist | MEDIUM |
 
 ## Output Format
 Bug status updated in `.aion/bugs/`, atomic commits per fix, summary shown in conversation.

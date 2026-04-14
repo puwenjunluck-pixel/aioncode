@@ -90,7 +90,7 @@ Follow Write Protocol (`.aion/refs/write-protocol.md`): Versioned for specs/plan
 
 **For specs** (`.aion/specs/{name}.md`):
 - If a spec file for this feature exists, append new sections (don't overwrite)
-- If no spec exists, create one with the standard format (see /project:aion-design)
+- If no spec exists, create one with the standard format (see /project:aion-think)
 - Only write substantive requirement information, not casual discussion
 
 **For plans** (`.aion/plans/{name}.md`):

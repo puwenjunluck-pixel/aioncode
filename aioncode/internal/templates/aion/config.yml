@@ -1,7 +1,7 @@
 # AionCode Project Configuration
 # Docs: https://github.com/user/aioncode
 
-version: "0.7.5"
+version: "0.7.6"
 
 rules:
   # Maximum rules per category before suggesting consolidation
@@ -10,11 +10,9 @@ rules:
 workflow:
   # Recommended phase order (not enforced)
   phases:
-    - design
-    - demo      # optional: generate interactive HTML prototypes
-    - plan
+    - think     # 讨论/碰撞/思考/目标对齐(融合挑战假设)
+    - plan      # 实现规划(主路径由 aion-think Phase 10 自动建议,命令仅用于修改已有 plan)
     - impl
-    - test      # optional: generate tests
-    - verify
-    - review    # includes auto-learning (rule extraction)
+    - qa        # optional: browser-based QA
+    - review    # verify + review + auto-learning 一站式
     - commit

@@ -110,8 +110,8 @@ aioncode init
 
 ```
 /project:aion-scan      扫描现有项目，建立初始规则
-/project:aion-design    需求分析 → .aion/specs/
-/project:aion-plan      技术方案 → 确认后自动执行
+/project:aion-think     讨论·碰撞·思考·目标对齐 → .aion/specs/
+/project:aion-plan      实现规划（由 aion-think 主动衔接，或独立修改已有 plan）
 /project:aion-review    代码审查 + 自动提取规则
 /project:aion-qa        浏览器 QA 测试 → bug 报告
 /project:aion-fix       按角色修复 bug
@@ -124,7 +124,7 @@ aioncode init
 
 **推荐工作流：**
 ```
-design → plan（自动执行）→ review → commit
+think → plan（主动建议）→ 实现 → review → commit
 ```
 
 ### 副驾驶面板

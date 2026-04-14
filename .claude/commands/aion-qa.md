@@ -209,7 +209,7 @@ For each bug to fix:
 3. **Reuse Scan** — search for similar fix patterns in codebase
 4. **Fix the code** — minimal change to address the root cause
 5. **Verify fix** — re-navigate to the bug URL, reproduce the steps, confirm resolved
-   - If using gstack: `$B goto {url}`, navigate to trigger the bug
+   - `$B goto {url}`, navigate to trigger the bug
    - If fix confirmed: ✅
    - If not fixed: try alternative approach (max 2 attempts per bug)
 6. **Atomic commit**: `fix(bug): {BUG-ID} {title}`
@@ -247,7 +247,7 @@ Regression: {PASS | issues found: list}
 - After fix mode: run `/project:aion-review` to review the fixes, then `/project:aion-commit`
 
 ## Checklist
-- [ ] Browser backend detected and verified
+- [ ] Browser backend detected (Antigravity Agent / gstack / Playwright)
 - [ ] URL reachable before starting
 - [ ] All pages/features tested systematically
 - [ ] Bugs classified by severity and type (F/B/X)

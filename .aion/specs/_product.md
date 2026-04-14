@@ -25,8 +25,8 @@ sources:
 | CLI — install/uninstall | 系统级安装/卸载二进制 | 首次安装 | 已实现 | [from:code] |
 | CLI — clean | 清理 .aion/ 临时文件 | 磁盘空间管理 | 已实现 | [from:code] |
 | Skill — aion-scan | 项目扫描 + 浏览器探索(--url) + 文档导入(--file) → 生成产品设计文档 | 接手已有项目 | 已实现 | product-design-layer |
-| Skill — aion-design | 挑战假设 + 需求分析 + 方案对比 + spec（--demo 原型，--file 导入） | 设计新功能 | 已实现 | product-design-layer |
-| Skill — aion-plan | 技术方案 + Scope Challenge + ASCII 图，用户确认后直接执行 | 规划实现方案 | 已实现 | [from:code] |
+| Skill — aion-think | 讨论·碰撞·思考·目标对齐（10-phase brainstorming + Iron Laws + Phase 5 挑战；Phase 10 自动衔接 plan） | 设计新功能 / 3+ 文件改动 | 已实现 | surgical-superpowers-fusion |
+| Skill — aion-plan | Bite-sized TDD 规划（2-5 min/step），由 aion-think 自动衔接，命令单独调用仅用于修改已有 plan | 规划实现方案 | 已实现 | surgical-superpowers-fusion |
 | Skill — aion-review | verify + 代码审查 + test gap + 自动学习一站式（--quick 跳过 gap） | 代码质量门禁 | 已实现 | [from:code] |
 | Skill — aion-qa | 浏览器 QA 测试 → bug 报告（--report-only 只报告不修复） | 发现 Bug | 已实现 | [from:code] |
 | Skill — aion-fix | 按角色修复 .aion/bugs/ 中的 bug（-f 前端 / -b 后端 / 指定 ID） | 修复 Bug | 已实现 | [from:code] |
@@ -41,16 +41,16 @@ sources:
 | Dashboard — 需求/方案/规则/清单/缺陷/测试/日志 | 各类数据视图 | 按分类浏览项目数据 | 已实现 | [from:code] |
 | Dashboard — 技能 | Skill 安装管理 + 官方市场 | 扩展能力 | 已实现 | skills-management |
 | Dashboard — 模型配置 | Provider 卡片管理 + 模型芯片切换 + settings.json 集成（官方/自定义） | 切换 Claude Code 使用的模型 | 已实现 | model-api-config |
-| Dashboard — 协作 | 设计协作视图（文件中转 + 轮询 + 选项卡片渲染） | aion-design 可视化交互 | 已实现 | dashboard-brainstorm |
+| Dashboard — 协作 | 设计协作视图（文件中转 + 轮询 + 选项卡片渲染） | aion-think 可视化交互 | 已实现 | dashboard-brainstorm |
 | Dashboard — 帮助 | 工作流指南 + 命令速查（11 命令）+ 常见场景 + 测试最佳实践 + FAQ | 日常查阅（高频） | 已实现 | [from:code] |
 | Dashboard — 关于 | 产品介绍 + 动态版本号 + 安装升级 + 路线图 + 更新日志 | 产品身份（低频） | 已实现 | [from:code] |
 
 ## 三、核心业务流程
 ### 流程 1: 新功能开发
-开发者 → aion-design（挑战假设 + 方案对比 → spec）→ aion-plan（技术方案 → 确认后直接执行）→ aion-review（verify + 审查 + test gap）→ aion-commit（Tier 分级提交）[CONFIRMED]
+开发者 → aion-think（10-phase 碰撞 + Phase 5 挑战 + Phase 9 用户批准 → spec + Phase 10 主动衔接 plan）→ 实现 → aion-review（Verification Gate + 审查 + test gap）→ aion-commit（Tier 分级提交）[CONFIRMED]
 
 ### 流程 2: 接手已有项目
-开发者 → aion-scan（扫描代码 + 生成产品文档）→ aion-design/plan → aion-review → aion-commit [CONFIRMED]
+开发者 → aion-scan（扫描代码 + 生成产品文档）→ aion-think → plan（自动）→ aion-review → aion-commit [CONFIRMED]
 
 ### 流程 3: Bug 修复
 开发者/测试 → aion-qa --report-only（浏览器测试 → bug 报告）→ aion-fix（按角色修复）→ aion-review → aion-commit [CONFIRMED]
@@ -77,7 +77,7 @@ aion-review（审查代码 + 自动学习）→ 提取规则到 rules/ → 下�
 | dashboard.routers | 10 个 API 路由模块（projects/files/monitor/bugs/team/commands/skills/logs/browse） | REST endpoints | services | 路由→服务 |
 | dashboard.services | 7 个业务服务（project_registry/file_ops/bugs/encoding/monitor/team/stats/skills） | Python API | 文件系统 | 文件 I/O |
 | dashboard.frontend | 嵌入式 HTML/CSS/JS 前端（build_frontend.py 构建） | HTML pages | 无运行时依赖 | 内嵌 |
-| commands/ (skills) | 11 个 Markdown 命令文件（v0.7.5），源文件含 `<!-- PLATFORM:name -->` 标记，安装时按平台裁剪，由 Claude Code 或 Antigravity 加载执行 | AI prompt | .aion/ 数据 | 文件驱动 |
+| commands/ (skills) | 11 个 Markdown 命令文件（v0.7.6），源文件含 `<!-- PLATFORM:name -->` 标记，安装时按平台裁剪，由 Claude Code 或 Antigravity 加载执行 | AI prompt | .aion/ 数据 | 文件驱动 |
 | .aion/ | 项目智能数据目录（规则、规格、计划、日志、Bug、测试） | 文件系统 | 无 | 文件驱动 |
 
 ## 五、技术栈

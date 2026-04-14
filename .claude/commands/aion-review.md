@@ -1,8 +1,21 @@
 # /project:aion-review — 代码审查
 
+<!-- 本命令 Iron Law + Verification Gate 综合 superpowers:verification-before-completion 精髓。
+     See .aion/CREDITS.md -->
+
 Review code changes, score quality, auto-extract reusable rules, and optionally auto-fix issues.
 
 $ARGUMENTS — Optional: specific files to review, or "all" for full diff, `--auto` (auto-apply mechanical fixes without asking; judgment-required fixes are skipped and logged). If empty, review all uncommitted changes.
+
+## Iron Laws (不可协商 — 见 `.aion/rules/metacognition.md`)
+
+```
+1. NO REVIEW WITHOUT READING FULL FILE (not just diff)
+2. NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
+   — 在本次 review session 跑过验证命令,才能判 "通过"。上次的结果不算。
+3. NO APPROVAL WITHOUT SPEC COVERAGE CHECK
+   — 每条 P0 必须指向实现它的代码;缺失 = major issue。
+```
 
 ## Role
 
@@ -56,25 +69,41 @@ Never use "likely", "probably", "should be fine" — verify and cite, or mark as
 
 ### Parallelism Strategy (optional)
 
-When reviewing changes across 5+ files in unrelated modules, consider using the Agent tool to review independent file groups in parallel — e.g., one subagent reviews frontend changes, another reviews backend changes. Each subagent must still read the full file (not just diffs) and check against `.aion/rules/`.
+When reviewing changes across 5+ files or across independent concerns, parallelize:
 
-### Step 2: Review Each Changed File
+Use the Agent tool to dispatch subagents:
+- **By stage**: One subagent runs Stage A (Spec Compliance), another runs Stage B (Code Quality + Security)
+- **By module**: One subagent reviews frontend changes, another reviews backend changes
+- Each subagent must still read the full file (not just diffs) and check against `.aion/rules/`
+
+### Step 2: Two-Stage Review
+
+Review is split into two independent stages. Both read the COMPLETE file (not just diffs). When parallelizing (see Parallelism Strategy above), dispatch these as two parallel agents.
+
+#### Stage A: Spec Compliance (30% — "Are we building the right thing?")
 For each changed file:
-1. Read the COMPLETE file (not just the diff) to understand full context
-2. Check against rules — are any violated?
-3. Check against spec — does this fulfill the acceptance criteria?
-4. Check against plan — does this follow the planned approach?
-5. Check against contracts — are interfaces respected?
-6. Check against prototypes — if `.aion/prototypes/` contains a prototype for this feature:
-   - Does the implemented UI structure roughly match the prototype layout?
-   - Are all interactive elements from the prototype accounted for in the implementation?
-   - Flag only structural mismatches; minor visual deviations are expected
-   - This falls under Architecture Compliance (30%), not a separate scoring dimension
+1. Read the COMPLETE file for full context
+2. Check against **spec** — does this fulfill each acceptance criterion?
+3. Check against **plan** — does this follow the planned approach and step order?
+4. Check against **contracts** — are interfaces respected?
+5. Check against **prototypes** — if `.aion/prototypes/` exists:
+   - Does the UI structure match the prototype layout?
+   - Are all interactive elements accounted for?
+   - Flag structural mismatches only; minor visual deviations are expected
 
-**Review Dimensions** (scoring weights):
-- **Code Quality (40%)**: Readability, maintainability, DRY, proper abstractions, type safety, error handling
-- **Security (30%)**: Injection, XSS, auth issues, secrets exposure, OWASP top 10 concerns
-- **Architecture Compliance (30%)**: Follows plan, respects contracts, consistent with existing patterns
+**Output**: List of spec requirements with pass/fail status. Any unmet acceptance criterion is a `major` issue.
+
+#### Stage B: Code Quality + Security (70% — "Is it built well?")
+For each changed file:
+1. Read the COMPLETE file for full context
+2. Check against **rules** — are any violated?
+3. **Code Quality (40%)**: Readability, maintainability, DRY, proper abstractions, type safety, error handling
+4. **Security (30%)**: Injection, XSS, auth issues, secrets exposure, OWASP top 10 concerns
+
+**Output**: Issues list with severity and suggested fixes.
+
+#### Merging Results
+After both stages complete, merge findings into a single review. If stages were run in parallel, read both outputs and deduplicate before scoring.
 
 ### Step 2.5: Quantitative Quality Gate
 For each changed file, run quantitative checks against `rules/style.md` thresholds:
@@ -97,11 +126,33 @@ Each WARNING deducts 5 points from the Code Quality dimension score.
 Known exemptions (historical files with tech debt) should be marked but not penalized.
 New code that exceeds thresholds MUST be flagged as issues in Step 3.
 
+### Step 2.8: Verification Gate (Iron Law 2)
+
+**打分前必须跑验证命令**。不能基于"上次跑过" / "应该能过" / "linter 干净"来判断。
+
+1. **识别**:什么命令能证明"代码真的能跑"?(`pytest` / `npm test` / `make build` / 具体 E2E)
+2. **执行**:在本次 review session 里跑一遍,**不是依赖历史结果**
+3. **阅读**:看完整输出、exit code、failure count
+4. **记录**:在 review 报告 `Verification` 段列出实际命令和结果
+
+**对照表**(来自 `.aion/rules/metacognition.md`):
+
+| 声明 | 需要的证据 |
+|---|---|
+| "测试通过" | 测试命令输出 `0 failures` |
+| "构建成功" | 构建命令 `exit 0` |
+| "Bug 修好了" | 原始复现用例现在通过(可选:红-绿循环) |
+| "需求全部满足" | 逐条 P0 checklist 核对 |
+
+**未跑验证 = 不能 approve**。verdict 直接降为 `needs_fix` 或 `DONE_WITH_CONCERNS`。
+
+若项目没有可运行的测试/构建(例如纯文档/配置变更),在 review 报告明确标记 "Verification: N/A — pure doc/config",并说明判断依据。
+
 ### Step 3: Score and Verdict
 - **Score**: 0-100 based on weighted dimensions above
 - **Verdict**:
-  - `approved` — score >= 70 and no critical issues
-  - `needs_fix` — score < 70 or has critical issues
+  - `approved` — score >= 70 and no critical issues **and Verification Gate passed**
+  - `needs_fix` — score < 70 or has critical issues or Verification Gate failed
 
 ### Step 4: Auto-Learn — Extract Rules & Style Patterns
 After reviewing, automatically extract two types of knowledge:
@@ -244,6 +295,7 @@ Read and apply `.aion/checklists/review.md` if it exists. If not, use the built-
 - [ ] Acceptance criteria verified against spec
 - [ ] Plan compliance verified
 - [ ] Contract compliance verified (if contracts exist)
+- [ ] **Verification Gate 执行**:本次 review session 跑过验证命令(Iron Law 2)
 - [ ] Score is justified with evidence from the review
 - [ ] Quantitative quality gate executed (file length, function length, nesting, params)
 - [ ] Reusable patterns extracted as rules (or explicitly noted as "none worth extracting")
@@ -259,6 +311,34 @@ Read and apply `.aion/checklists/review.md` if it exists. If not, use the built-
 | Giving high scores without justification | Scores must be evidence-based, not feelings-based | MEDIUM |
 | Auto-fixing without user permission | User must approve fixes — don't silently change code | CRITICAL |
 | More than 3 fix rounds without escalating | Infinite fix loops waste time; the plan or spec likely needs revision | MEDIUM |
+
+### Rationalization Prevention
+If you catch yourself thinking any of these, STOP — you're rationalizing:
+
+| Excuse | Reality |
+|--------|---------|
+| "The changes are small, a quick glance is fine" | Small changes cause the worst bugs — less context = more assumptions |
+| "I already reviewed this in my head while coding" | Self-review has 0% objectivity. Fresh eyes catch what familiarity hides |
+| "It's just a refactor, nothing can break" | Refactors that "can't break anything" are the #1 source of regressions |
+| "The tests pass, so it must be fine" | Tests verify what you thought to test. Review catches what you didn't |
+| "Reading the full file takes too long" | Reading the diff takes less time but misses the bug. Choose quality |
+| "This file hasn't changed, no need to check it" | The changed file may break the unchanged file's assumptions |
+
+### Receiving Code Review Feedback
+When receiving review feedback (from user, another agent, or aion-review itself):
+
+**Do:**
+- Read the feedback fully before responding
+- Verify the claim independently (read the code, run the test)
+- If the feedback is correct: fix it silently. Actions > words.
+- If the feedback is wrong: explain technically WHY, with evidence (file:line, test output)
+- Push back when: fix would break other functionality, reviewer lacks context, violates YAGNI, or is technically incorrect
+
+**Never:**
+- "Great point!" / "Thanks for catching that!" / "You're absolutely right!" — performative agreement erodes trust
+- Blindly implement every suggestion without technical evaluation
+- Agree in words but not in code (saying "fixed" without actually fixing)
+- Dismiss feedback without evidence ("I think it's fine" is not a rebuttal)
 
 ## Output Format
 The review file written to `.aion/reviews/{feature-name}.md` using the format defined in Step 5.
