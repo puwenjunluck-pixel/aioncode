@@ -1,6 +1,6 @@
 ---
 name: qa
-description: 浏览器 QA 测试 — 像真实用户一样 dogfood 运行中的应用，发现有证据的 bug，报告或修复。Use when the user asks to 测试 web 应用、dogfood 用户流程、QA a deployment、发现 bug, or verify a running URL. Executes .aion/tests/e2e/*.md definitions and writes bug reports to .aion/bugs/ for /aion:fix. Browser automation is optional — degrades to static test-path analysis when no browser tool is available. Not for unit testing or code review.
+description: 浏览器 QA — 像真实用户一样 dogfood 运行中的应用，发现有证据的 bug。Use when 用户要 测试 web 应用、dogfood 流程、QA a deployment、verify a running URL. Not for unit testing or code review.
 ---
 
 # /aion:qa — 浏览器 QA 测试
@@ -119,7 +119,7 @@ P0 → P1；P2/P3 除非用户显式要求否则跳过。每个 bug：
 2. Reuse Scan — 搜索代码库中类似修复模式
 3. 最小修改解决根因
 4. **验证**：浏览器路径 → 重导航到 bug URL 复现步骤确认已解决；静态路径 → 跑对应测试/静态核对。未修好 → 换方法（每 bug 最多 2 次尝试）
-5. **原子提交**：`fix(bug): {BUG-ID} {title}` — 提交信息**必须以 `fix(bug): ` 开头**（hook 锚定校验，门禁豁免格式），一 bug 一 commit
+5. **原子提交**：`fix(bug): {BUG-ID} {title}` — `fix(bug): ` 前缀是门禁 hook 官方豁免（契约详见 commit skill），豁免门禁前置、不豁免验证证据；一 bug 一 commit
 6. 更新 bug 状态 `open` → `fixed`，加 `fixed_by_commit: {hash}`
 
 **Regression**（全部修完后）：重测所有已测页面/路径 + 核心用户旅程 smoke test，确认没引入新问题。

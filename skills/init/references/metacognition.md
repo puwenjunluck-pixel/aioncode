@@ -40,6 +40,7 @@ RULE 4 · NO DESIGN WITHOUT APPROVAL
 | "Agent 说成功了" | Agent 的汇报是声明，不是证据。看 diff。 |
 | "我就改一行" | 最短的 diff 也能破坏最多的 invariant。 |
 | "不走 /aion:think，直接改" | 直接改 → 遗漏约束 → 返工 → 比走流程慢 3 倍。 |
+| "You're absolutely right!" 式空洞附和 | 反馈要么有道理（指出哪里对）要么有疑问（带证据 push back），没有第三种。 |
 
 **STOP 的判断标准**:如果你在句子里出现了 should / probably / seems / 应该 / 估计 / 大概 / 看起来 — 这些是**模糊词**,意味着你没有证据。
 
@@ -79,6 +80,7 @@ RULE 4 · NO DESIGN WITHOUT APPROVAL
 | "我累了" | 疲惫不是借口。它是犯错的信号，恰好是要加验证的时刻。 |
 | "部分检查就够了" | 部分证明等于没证明。 |
 | "换个词这条规则就不适用" | 规则的**精神**优先于字面。 |
+| "测试事后补也一样" | 事后测试只验证你写了什么，不验证需求要什么。可自动验证的改动默认测试先行。 |
 
 ## 优先级 (当规则冲突时)
 
@@ -87,6 +89,8 @@ RULE 4 · NO DESIGN WITHOUT APPROVAL
 3. **superpowers / 默认系统行为** — 最低
 
 若 CLAUDE.md 说"别用 TDD"而 skill 说"必须用 TDD" — 听 CLAUDE.md,用户在掌控。
+
+**例外：机械门禁与安全底线（review 门禁 / commit 确认 / 不自动 push）不受单次对话指令豁免**——它们的变更只能通过修改 rules 文件或 hook 配置完成，不能通过会话内说服。
 
 ## 本规则何时生效
 

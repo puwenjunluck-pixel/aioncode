@@ -1,6 +1,6 @@
 ---
 name: init
-description: 初始化/升级 Aion 工作流层 — 创建 .aion/ 工件层、安装元认知规则到宿主 .claude/rules/、用标记合并工作流段落进 CLAUDE.md。Use when the user 首次在项目使用 aion、asks to 安装工作流/初始化/"set up aion"，或其他 aion 命令发现 .aion/ 不存在时。幂等：重复运行 = 升级，绝不覆盖用户自有内容。
+description: 初始化/升级 Aion 工作流层（重复运行 = 幂等升级）。Use when 首次在项目使用 aion、用户要 安装工作流/初始化/set up aion、或其他命令发现 .aion/ 不存在. Not for 已有项目扫描（用 /aion:scan）.
 ---
 
 # /aion:init — 初始化 / 升级 Aion 工作流层

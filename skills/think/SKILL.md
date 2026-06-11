@@ -1,6 +1,6 @@
 ---
 name: think
-description: 讨论·碰撞·思考·目标对齐 — 把模糊想法收敛为目标对齐的 spec。Use when the user proposes a new feature, plans a change touching 3+ files, or asks to 设计/讨论/想清楚 something, BEFORE any code is written. Produces .aion/specs/{feature}.md and proactively chains into /aion:plan. Not for trivial single-file edits or pure Q&A.
+description: 把模糊想法收敛为目标对齐的 spec。Use when the user proposes a new feature, plans a change touching 3+ files, or asks to 设计/讨论/想清楚. Not for single-file edits or pure Q&A.
 ---
 
 # /aion:think — 讨论 · 碰撞 · 思考 · 目标对齐
@@ -91,7 +91,7 @@ description: 讨论·碰撞·思考·目标对齐 — 把模糊想法收敛为�
 
 按 `references/spec-template.md` 生成 spec（宿主项目若有 `.aion/rules/spec-template.md` 以宿主版为准）。
 
-**Version Check（写入前）**：Follow `references/write-protocol.md`（category: Versioned）。同名 spec 存在 → 读完整内容，展示 diff 摘要，给用户选 A)新版本归档（推荐）/ B)覆盖 / C)新文件名；同名不同 scope → force C。**Refusal Condition**：发现同名 spec 但没展示 diff 摘要 = 写入 INVALID。
+**Version Check（写入前）**：Follow `references/write-protocol.md`（category: Versioned）——未读先写 = INVALID。**Refusal Condition**：发现同名 spec 但没展示 diff 摘要 = 写入 INVALID。
 
 落盘到 `.aion/specs/{feature-name}.md`（kebab-case）。
 

@@ -1,5 +1,6 @@
 # Product Template — `_product.md` 产品全景文档结构
 
+<!-- 被多个 skill 跨目录引用（plan/commit/save/scan/fix/qa），勿移动或重命名 -->
 <!-- 使用方: /aion:think Phase 10.1 与 /aion:scan。
      _product.md 是项目唯一的产品全景文档，由 think/scan 自动维护，人工确认的内容标 [CONFIRMED]。 -->
 

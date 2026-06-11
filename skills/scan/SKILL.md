@@ -1,6 +1,6 @@
 ---
 name: scan
-description: 项目扫描 — 产品全景 + 规则种子 + E2E 测试定义。Use when 接手已有项目 needs AionCode onboarding, when the user wants to 建立或刷新产品全景 (_product.md), 导入需求文档 (--file), or explore a running app (--url). Covers what native /init does NOT — product map, rule seeds, E2E definitions. Not for codebase documentation or CLAUDE.md (use native /init).
+description: 项目扫描 — 产品全景 + 规则种子 + E2E 测试定义。Use when 接手已有项目做 onboarding、建立/刷新产品全景、导入需求文档、或探索运行中应用. Not for 代码通识/CLAUDE.md — use native /init.
 ---
 
 # /aion:scan — 产品全景 · 规则种子 · E2E 定义

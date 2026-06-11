@@ -1,5 +1,7 @@
 # Write Protocol
 
+<!-- 被多个 skill 跨目录引用（plan/commit/save/scan/fix/qa），勿移动或重命名 -->
+
 Commands that write to `.aion/` MUST follow this protocol. Before ANY write operation, determine the target file's category and apply the corresponding rules.
 
 > **Enforcement**: Violating a Refusal Condition means the write MUST NOT proceed. Terminate the write operation and report the violation to the user.

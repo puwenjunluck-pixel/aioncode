@@ -1,6 +1,6 @@
 ---
 name: plan
-description: 实现规划 — 把已批准的 spec 转化为 bite-sized、可验证、零上下文假设的实现计划。主路径由 /aion:think Phase 10 主动衔接（初次生成不需要用户显式触发）；单独调用仅用于修改已有 plan 或为已有 spec 补 plan。Use when a spec is approved and needs an implementation plan, or when the user asks to 修改/更新 an existing plan. Produces .aion/plans/{feature}.md. Not for planning without a spec — run /aion:think first.
+description: 实现规划 — 把已批准的 spec 转为 bite-sized 可验证实现计划。Use when a spec 已批准需要 plan、或用户要 修改/更新 已有 plan. Not for 无 spec 规划 — 先 /aion:think（无 spec 且无 .aion/ 时可凭口述需求降级）.
 ---
 
 # /aion:plan — 实现规划
@@ -89,9 +89,7 @@ description: 实现规划 — 把已批准的 spec 转化为 bite-sized、可验
 
 ## Step 6 — Version Check + 落盘
 
-Follow `../think/references/write-protocol.md`（category: **Versioned**）。
-
-`.aion/plans/` 已有同名 plan 时：读完整内容、展示 diff 摘要，同 `scope` → 给用户选 **A) 新版本归档（推荐）**（归档为 `{name}.v{N}.md`，新版 `version: N+1`，`change_reason` 必填不能为空）/ **B) 覆盖**（明确接受丢历史）/ **C) 新文件名**；不同 `scope` → **force C**，自动建议 `{name}-{scope}.md`。每个 plan 最多 10 个归档版本，超限警告并建议清理。
+Follow `../think/references/write-protocol.md`（category: **Versioned**）——未读先写 = INVALID。**Refusal Condition**：同名 plan 存在但未展示 diff 摘要 = 写入 INVALID。
 
 落盘到 `.aion/plans/{feature-name}.md`（与 spec 文件同名），格式严格按 `references/plan-template.md`。
 

@@ -1,6 +1,6 @@
 ---
 name: save
-description: 会话工件落盘 — 把本次会话的关键决策、未落盘的 spec/plan 增量、新发现的坑沉淀到 .aion/。Use when 会话要结束、上下文要交接、或用户说"保存一下 / save / 存档"。跨会话记忆由 Claude Code 原生 memory 负责，本 skill 不碰 memory。Not for 提交代码（用 /aion:commit）。
+description: 会话工件落盘 — 把会话决策与未落盘增量沉淀到 .aion/。Use when 会话要结束、上下文要交接、或用户说 保存/save/存档. Not for 提交代码（用 /aion:commit）或跨会话 memory（原生负责）.
 ---
 
 # /aion:save — 会话工件落盘
@@ -45,9 +45,11 @@ description: 会话工件落盘 — 把本次会话的关键决策、未落盘�
 
 ### Step 3 — 执行写入
 
-- **changelog**（Accumulative）：先读全文 → 语义去重（已记录则跳过并告知）→ 追加条目：`## {YYYY-MM-DD HH:MM} | Context Save`，含 Summary / Key Conclusions / Pending 三段。即使其他类型无内容，changelog 条目也总是追加。
-- **specs / plans**（Versioned）：同名文件存在 → 读完整内容、展示 diff 摘要、A) 版本归档（推荐）/ B) 覆盖 / C) 新文件名；不存在 → 仅当对话材料足够支撑时才新建（半生不熟的 spec 比没有更糟）。
-- **rules**（Accumulative）：先读现有规则去重，格式 `- **{Title}** ({source}, {date}) [cite_count: 0, last_cited: {date}]`。
+Follow `../think/references/write-protocol.md`（changelog/rules: Accumulative；specs/plans: Versioned）——未读先写 = 写入 INVALID。**Refusal Condition**：Accumulative 目标未读做 dedup 就追加 = 写入 INVALID。本 skill 特有约定：
+
+- **changelog**：条目格式 `## {YYYY-MM-DD HH:MM} | Context Save`，含 Summary / Key Conclusions / Pending 三段；即使其他类型无内容，changelog 条目也总是追加。
+- **specs / plans**：不存在同名文件时，仅当对话材料足够支撑才新建（半生不熟的 spec 比没有更糟）。
+- **rules**：条目格式 `- **{Title}** ({source}, {date}) [cite_count: 0, last_cited: {date}]`。
 
 ### Step 4 — 报告
 

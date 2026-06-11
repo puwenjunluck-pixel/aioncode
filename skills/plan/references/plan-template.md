@@ -18,6 +18,12 @@ last_updated: 2026-06-12
 5. **DRY. YAGNI. TDD. 频繁 commit.** — 每个 task 结束一次 commit。
 6. **Verify = evidence** — 每个 step 有 `Verify` 字段,给出命令和预期输出。没有 Verify 的 step 是残次品。
 
+## TDD 纪律（plan 必须体现）
+
+- **默认 TDD**：所有可自动验证的改动默认 TDD（先写失败测试再实现）；豁免（manual_check / build_check 类）需在 plan 中写明理由。
+- **verify-RED**：跑失败测试时必须确认**失败原因是功能缺失**而非语法错误/测试自身 bug；测试直接通过 = 你在测既有行为，重写测试。
+- **沉没成本**：先写了实现代码才想起测试 → 删掉实现，从测试开始重来。沉没成本不是理由："代码已经写了"恰恰是测试失去约束力的时刻。
+
 ## Frontmatter
 
 ```yaml
@@ -92,7 +98,7 @@ total_steps: {N}
 - [ ] **Step 2: Run test to verify it fails**
 
   Run: `pytest tests/path/test.py::test_name -v`
-  Expected: `FAIL with "function not defined"`
+  Expected: `FAIL with "function not defined"`（失败原因须是功能缺失，非语法错误/测试自身 bug；直接 PASS = 在测既有行为，重写测试）
 
 - [ ] **Step 3: Write minimal implementation**
 

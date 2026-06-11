@@ -1,6 +1,6 @@
 ---
 name: commit
-description: 安全提交 — 生成 commit message、用户确认后执行 git commit、追加 changelog。Use when the user asks to 提交/commit/保存改动, after implementation work is done. Precondition - /aion:review has approved the staged changes (mechanically enforced by a PreToolUse hook). Never pushes; never skips commit confirmation, even with --auto.
+description: 安全提交 — 展示将提交内容、用户确认后 git commit 并追加 changelog。Use when the user asks to 提交/commit/保存改动 after implementation. Not for push（永不自动 push）或工件落盘（用 /aion:save）.
 ---
 
 # /aion:commit — 安全提交
@@ -89,7 +89,7 @@ commit 成功后 grep 已提交文件中的 `TODO|FIXME|HACK|XXX|WORKAROUND|TEMP
 - 无 marker 时本步骤静默
 
 ### Step 5: Update Changelog (Accumulative)
-Follow `../think/references/write-protocol.md`（category: **Accumulative**）：**先读** `.aion/changelog.md` 做语义 dedup，再 APPEND — 重复则跳过并告知；与已有条目冲突则 flag 给用户，不自动写。未读先写 = 写入 INVALID。
+Follow `../think/references/write-protocol.md`（category: **Accumulative**）——未读先写 = 写入 INVALID。**Refusal Condition**：未读 `.aion/changelog.md` 做 dedup 就追加 = 写入 INVALID。
 
 ```markdown
 ## {YYYY-MM-DD HH:MM} | {type}: {short description}

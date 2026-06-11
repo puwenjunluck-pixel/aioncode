@@ -1,6 +1,6 @@
 ---
 name: fix
-description: Bug 修复 — 按角色消费 .aion/bugs/ 报告，4-phase 根因分析，红→绿验证，原子提交。Use when fixing bug reports in .aion/bugs/ (e.g. after /aion:qa), when the user reports a bug or asks to 修复/排查/debug something, or with a specific BUG-ID. Not for new features or refactoring.
+description: Bug 修复 — 根因分析 + 红→绿验证 + 原子提交。Use when user reports a bug, asks to 修复/排查/debug, with a BUG-ID, or .aion/bugs/ 有待修报告. Not for new features or refactoring.
 ---
 
 # /aion:fix — Bug 修复
@@ -26,12 +26,10 @@ Fix bugs from `.aion/bugs/` reports（或用户口述的 bug）。按角色过�
 
 > ⚠️ **CRITICAL**: Fix the bug as described. 不扩 scope，不重构无关代码。违反这条是本命令失败的第一原因。
 
-## 提交与门禁的关系（先读懂再动手）
+## 提交与门禁的关系
 
-「每个 bug 立即提交」与「commit 前必须 review」**不矛盾**，分工如下：
-
-1. **修复中**：每修完一个 bug 立即原子提交，提交信息**必须以 `fix(bug): ` 开头**（hook 锚定校验），格式 `fix(bug): {BUG-ID} {一句话}`。这个前缀是 commit 门禁 hook 的**官方豁免** — 没有它，提交会被门禁拦下（门禁默认要求先过 `/aion:review`）。
-2. **整批修完后**：**仍建议**跑 `/aion:review` 对本修复批次做**事后审查**。这是质量动作，不是门禁前置 — 豁免让你能原子提交，事后 review 保证批次质量并触发 auto-learn。
+- `fix(bug): ` 前缀是门禁 hook 官方豁免（契约详见 commit skill）——豁免门禁前置、不豁免红→绿证据。格式 `fix(bug): {BUG-ID} {一句话}`，hook 锚定校验。
+- 整批修完后仍建议跑 `/aion:review` 做事后审查（质量动作，非门禁前置）。
 
 ## Steps
 
@@ -87,6 +85,7 @@ Glob `.aion/bugs/**/*.md` 按 scope 过滤，加载 `status: open|suspected`。*
 - 读完整错误信息/stack trace；沿调用链（caller → callee）trace 代码路径复现
 - `git log` 查受影响文件的近期改动 — 是最近的 commit 引入的吗？
 - 列出全部假设："I assume X because Y"；跨多模块调查时，用 Agent tool 并行 subagent
+- 跨层/时序/疑难 bug 参照 `references/debugging-playbook.md` 的插桩与追踪协议
 
 **Phase 2 根因** — 找到 work 的对照再下结论。
 - 找代码库中**正常工作**的相似路径，diff 出差异；判断 systemic vs isolated（同 pattern 在别处也有吗？）
@@ -113,7 +112,7 @@ Glob `.aion/bugs/**/*.md` 按 scope 过滤，加载 `status: open|suspected`。*
 
 - 报告有 `verify_test` → 跑它，**必须 100% 通过**才能标 fixed
 - 没有 `verify_test`（含口述模式）→ 自己构造最小复现用例走红→绿，并跑相关测试套件
-- 失败 → fix 不完整，换思路（单 bug 修复尝试最多 2 次）；仍失败 → 跳过该 bug 修下一个；批次结束存在跳过项 → exit `DONE_WITH_CONCERNS`（`BLOCKED` 仅当整批无法继续）
+- 失败 → fix 不完整，换思路（单 bug 修复尝试最多 2 次）；仍失败 → 跳过该 bug 修下一个；环境性问题出口见 `references/debugging-playbook.md`；批次结束存在跳过项 → exit `DONE_WITH_CONCERNS`（`BLOCKED` 仅当整批无法继续）
 
 不跑 red→green 的"测试"可能是空 assertion，**没证明力**。
 
