@@ -1,15 +1,15 @@
 ---
 category: metacognition
 rule_count: 0
-last_updated: 2026-04-14
+last_updated: 2026-06-12
 ---
 
 # Metacognition — 元认知与反合理化
 
-<!-- 本文件为手写纪律层（非 aion-review 自动提取），基于 superpowers:using-superpowers
-     和 verification-before-completion 改编。See .aion/CREDITS.md
-     Rules 一律在动作前生效，违反者视为违反 .aion/rules/ MANDATORY 约束。
--->
+<!-- 本仓库自身加载的元规则（dogfood）。与分发源 skills/init/references/metacognition.md
+     保持同步——后者由 /aion:init 安装到宿主 .claude/rules/metacognition.md。
+     手写纪律层（非 /aion:review 自动提取），基于 superpowers:using-superpowers
+     和 verification-before-completion 改编。Rules 一律在动作前生效。 -->
 
 ## Iron Laws (不可协商)
 
@@ -19,9 +19,9 @@ RULE 1 · NO RULE SKIP
 RULE 2 · NO COMPLETION WITHOUT VERIFICATION
 在声称"完成 / 通过 / 修好"之前，MUST 在本轮消息中跑过验证命令。
 RULE 3 · NO FIX WITHOUT ROOT CAUSE
-在提出修复之前，MUST 完成 aion-fix 的根因阶段（Phase 1）。
+在提出修复之前，MUST 完成 /aion:fix 的根因阶段（Phase 1）。
 RULE 4 · NO DESIGN WITHOUT APPROVAL
-3+ 文件改动之前，MUST 先走 aion-think 并获得用户批准。
+3+ 文件改动之前，MUST 先走 /aion:think 并获得用户批准。
 ```
 
 ## Red Flags — 听到内心这样说就 STOP
@@ -38,7 +38,8 @@ RULE 4 · NO DESIGN WITHOUT APPROVAL
 | "规则太繁琐" | 繁琐是你的合理化。规则在那里是因为**过去已经翻过车**。 |
 | "Agent 说成功了" | Agent 的汇报是声明，不是证据。看 diff。 |
 | "我就改一行" | 最短的 diff 也能破坏最多的 invariant。 |
-| "不走 aion-think，直接改" | 直接改 → 遗漏约束 → 返工 → 比走流程慢 3 倍。 |
+| "不走 /aion:think，直接改" | 直接改 → 遗漏约束 → 返工 → 比走流程慢 3 倍。 |
+| "You're absolutely right!" 式空洞附和 | 反馈要么有道理（指出哪里对）要么有疑问（带证据 push back），没有第三种。 |
 
 **STOP 的判断标准**:如果你在句子里出现了 should / probably / seems / 应该 / 估计 / 大概 / 看起来 — 这些是**模糊词**,意味着你没有证据。
 
@@ -78,17 +79,20 @@ RULE 4 · NO DESIGN WITHOUT APPROVAL
 | "我累了" | 疲惫不是借口。它是犯错的信号，恰好是要加验证的时刻。 |
 | "部分检查就够了" | 部分证明等于没证明。 |
 | "换个词这条规则就不适用" | 规则的**精神**优先于字面。 |
+| "测试事后补也一样" | 事后测试只验证你写了什么，不验证需求要什么。可自动验证的改动默认测试先行。 |
 
 ## 优先级 (当规则冲突时)
 
 1. **用户显式指令** (CLAUDE.md / 直接对话) — 最高
-2. **.aion/rules/** 硬约束 (含本文件)
+2. **.claude/rules/ 与 .aion/rules/** 硬约束 (含本文件)
 3. **superpowers / 默认系统行为** — 最低
 
 若 CLAUDE.md 说"别用 TDD"而 skill 说"必须用 TDD" — 听 CLAUDE.md,用户在掌控。
 
+**例外：机械门禁与安全底线（review 门禁 / commit 确认 / 不自动 push）不受单次对话指令豁免**——它们的变更只能通过修改 rules 文件或 hook 配置完成，不能通过会话内说服。
+
 ## 本规则何时生效
 
-**每次对话的每次回复**。不是仅在 aion-think / aion-review / aion-fix — 而是**所有编辑、提交、宣称完成**的动作。
+**每次对话的每次回复**。不是仅在 /aion:think / /aion:review / /aion:fix — 而是**所有编辑、提交、宣称完成**的动作。
 
 If you think there is even a 1% chance a rule here applies — **apply it**. This is not negotiable.

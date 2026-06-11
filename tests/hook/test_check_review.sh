@@ -112,6 +112,17 @@ R=$(make_repo); mkdir -p "$R/.aion/reviews"; stage_file "$R" code.py
 touch "$(git -C "$R" rev-parse --git-path MERGE_HEAD | sed "s|^|$R/|")" 2>/dev/null || touch "$R/.git/MERGE_HEAD"
 assert "merge in progress allowed" allow "$(run_hook 'git commit -m merge' "$R")"
 
+# ── 第二轮红队：status 前缀伪批准 + -m 紧贴写法 ──
+R=$(make_repo); stage_file "$R" code.py
+H=$(git -C "$R" rev-parse --short HEAD); mkdir -p "$R/.aion/reviews"
+printf -- '---\nstatus: approved-pending\nbase_commit: %s\nreviewed_files:\n  - code.py\n---\n' "$H" > "$R/.aion/reviews/r.md"
+assert "approved-pending prefix denied" deny "$(run_hook 'git commit -m x' "$R")"
+
+R=$(make_repo); mkdir -p "$R/.aion/reviews"; stage_file "$R" code.py
+assert "fix(bug) tight -m quote allowed" allow "$(run_hook "git commit -m'fix(bug): x'" "$R")"
+R=$(make_repo); mkdir -p "$R/.aion/reviews"; stage_file "$R" code.py
+assert "fix(bug): no-space-after-colon denied" deny "$(run_hook "git commit -m 'fix(bug):x'" "$R")"
+
 echo
 echo "passed: $PASS, failed: $FAIL"
 [ "$FAIL" -eq 0 ]

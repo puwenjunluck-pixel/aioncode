@@ -54,6 +54,16 @@ assert "clean -df (flag order) denied" deny "$(run_hook 'git clean -df')"
 assert "clean split flags denied" deny "$(run_hook 'git clean -f -d')"
 assert "piped rm denied" deny "$(run_hook 'echo go | rm -rf /')"
 
+# ── 第二轮红队：程序名形态绕过 ──
+assert "abs path /bin/rm denied" deny "$(run_hook '/bin/rm -rf /')"
+assert "abs path /usr/bin/git push denied" deny "$(run_hook '/usr/bin/git push origin -f')"
+assert "command wrapper rm denied" deny "$(run_hook 'command rm -rf /')"
+# xargs 的删除目标来自 stdin（管道），静态分析的固有盲区——
+# 硬拦会误杀合法的 find ... | xargs rm。如实记录为放行，不假装拦截。
+assert "xargs pipe is known blind spot (allowed)" allow "$(run_hook 'echo / | xargs rm -rf')"
+assert "rm -r -f split denied" deny "$(run_hook 'rm -r -f /')"
+assert "subshell rm denied" deny "$(run_hook '$(rm -rf /)')"
+
 echo
 echo "passed: $PASS, failed: $FAIL"
 [ "$FAIL" -eq 0 ]

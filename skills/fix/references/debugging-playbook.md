@@ -1,7 +1,7 @@
 # Debugging Playbook — 跨层 / 时序 / 疑难 bug 协议
 
 <!-- 使用方: /aion:fix 根因分析（2c.5 Phase 1-2）与 2e 失败路径。
-     改编自 superpowers:systematic-debugging 精髓（来源声明见 CREDITS.md）。 -->
+     改编自 superpowers:systematic-debugging 精髓（来源声明见插件根 CREDITS.md）。 -->
 
 ## 1. 多组件边界插桩协议（怀疑跨层 bug 时）
 

@@ -46,7 +46,7 @@ git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
 # Exemption: atomic bugfix commits. Anchored to the start of the -m payload —
 # "fix(bug):" appearing elsewhere in a message must NOT unlock the gate.
-if printf '%s' "$CMD_NORM" | grep -qE -- '(-m|--message)[ =]["'"'"']?fix\(bug\): '; then
+if printf '%s' "$CMD_NORM" | grep -qE -- '(-m|--message)[ =]?["'"'"']?fix\(bug\): '; then
   exit 0
 fi
 
@@ -71,7 +71,7 @@ covered=""
 for review in .aion/reviews/*.md; do
   [ -f "$review" ] || continue
   fm=$(tr -d '\r' < "$review" | awk '/^---$/{n++; next} n==1{print} n>=2{exit}')
-  printf '%s\n' "$fm" | grep -qE '^status: *"?approved"?' || continue
+  printf '%s\n' "$fm" | grep -qE '^status: *"?approved"? *$' || continue
   base=$(printf '%s\n' "$fm" | sed -n 's/^base_commit: *//p' | tr -d '"'"'" | head -1)
   [ "$base" = "$head_full" ] || [ "$base" = "$head_short" ] || continue
   inline=$(printf '%s\n' "$fm" | sed -n 's/^reviewed_files: *\[\(.*\)\].*/\1/p')

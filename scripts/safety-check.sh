@@ -40,18 +40,27 @@ printf '%s\n' "$CMD" | tr ';&|' '\n' | while IFS= read -r seg; do
   # shellcheck disable=SC2086
   set -- $seg
   [ $# -eq 0 ] && continue
-  # Skip env-var prefixes and sudo/env wrappers to find the real program.
+  # Skip env-var prefixes and command wrappers to find the real program.
   while [ $# -gt 0 ]; do
-    case "$1" in *=*) shift ;; sudo|env) shift ;; *) break ;; esac
+    case "$1" in
+      *=*) shift ;;
+      sudo|env|command|builtin|exec|nohup|time) shift ;;
+      *) break ;;
+    esac
   done
   [ $# -eq 0 ] && continue
   prog=$1; shift
+  # Normalize: strip backslash/backtick/$( wrappers and any directory path,
+  # so /bin/rm, `rm, $(rm, \rm all resolve to the bare program name.
+  prog=${prog#\\}; prog=${prog#\`}; prog=${prog#\$\(}; prog=${prog##*/}
 
   case "$prog" in
     rm)
       has_r=0; has_f=0; bad_target=""
       for tok in "$@"; do
-        case "$tok" in
+        # Strip trailing ) from $(...) substitution and surrounding quotes.
+        t=${tok%\)}; t=${t#\"}; t=${t%\"}; t=${t#\'}; t=${t%\'}
+        case "$t" in
           --recursive) has_r=1 ;;
           --force) has_f=1 ;;
           --*) ;;
