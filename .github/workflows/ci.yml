@@ -5,51 +5,66 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
-  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
-  lint:
+  hook-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      - name: Commit gate test suite
+        run: bash tests/hook/test_check_review.sh
 
-      - name: Install ruff
-        run: pip install ruff
+      - name: Safety hook test suite
+        run: bash tests/hook/test_safety_check.sh
 
-      - name: Ruff lint
-        run: ruff check aioncode/ tests/
-
-      - name: Ruff format check
-        run: ruff format --check aioncode/ tests/
-
-  test:
+  consistency:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
+      - name: JSON manifests parse
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          python3 -m json.tool .claude-plugin/plugin.json > /dev/null
+          python3 -m json.tool .claude-plugin/marketplace.json > /dev/null
+          python3 -m json.tool hooks/hooks.json > /dev/null
 
-      - name: Smoke test — circuit breaker
-        run: python -m aioncode version
+      - name: No stale references in skills
+        run: |
+          if grep -rn "PLATFORM:\|/project:\|aion-help\|aion-loop\|aion-audit\|product-design-layer" skills/; then
+            echo "::error::Stale reference found in skills/"
+            exit 1
+          fi
 
-      - name: Run tests
-        run: pytest tests/ -v --tb=short
+      - name: Skill frontmatter sanity
+        run: |
+          for f in skills/*/SKILL.md; do
+            head -1 "$f" | grep -q '^---$' || { echo "::error::missing frontmatter open: $f"; exit 1; }
+            grep -q '^name: ' "$f" || { echo "::error::missing name: $f"; exit 1; }
+            grep -q '^description: ' "$f" || { echo "::error::missing description: $f"; exit 1; }
+          done
+
+      - name: Hook scripts are executable and referenced
+        run: |
+          test -x scripts/check-review.sh
+          test -x scripts/safety-check.sh
+          grep -q "check-review.sh" hooks/hooks.json
+          grep -q "safety-check.sh" hooks/hooks.json
+
+  plugin-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate plugin manifest
+        run: claude plugin validate .

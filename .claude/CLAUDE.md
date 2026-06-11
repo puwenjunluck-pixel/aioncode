@@ -1,43 +1,24 @@
-<!-- AIONCODE:START -->
-# AionCode — Project Intelligence
+# Aion Plugin — Project Intelligence (dogfood)
+
+## 本仓库是什么
+Aion 插件源码仓库（dogfooding 自身）。产品本体 = `skills/` + `hooks/` + `scripts/`。
+旧形态（Python CLI + Dashboard + 多平台 init）已于 2026-06-12 封存：tag `v0.7.6-final` / branch `archive/v0.7-cli`。战略决策见 `.aion/specs/contraction-to-plugin.md`。
 
 ## Rules (MANDATORY)
-NEVER write or edit any code file without first reading ALL rules in `.aion/rules/`. This is non-negotiable.
+NEVER write or edit any file without first reading ALL rules in `.aion/rules/`. This is non-negotiable.
 
-**`.aion/rules/metacognition.md` 是元规则** — 元认知 / 反合理化 / Verification Gate / Iron Laws。
-每次动作前生效,不是只在某个命令内。
+**`.aion/rules/metacognition.md` 是元规则** — 元认知 / 反合理化 / Verification Gate / Iron Laws。每次动作前生效。
 
-## Context
-ALWAYS check `.aion/` for project context before starting work: changelog, specs, plans, contracts, refs, prototypes, checklists, team.yml, bugs/, sessions.jsonl.
+## Source layout
+- `skills/<name>/SKILL.md` — 9 个命令源（这就是产品；`skills/think/SKILL.md` 是格式范本）
+- `skills/*/references/` — 随 skill 分发的模板与协议（spec/plan/write-protocol/metacognition）
+- `hooks/hooks.json` + `scripts/*.sh` — 安全 hook + commit 门禁 hook
+- `.claude-plugin/` — 插件与 marketplace 清单
+- `.aion/` — 本仓库自身的工件层（specs/plans/reviews/bugs/changelog）
 
-## Commands
-Run `/project:aion-help` for full command list. Key workflow commands:
-scan | think | plan | fix | qa | loop | review | commit | save | help
-
-## Workflow (MANDATORY)
-NEVER skip the workflow. For ANY task involving code changes, follow the appropriate flow:
-
-New feature:  think → plan(主动建议) → 实现 → review → commit
-Existing code: scan → think → plan(主动建议) → 实现 → review → commit
-Bug fix:       /project:aion-fix {BUG-ID} → review → commit
-
-Key rules:
-- For tasks involving **3+ file changes**, ALWAYS run `/project:aion-think` first and get user approval (Phase 9 gate) before implementing. `aion-think` 完成后会**主动建议**进入 plan 阶段,**不需要用户显式触发** `/project:aion-plan`。
-- `/project:aion-plan` 命令保留,仅用于**修改已有 plan**。主路径初次生成由 aion-think Phase 10 衔接。
-- NEVER commit without running `/project:aion-review` first. commit requires review approval + Verification Gate 通过(Iron Law 2: evidence before claims)。
-- When a task can be broken into independent subtasks, use the Agent tool to parallelize work with subagents.
-- bug fix 强烈建议启用 `--deep`(4-phase 根因分析),除非 bug 极度明确。
-
-<!-- AIONCODE:END -->
-
-## Project Notes
-- 本项目是 AionCode 自身（dogfooding）— NEVER 同步 commands/ → .claude/commands/
-- 公司：成都奕贝科技
-- Dashboard dev 模式：`python3.11 -c "from aioncode.internal.dashboard.app import create_app; import uvicorn; uvicorn.run(create_app(dev=True), host='127.0.0.1', port=19200)"`
-- E2E 测试定义：`.aion/tests/e2e/*.md`（Given/When/Then 格式，AI 多源自动生成）
-- Playwright MCP 仅限 `aion-qa` 和 `aion-scan --url` 模式（见 pitfalls 规则）
-- 产品设计文档：`.aion/specs/_product.md`（全局产品全景，design/plan/scan 自动维护）
-- `--file` 参数：aion-think / aion-scan 支持导入 .docx/.pdf/.pptx 外部文档
-- Bug 报告：`.aion/bugs/`（由 aion-qa 生成，aion-fix 按角色消费）
-- `--auto` 参数：loop/fix/qa/review/commit 支持（commit 确认永不跳过）
-- 多平台：init 支持 Claude Code + Antigravity，命令用 `<!-- PLATFORM:name -->` 标记按平台裁剪
+## Key rules
+- NEVER commit without a review file in `.aion/reviews/`（frontmatter 必含 `reviewed_files` + `base_commit`）— 本仓库 hooks 已机械强制
+- 验证三件套，改动后必跑：`bash tests/hook/test_check_review.sh && bash tests/hook/test_safety_check.sh && claude plugin validate .`
+- 死引用断言：`grep -rn "PLATFORM:\|/project:\|aion-help\|aion-loop\|aion-audit" skills/` 必须 0 命中
+- 3+ 文件改动先对齐获批（spec/plan 或用户明示）再实现
+- skill 文案中文为主；frontmatter description 必含触发条件 + 负面范围（"Not for…"）
