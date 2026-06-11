@@ -45,7 +45,7 @@ def run_version(args: argparse.Namespace) -> None:
     project_version = _read_project_version(cwd)
     if project_version:
         info(f"Project: {cwd.name} (v{project_version})")
-        if project_version != __version__.rsplit(".", 1)[0]:  # Compare major.minor
+        if project_version != __version__:
             warning(f"Project template version (v{project_version}) differs from CLI (v{__version__})")
             info("Run `aioncode init` to update project templates")
     else:

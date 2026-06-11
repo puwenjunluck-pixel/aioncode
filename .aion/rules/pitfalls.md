@@ -1,6 +1,6 @@
 ---
 category: pitfalls
-rule_count: 12
+rule_count: 13
 last_updated: 2026-04-14
 ---
 
@@ -36,8 +36,8 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 - **NEVER 手动编辑 embedded.py** (save, 2026-03-22) [cite_count: 2, last_cited: 2026-03-26]
   `aioncode/internal/dashboard/embedded.py` 是由 `build_frontend.py` 从 `static/` 目录自动生成的文件。手动编辑会在下次构建时被覆盖。`ruff` 配置已 exclude 此文件。前端修改必须在 `static/` 目录中进行，然后运行构建脚本。
 
-- **NEVER 忘记同步模板 config.yml 版本号** (save, 2026-03-22) [cite_count: 0, last_cited: 2026-03-22]
-  `aioncode/internal/templates/aion/config.yml` 和 `templates/aion/config.yml` 的 `version` 字段必须与 `pyproject.toml` 和 `__init__.py` 同步更新。遗漏会导致新用户安装时拿到旧版本号，且 upgrade 逻辑无法正确检测版本差异。v0.5 曾因此遗留 version: "0.3"。
+- **NEVER 忘记同步模板 config.yml 版本号** (save, 2026-03-22, updated 2026-04-14) [cite_count: 2, last_cited: 2026-04-14]
+  `aioncode/internal/templates/aion/config.yml` 的 `version` 字段必须与 `pyproject.toml` 和 `__init__.py` 同步更新。遗漏会导致新用户安装时拿到旧版本号,且 upgrade 逻辑无法正确检测版本差异。v0.5 曾因此遗留 version: "0.3";v0.7.6 bump 时同一坑再次触发(templates 留在 0.7.5),是 dogfood 运行 `aioncode init` 自我升级时才抓到。**bump 版本 checklist**:pyproject.toml + aioncode/__init__.py + aioncode/internal/templates/aion/config.yml 三处必须一次性改完。注:v0.7.6 同时删除了根目录废弃的 `templates/`(与真实包漂移严重),后续只需维护 `aioncode/internal/templates/`。
 
 - **NEVER 在非 qa/scan-url 模式下调用浏览器自动化** (design, 2026-03-23, updated 2026-03-26) [cite_count: 1, last_cited: 2026-03-26]
   浏览器自动化仅允许在 `aion-qa` 和 `aion-scan --url` 两种模式下使用。支持两种后端：gstack browse CLI（优先，通过 Bash 调用）和 Playwright MCP（fallback）。在其他命令中触发浏览器操作会消耗大量 token 且超出作用域。**此规则无例外。**
@@ -59,6 +59,9 @@ Rules with no citations in 60+ days are flagged as "stale" by aion-status.
 
 - **CC daemon 将 env vars 广播给所有会话，settings.local.json 无法项目级隔离** (bugfix, 2026-03-29) [cite_count: 0, last_cited: 2026-03-29]
   Claude Code 所有打开的会话共用同一 daemon 进程。任何项目的 `.claude/settings.local.json` 中 env 变化都会立即广播给所有已连接会话——包括其他项目的终端窗口。模型切换不存在"只影响当前项目"的运行时隔离，应使用全局 `~/.claude/settings.json`，并在 UI 上说明切换是全局生效。
+
+- **发布前必须扫查 docs/ 与非打包目录的过时引用** (save, 2026-04-14) [cite_count: 0, last_cited: 2026-04-14]
+  命令体系演进后,`README.md` / `docs/commands.md` / `docs/how-it-works.md` / `docs/aion-*.md` 等面向用户的文档层容易被漏改 —— 因为它们不在 `aioncode/` 包里也不影响 import/test,ruff/pytest 都发现不了。v0.7.6 差点带着 4 个仍写 `/project:aion-design` 的 docs 文件 tag 发布。**发布 checklist**:tag 前执行 `grep -rn "aion-{旧命令名}" README.md docs/ --include="*.md"` 必须为 0;同时确认根目录没有与 `aioncode/internal/templates/` 漂移的废弃 `templates/` 副本。
 
 - **upgrade 路径必须从 config 恢复完整 profile（含 platform）** (review, 2026-04-07) [cite_count: 0, last_cited: 2026-04-07]
   `init.py` upgrade 分支在无新命令时曾跳过 profile 构建，导致 `project.py` 使用 DEFAULT_PLATFORM 默认值。Antigravity 用户升级时命令会错误安装到 `.claude/commands/`。修复：始终从 `read_profile()` 结果构建 InitProfile，即使命令列表未变化。

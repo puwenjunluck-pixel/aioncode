@@ -2,6 +2,38 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-04-14 | chore(v0.7.6): template version sync + docs refresh + legacy cleanup
+
+### Summary
+v0.7.6 发布后 dogfood 自升级(`aioncode init` on self)抓到 templates 版本号未同步(0.7.5 残留),由此顺势完成发布前应做的全面清理。已打 tag `v0.7.6` 并 push 到 origin。
+
+### 核心改动
+- **fix**: `aioncode/internal/templates/aion/config.yml` 0.7.5 → 0.7.6 + phases 刷新(`design/demo/impl/test/verify/...` → `think/plan/impl/qa/review/commit`)
+- **docs refresh**: README + `docs/commands.md` + `docs/how-it-works.md` 重写至 v0.7.6 命令体系(11 命令),删 `docs/aion-design.md`(601 行老设计稿)
+- **legacy cleanup**:
+  - `git rm -r templates/`(根目录废弃,与 `aioncode/internal/templates/` 严重漂移,pyproject 不打包)
+  - `git rm -r .aion/bin/`(v0.5 老 dashboard.py 4738 行 + 废弃 uninstall.sh)
+  - 归档 `.aion/specs/{dashboard-brainstorm,design-plan-upgrade}.md` + `.aion/plans/design-plan-upgrade.md`(已实现 spec 移入 archive/)
+  - 删 `.aion/checklists/design.md`(已被 think.md 取代)
+- **dogfood**: 同步 `.claude/commands/`(11 命令,aion-think/audit 入,aion-design 出)+ `.aion/config.yml`(phases/commands 刷新)
+
+### Rules learned: 2
+- pitfalls (updated cite_count): **NEVER 忘记同步模板 config.yml 版本号** — v0.7.6 同一坑再次触发,补强 bump 三件套 checklist
+- pitfalls (new): **发布前必须扫查 docs/ 与非打包目录的过时引用** — docs/ 不在包内,import/ruff 测不到,差点带 4 个旧 `/project:aion-design` 引用 tag 发布
+
+### Verification
+- `aioncode.core.profiles` import + 11 commands 断言 ✓
+- `embedded.py` 合规 ✓
+- `ruff check aioncode/` all checks passed ✓
+- `grep "aion-design"` 活跃引用 0 处(仅 changelog / reviews / archive / think.md:3 历史注释 / dashboard release log 保留)
+- `grep "0.7.5"` 活跃引用 0 处
+
+### Release
+- commit `ed0852a` + 前置 `eef8556`/`b7ae451`/`9e84eca` 共 4 个 commit 已 push origin/master
+- tag `v0.7.6` 已 push
+
+---
+
 ## 2026-04-14 | feat: surgical superpowers fusion v0.7.6
 
 ### Summary
