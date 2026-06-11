@@ -2,7 +2,7 @@
 
 **让 Claude Code 有章可循、越用越聪明。** think → plan → review → commit 纪律闭环 + 机械化提交门禁 + 可审计的学习飞轮。
 
-> **EN TL;DR**: Aion is a Chinese-first development methodology plugin for Claude Code: a disciplined think→plan→review→commit loop, a PreToolUse hook that *mechanically* blocks unreviewed commits (not a prompt suggestion — an actual deny), and an auditable learning flywheel that turns review findings into per-project rules under `.aion/`. Born from 13 real rules extracted while building itself.
+> **EN TL;DR**: Aion is a Chinese-first development methodology plugin for Claude Code: a disciplined think→plan→review→commit loop, a PreToolUse hook that *mechanically* blocks unreviewed commits (not a prompt suggestion — an actual deny), and an auditable learning flywheel that turns review findings into per-project rules under `.aion/`. Dogfooded to the point that its own v0.8 contraction mechanically archived 18 stale rules in one sweep.
 
 ## 为什么存在
 
@@ -56,7 +56,7 @@ Aion 的流程是刻意"重交互"的——这是 feature，不是 bug。以一�
 
 ## 学习飞轮：来自本项目自身的真实证据
 
-Aion 用自己开发自己。以下规则是它在自己仓库里真实踩坑后由 review 自动提取的（完整 13 条见 `.aion/rules/pitfalls.md`）：
+Aion 用自己开发自己。以下规则是它在自己仓库里真实踩坑后由 review 自动提取的（规则库当前 5 条活跃 + 18 条已归档，全部见 `.aion/rules/`）：
 
 > **NEVER 忘记同步模板版本号** [cite_count: 2] — v0.5 因此遗留 0.3 版本号；v0.7.6 发布时同一坑**再次**触发，靠 dogfood 自升级才抓到。规则被引用 2 次后，最终在 v0.8 收缩中从根上消灭了多版本号源。
 
@@ -64,7 +64,7 @@ Aion 用自己开发自己。以下规则是它在自己仓库里真实踩坑后
 
 > **CC daemon 将 env vars 广播给所有会话** — 调试模型切换时发现的平台行为：所有打开的会话共用 daemon，`settings.local.json` 的 env 变化会立即广播到其他项目的窗口。这类生态知识一旦沉淀，团队每个人的 Claude 都知道。
 
-每条规则带 `cite_count` / `last_cited` 元数据：review 引用它就 +1，超过 60 天无引用会被建议归档——**飞轮有进有出，不会积累噪音**。而且出口不是口头约定：`scripts/rules-status.sh` 做机械化 stale 扫描，`/aion:review` 每次调用它。本仓库自己就是活样本：v0.8 收缩当天，该脚本扫出 23 条因机制层退役而失效的规则，当场完成归档——归档动作全部留痕在 git 历史里，这就是"可审计"的含义。
+每条规则带 `cite_count` / `last_cited` 元数据：review 引用它就 +1，超过 60 天无引用会被建议归档——**飞轮有进有出，不会积累噪音**。而且出口不是口头约定：`scripts/rules-status.sh` 做机械化 stale 扫描，`/aion:review` 每次调用它。本仓库自己就是活样本：v0.8 收缩当天，该脚本扫出一批因机制层退役而失效的规则，当场归档 18 条——归档动作全部留痕在 git 历史里，这就是"可审计"的含义。
 
 ## 机械门禁长什么样
 
@@ -74,17 +74,20 @@ $ git commit -m "quick fix"
    当前 HEAD）：src/auth.py。请先运行 /aion:review。
 ```
 
-review 报告的 frontmatter 含 `reviewed_files` + `base_commit`，hook 做集合校验（多份 review 取并集）。豁免四种：`fix(bug): ` 开头的原子修复（锚定校验，消息中间出现不算）、纯 `.aion/` 工件提交、merge 进行中、非 Aion 项目。**被拦最常见的原因**：刚提交过一次，HEAD 前移导致旧 review 失效——重跑 `/aion:review` 即可。两个 hook 共 40 个测试用例，含旗标乱序/捆绑/空白变体等红队对抗输入；解析失败时 fail-open，绝不 brick 你的提交。
+review 报告的 frontmatter 含 `reviewed_files` + `base_commit`，hook 做集合校验（多份 review 取并集）。豁免四种：`fix(bug): ` 开头的原子修复（锚定校验，消息中间出现不算）、纯 `.aion/` 工件提交、merge 进行中、非 Aion 项目。**被拦最常见的原因**：刚提交过一次，HEAD 前移导致旧 review 失效——重跑 `/aion:review` 即可。两个 hook 共 49 个测试用例（外加 rules-status 5 个，合计 54），含旗标乱序/捆绑/空白变体、`/bin/rm` 路径、伪 `approved` 前缀等红队对抗输入；解析失败时 fail-open，绝不 brick 你的提交。
 
 ## `.aion/` 工件层
 
 ```
-.aion/
+.aion/                # /aion:init 创建以下全部目录
 ├── rules/        # 学习飞轮产出（pitfalls/style/perf，带引用计数）
 ├── specs/        # 需求规格（版本化归档）+ _product.md 产品全景
 ├── plans/        # bite-sized 实现计划
 ├── reviews/      # 审查报告（门禁 hook 消费）
 ├── bugs/         # QA 产出的 bug 报告（fix 按角色消费）
+├── refs/         # 导入的参考资料（API spec / 需求文档）
+├── prototypes/   # UI 原型（think 读取）
+├── contracts/    # 接口契约
 ├── tests/e2e/    # Given/When/Then 测试定义
 └── changelog.md  # 工作日志（append-only）
 ```

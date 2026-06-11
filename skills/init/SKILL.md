@@ -52,7 +52,7 @@ description: 初始化/升级 Aion 工作流层（重复运行 = 幂等升级）
 
 ## Phase 3 — 安装元认知规则
 
-将 `references/metacognition.md` 完整内容写入宿主 `.claude/rules/metacognition.md`（先 `mkdir -p .claude/rules`）。这是原生 rules 目录，每会话自动加载。
+将 `references/metacognition.md` 写入宿主 `.claude/rules/metacognition.md`（先 `mkdir -p .claude/rules`）。这是原生 rules 目录，每会话自动加载。**用文件复制（`cp "$CLAUDE_PLUGIN_ROOT/skills/init/references/metacognition.md" .claude/rules/`）而非读进来再重新输出** — 后者有改写/截断风险。
 
 - 不存在 → 直接写入
 - 已存在且内容相同 → skip 并报告
@@ -61,7 +61,7 @@ description: 初始化/升级 Aion 工作流层（重复运行 = 幂等升级）
   - (b) **保留** — 不动现有文件（用户可能有本地定制）
   - (c) **跳过** — 本次不处理，下次 init 再问
 
-NEVER 截断、改写或"精简"规则内容 — 元认知规则是产品核心资产，逐字节写入。
+NEVER 截断、改写或"精简"规则内容 — 元认知规则是产品核心资产，逐字节写入（用 `cp`，不要重新生成）。
 
 ## Phase 4 — 合并 CLAUDE.md 工作流段
 

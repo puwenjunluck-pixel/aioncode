@@ -112,7 +112,7 @@ Follow `../think/references/write-protocol.md`（category: **Versioned**）—�
 
 ## Checklist
 
-有 `.aion/checklists/plan.md` 则用之，否则用内置：
+宿主项目有 `.aion/checklists/plan.md`（用户自建）则用之，否则用内置：
 
 - [ ] 代码库已探索 — 既有模式已理解
 - [ ] spec 全部 P0 至少被一个 task 覆盖

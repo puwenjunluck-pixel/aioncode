@@ -63,7 +63,7 @@ Score 0-100 = **Code Quality（40）+ Security（30）+ Spec Compliance（30）*
 扫描 ≥3 个文件一致的模式（错误处理约定 / import 风格 / 命名 / 类型标注风格），写入 `rules/style.md`（同 Accumulative 纪律）。不一致的模式作为 issue 报告，不提取。
 
 ### 4c 引用更新 + 退役建议（学习飞轮的出口 — MUST，不可跳过）
-先做机械扫描：运行 `bash "${CLAUDE_PLUGIN_ROOT:-.}/scripts/rules-status.sh" .aion/rules`（脚本随插件分发在其根的 `scripts/` 下；`CLAUDE_PLUGIN_ROOT` 未设置时回退当前目录，本仓库 dogfood 即如此）。脚本不可用时按 last_cited 距今 >60 天（无论 cite_count）人工扫描。对每条 STALE 候选逐条向用户确认是否标 `status: archived`（NEVER 自动删除正文）。
+先做机械扫描：脚本 `rules-status.sh` 随插件分发在其根的 `scripts/` 下。优先 `bash "$CLAUDE_PLUGIN_ROOT/scripts/rules-status.sh" .aion/rules`；`$CLAUDE_PLUGIN_ROOT` 未设置时（本仓库 dogfood）用 `bash scripts/rules-status.sh .aion/rules`。**脚本路径不存在就直接按 last_cited 距今 >60 天（无论 cite_count）人工扫描——不要因脚本缺失报错中断。** 对每条 STALE 候选逐条向用户确认是否标 `status: archived`（NEVER 自动删除正文）。
 1. 本次 review 引用过的每条规则（违反或遵守都算）：`cite_count` +1，`last_cited` = 今天；缺元数据的条目补 `[cite_count: 1, last_cited: 今天]`
 2. 更新各规则文件 frontmatter 的 `last_updated` 与 `rule_count`
 
