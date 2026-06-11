@@ -2,6 +2,26 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-06-12 | chore(P0): 战略收缩定界 — v0.7.6-final 封存 + 插件化决策记录
+
+### Summary
+基于 2026-06-11 多代理深度评估（29 项发现全核实成立）与竞品/平台调研，确定「方案 3 收缩」：砍机制层（CLI 二进制 / Dashboard / Antigravity），方法论层蒸馏为 Claude Code 官方插件（skills 形态，名 `aion`）并开源。本条目为 P0 定界封存。
+
+### 核心改动
+- **封存**：tag `v0.7.6-final` + 分支 `archive/v0.7-cli`（commit `7e09e4d`），旧形态可随时找回
+- **收尾提交**：v0.7.6 遗留三处入库（changelog 补录 + pitfalls 2 条 rules learned + version.py 全量版本比较修复），review 见 `.aion/reviews/v0.7.6-final-seal.md`（95/100）
+- **决策记录**：`.aion/specs/contraction-to-plugin.md` — 五项决策全部拍板（开源 MIT / 放弃 Antigravity / Dashboard 归档 / 插件名 aion / audit 并入 review），含 11 命令 → 8 skills 处置表、分阶段路线（P0-P4，预算 7-11 工作日）与验收标准
+- **新惯例**：review 文件 frontmatter 自 `v0.7.6-final-seal.md` 起增加 `reviewed_files` + `base_commit` 字段（回应评估发现：门禁需可机械校验覆盖范围）
+
+### Verification
+- 本条目与 spec 为纯 `.aion/` 文档变更，Verification Gate N/A（依 aion-review 纯文档出口）
+- 封存提交的验证：`pytest tests/ -q` 77 passed / `ruff check` + `ruff format --check` 全绿
+
+### Next
+- P1：插件骨架 + think 垂直切片（`.claude-plugin/plugin.json` + 端到端自装实测）
+
+---
+
 ## 2026-04-14 | chore(v0.7.6): template version sync + docs refresh + legacy cleanup
 
 ### Summary
