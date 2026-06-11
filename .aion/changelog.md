@@ -2,6 +2,26 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-06-12 | feat(v0.8.0): 插件形态重生 — P1-P4 完成
+
+### Summary
+按 contraction-to-plugin spec v2 完成 P1-P4：插件骨架（name: aion）+ 9 skills 蒸馏迁移 + 双 hook（安全 + 提交门禁）+ 机制层一次性删除（-20,086 行）+ 文档层重写。剩余：对标优化循环（Task 7）+ 用户侧动作（push / 开源 / marketplace 提交 / 本仓库 hooks.json 切换）。
+
+### 核心改动
+- **P1 骨架**：.claude-plugin/{plugin.json,marketplace.json}，`claude plugin validate` 通过
+- **P2 skills**：think 手工旗舰 + 8 个并行代理蒸馏；评估确认的 prompts 缺陷全修（plan 三处矛盾、review 门禁字段 reviewed_files/base_commit、audit 并入 --deep、飞轮 stale 出口、纪律层随 init 分发、aion-help/loop 移除）
+- **P3 hooks**：check-review.sh（8/8 测试）+ safety-check.sh 移植（7/7 测试，发现并修复测试用例自身 JSON 转义 bug——验证了 fail-open 设计）
+- **机制层删除**：aioncode/ 80 文件、commands/、docs/、.claude/commands/、双安装脚本、pyproject、release.yml、Python 测试全退役；CI 重写为 hook 测试 + 一致性断言 + validate
+- **P4 文档**：README（真实飞轮证据替换虚构周曲线，引用 pitfalls 13 条中的 3 条实例）+ MIGRATION.md（命令映射表）+ CHANGELOG.md + CREDITS.md（superpowers 致谢 + 原创增量声明）
+
+### 受阻项
+- `.claude/hooks.json` 门禁激活被权限分类器拦截（自我修改边界），已恢复 .aion/hooks/ 旧文件保持现状可用；切换内容见 .aion/reviews/mechanism-layer-removal.md
+
+### Verification
+- hook 双测试套 8/8 + 7/7；`claude plugin validate .` 通过；README 命令表与 skills/ 9=9 一致；死引用 grep 0 命中；版本 0.8.0 三处一致（plugin.json/CHANGELOG/changelog）
+
+---
+
 ## 2026-06-12 | chore(P0): 战略收缩定界 — v0.7.6-final 封存 + 插件化决策记录
 
 ### Summary
