@@ -1,0 +1,16 @@
+{
+  "name": "aion",
+  "displayName": "Aion — AI 开发方法论",
+  "version": "0.8.0",
+  "description": "中文优先的 Claude Code 开发方法论：think→plan→review→commit 纪律闭环、机械化 commit 门禁（hook 强制 review 覆盖）、可审计的学习飞轮（.aion/ 工件层沉淀项目规则与决策）。",
+  "author": {
+    "name": "waynepo",
+    "url": "https://github.com/puwenjunluck-pixel/aioncode"
+  },
+  "homepage": "https://github.com/puwenjunluck-pixel/aioncode",
+  "repository": "https://github.com/puwenjunluck-pixel/aioncode",
+  "license": "MIT",
+  "keywords": ["workflow", "methodology", "discipline", "spec-driven", "chinese", "中文"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

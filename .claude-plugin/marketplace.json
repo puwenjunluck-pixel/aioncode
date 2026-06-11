@@ -1,0 +1,20 @@
+{
+  "name": "aion-marketplace",
+  "description": "Aion 开发方法论插件的官方分发入口。",
+  "owner": {
+    "name": "waynepo",
+    "url": "https://github.com/puwenjunluck-pixel"
+  },
+  "plugins": [
+    {
+      "name": "aion",
+      "source": "./",
+      "description": "中文优先的开发方法论：think→plan→review→commit 纪律闭环、机械化 commit 门禁、可审计的学习飞轮。",
+      "author": { "name": "waynepo" },
+      "homepage": "https://github.com/puwenjunluck-pixel/aioncode",
+      "repository": "https://github.com/puwenjunluck-pixel/aioncode",
+      "license": "MIT",
+      "keywords": ["workflow", "methodology", "spec-driven", "中文"]
+    }
+  ]
+}

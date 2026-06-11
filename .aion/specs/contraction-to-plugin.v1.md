@@ -1,10 +1,10 @@
 ---
 status: completed
 created_at: 2026-06-12
-version: 2
+version: 1
 author: waynepo
 scope: full
-change_reason: "修正 P0 与 §5 处置表不一致：save 按用户批准的处置表保留为蒸馏后的工件落盘 skill，skills 总数 8→9（v1 归档于 contraction-to-plugin.v1.md）"
+change_reason: null
 ---
 
 # 战略收缩：AionCode → 开源方法论插件
@@ -28,7 +28,7 @@ change_reason: "修正 P0 与 §5 处置表不一致：save 按用户批准的�
 
 - 旧形态封存：tag `v0.7.6-final` + 分支 `archive/v0.7-cli`，可随时找回（本 spec 提交时已完成）
 - 插件骨架：`.claude-plugin/plugin.json`（name: `aion`，version 为唯一版本事实来源）+ `marketplace.json` 自有市场入口
-- 9 个 skills 迁移完成：init / think / plan / review / commit / fix / qa / scan / save（11 命令 → 9 skills，处置表见 §5；save 为蒸馏后的薄壳，只留工件落盘）
+- 8 个 skills 迁移完成：init / think / plan / review / commit / fix / qa / scan（11 命令 → 8 skills，处置表见 §5）
 - 纪律层文件（metacognition / spec-template / plan-template）以 skill references 形式随插件分发；`/aion:init` 在宿主项目创建 `.aion/` 工件目录并写入 `.claude/rules/` 种子
 - review→commit 门禁 hook 化：PreToolUse 拦 `Bash(git commit *)`，校验 review frontmatter `reviewed_files`/`base_commit` 覆盖当前 diff，否则 exit 2 阻断
 - 迁移时修复评估确认的内容层缺陷：aion-plan 新旧格式自相矛盾、Iron Law 三套编号冲突、学习飞轮 stale 清理引用已删除命令、`<!-- PLATFORM -->` 标记全清
@@ -51,13 +51,13 @@ change_reason: "修正 P0 与 §5 处置表不一致：save 按用户批准的�
 
 ## 5. Architecture (架构)
 
-**11 命令 → 9 skills 处置表**：think / plan / review / commit / fix 保留并修缺陷；qa 保留标记可选（浏览器 MCP 依赖）；scan 蒸馏（砍与原生 `/init` 重叠的冷启动，留 `_product.md` 全景 + `--file` 导入）；save 蒸馏（记忆职能让位原生 auto memory，只留工件落盘）；**audit 并入 review**（作为 `--deep` 模式）；**loop 砍**（原生 background tasks / agent teams 覆盖）；**help 砍**（原生 `/help` + README 接管）。
+**11 命令 → 8 skills 处置表**：think / plan / review / commit / fix 保留并修缺陷；qa 保留标记可选（浏览器 MCP 依赖）；scan 蒸馏（砍与原生 `/init` 重叠的冷启动，留 `_product.md` 全景 + `--file` 导入）；save 蒸馏（记忆职能让位原生 auto memory，只留工件落盘）；**audit 并入 review**（作为 `--deep` 模式）；**loop 砍**（原生 background tasks / agent teams 覆盖）；**help 砍**（原生 `/help` + README 接管）。
 
 **目标结构**（同仓库重构，调用前缀 `/aion:*`）：
 
 ```
 .claude-plugin/{plugin.json, marketplace.json}
-skills/{init,think,plan,review,commit,fix,qa,scan,save}/SKILL.md (+references/)
+skills/{init,think,plan,review,commit,fix,qa,scan}/SKILL.md (+references/)
 hooks/hooks.json + scripts/check-review.sh
 README.md / MIGRATION.md / LICENSE
 ```
