@@ -106,7 +106,7 @@ Follow `../think/references/write-protocol.md`（category: **Versioned**）。
 >  - **(b) Inline** — 本会话内逐 task 执行，每 task 完成后汇报并 pause 供 review
 >  - **(c) 暂不执行** — 保留 plan，后续再触发"
 
-选 (a)：用 Agent 工具逐 task 派发，或 `/aion:loop` 自动流水线。选 (b)：本会话逐 task 执行，按 plan 的 Verify 逐步验证，完成的 step 勾掉 checkbox。选 (c)：退出 `DONE`，plan 保留。
+选 (a)：用 Agent 工具逐 task 流水线派发执行。选 (b)：本会话逐 task 执行，按 plan 的 Verify 逐步验证，完成的 step 勾掉 checkbox。选 (c)：退出 `DONE`，plan 保留。
 
 实现完成后：`/aion:review` 审查 → `/aion:commit` 提交。
 

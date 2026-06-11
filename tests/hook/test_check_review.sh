@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Table-driven tests for scripts/check-review.sh (the Aion commit gate).
-# Each case builds a scenario in a tmp git repo, feeds hook-shaped JSON on
-# stdin, and asserts allow (empty output) or deny (permissionDecision JSON).
+# Includes the adversarial bypass cases found in the 2026-06 red-team review.
 set -u
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/scripts/check-review.sh"
@@ -12,7 +11,6 @@ run_hook() {
 }
 
 assert() {
-  # $1 name, $2 expected (allow|deny), $3 actual output
   local verdict="allow"
   case "$3" in *permissionDecision*deny*) verdict="deny";; esac
   if [ "$verdict" = "$2" ]; then
@@ -30,51 +28,89 @@ make_repo() {
   echo "$dir"
 }
 
+stage_file() { echo x > "$1/$2"; git -C "$1" add "$2"; }
+
+write_review() {
+  # $1 repo, $2 filename, $3 base_commit, $4... reviewed files
+  local repo=$1 file=$2 base=$3; shift 3
+  mkdir -p "$repo/.aion/reviews"
+  { printf -- '---\nstatus: approved\nbase_commit: %s\nreviewed_files:\n' "$base"
+    for f in "$@"; do printf '  - %s\n' "$f"; done
+    printf -- '---\n# r\n'; } > "$repo/.aion/reviews/$file"
+}
+
 echo "check-review.sh test suite"
 
-# 1. Non-commit commands pass untouched
+# ── 基础行为 ──
 R=$(make_repo); mkdir -p "$R/.aion"
 assert "non-commit command allowed" allow "$(run_hook 'ls -la' "$R")"
 
-# 2. No .aion directory → not an aion project, never gate
-R=$(make_repo)
-echo x > "$R/code.py"; git -C "$R" add code.py
+R=$(make_repo); stage_file "$R" code.py
 assert "non-aion project allowed" allow "$(run_hook 'git commit -m x' "$R")"
 
-# 3. Staged code file without any review → deny
-R=$(make_repo); mkdir -p "$R/.aion/reviews"
-echo x > "$R/code.py"; git -C "$R" add code.py
+R=$(make_repo); mkdir -p "$R/.aion/reviews"; stage_file "$R" code.py
 assert "unreviewed change denied" deny "$(run_hook 'git commit -m x' "$R")"
 
-# 4. Approved review at HEAD covering the file → allow
-R=$(make_repo); mkdir -p "$R/.aion/reviews"
-echo x > "$R/code.py"; git -C "$R" add code.py
-HEAD_SHORT=$(git -C "$R" rev-parse --short HEAD)
-printf -- '---\nstatus: approved\nbase_commit: %s\nreviewed_files:\n  - code.py\n---\n# r\n' "$HEAD_SHORT" > "$R/.aion/reviews/r.md"
+R=$(make_repo); stage_file "$R" code.py
+write_review "$R" r.md "$(git -C "$R" rev-parse --short HEAD)" code.py
 assert "covered change allowed" allow "$(run_hook 'git commit -m x' "$R")"
 
-# 5. Review with stale base_commit → deny
-R=$(make_repo); mkdir -p "$R/.aion/reviews"
-echo x > "$R/code.py"; git -C "$R" add code.py
-printf -- '---\nstatus: approved\nbase_commit: 0000000\nreviewed_files:\n  - code.py\n---\n# r\n' > "$R/.aion/reviews/r.md"
+R=$(make_repo); stage_file "$R" code.py
+write_review "$R" r.md 0000000 code.py
 assert "stale review denied" deny "$(run_hook 'git commit -m x' "$R")"
 
-# 6. Review approved but file not in reviewed_files → deny
-R=$(make_repo); mkdir -p "$R/.aion/reviews"
-echo x > "$R/code.py"; echo y > "$R/other.py"; git -C "$R" add code.py other.py
-HEAD_SHORT=$(git -C "$R" rev-parse --short HEAD)
-printf -- '---\nstatus: approved\nbase_commit: %s\nreviewed_files:\n  - code.py\n---\n# r\n' "$HEAD_SHORT" > "$R/.aion/reviews/r.md"
+R=$(make_repo); stage_file "$R" code.py; stage_file "$R" other.py
+write_review "$R" r.md "$(git -C "$R" rev-parse --short HEAD)" code.py
 assert "partially covered denied" deny "$(run_hook 'git commit -m x' "$R")"
 
-# 7. Pure .aion/ bookkeeping → allow
+R=$(make_repo); stage_file "$R" a.py; stage_file "$R" b.py
+H=$(git -C "$R" rev-parse --short HEAD)
+write_review "$R" r1.md "$H" a.py
+write_review "$R" r2.md "$H" b.py
+assert "union across reviews allowed" allow "$(run_hook 'git commit -m x' "$R")"
+
 R=$(make_repo); mkdir -p "$R/.aion"
 echo log > "$R/.aion/changelog.md"; git -C "$R" add .aion/changelog.md
 assert "aion-only commit allowed" allow "$(run_hook 'git commit -m docs' "$R")"
 
-# 8. fix(bug): atomic commit exemption → allow
+R=$(make_repo); mkdir -p "$R/.aion/reviews"; stage_file "$R" code.py
+assert "fix(bug) exemption allowed" allow "$(run_hook "git commit -m 'fix(bug): F-001 repair'" "$R")"
+
+# ── 红队对抗用例 ──
+R=$(make_repo); mkdir -p "$R/.aion/reviews"; stage_file "$R" code.py
+assert "fix(bug) mid-message denied" deny "$(run_hook "git commit -m 'feat: replace old fix(bug): handler'" "$R")"
+
+R=$(make_repo); mkdir -p "$R/.aion/reviews"; stage_file "$R" code.py
+assert "double-space variant denied" deny "$(run_hook 'git  commit -m x' "$R")"
+
+R=$(make_repo); mkdir -p "$R/.aion/reviews"; stage_file "$R" code.py
+assert "git -C variant denied" deny "$(run_hook 'git -C . commit -m x' "$R")"
+
 R=$(make_repo); mkdir -p "$R/.aion/reviews"
 echo x > "$R/code.py"; git -C "$R" add code.py
-assert "fix(bug) exemption allowed" allow "$(run_hook "git commit -m 'fix(bug): F-001 repair'" "$R")"
+git -C "$R" -c user.email=t@t -c user.name=t commit -qm seed
+echo y > "$R/code.py"  # tracked, unstaged
+assert "bundled -va flag denied" deny "$(run_hook 'git commit -va -m x' "$R")"
+
+# ── 格式健壮性（fail-closed 误拒修复）──
+R=$(make_repo); stage_file "$R" code.py
+H=$(git -C "$R" rev-parse --short HEAD); mkdir -p "$R/.aion/reviews"
+printf -- '---\r\nstatus: approved\r\nbase_commit: %s\r\nreviewed_files:\r\n  - code.py\r\n---\r\n# r\n' "$H" > "$R/.aion/reviews/r.md"
+assert "CRLF review accepted" allow "$(run_hook 'git commit -m x' "$R")"
+
+R=$(make_repo); stage_file "$R" code.py
+H=$(git -C "$R" rev-parse --short HEAD); mkdir -p "$R/.aion/reviews"
+printf -- '---\nstatus: "approved"\nbase_commit: "%s"\nreviewed_files: [code.py]\n---\n# r\n' "$H" > "$R/.aion/reviews/r.md"
+assert "quoted + inline list accepted" allow "$(run_hook 'git commit -m x' "$R")"
+
+R=$(make_repo); stage_file "$R" code.py
+H=$(git -C "$R" rev-parse --short HEAD); mkdir -p "$R/.aion/reviews"
+printf -- '---\nstatus: approved\nbase_commit: %s\nreviewed_files:\n- code.py\n---\n# r\n' "$H" > "$R/.aion/reviews/r.md"
+assert "zero-indent list accepted" allow "$(run_hook 'git commit -m x' "$R")"
+
+R=$(make_repo); mkdir -p "$R/.aion/reviews"; stage_file "$R" code.py
+touch "$(git -C "$R" rev-parse --git-path MERGE_HEAD | sed "s|^|$R/|")" 2>/dev/null || touch "$R/.git/MERGE_HEAD"
+assert "merge in progress allowed" allow "$(run_hook 'git commit -m merge' "$R")"
 
 echo
 echo "passed: $PASS, failed: $FAIL"

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Tests for scripts/safety-check.sh — dangerous patterns denied, normal allowed.
+# Tests for scripts/safety-check.sh — bypass variants denied, prose allowed.
+# Covers the flag-order/bundling bypasses and false positives from the
+# 2026-06 red-team review.
 set -u
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/scripts/safety-check.sh"
@@ -20,13 +22,37 @@ assert() {
 }
 
 echo "safety-check.sh test suite"
+
+# ── 正常命令放行 ──
 assert "normal command allowed" allow "$(run_hook 'ls -la && git status')"
 assert "git commit allowed" allow "$(run_hook 'git commit -m x')"
-assert "force push denied" deny "$(run_hook 'git push --force origin master')"
-assert "rm -rf / denied" deny "$(run_hook 'rm -rf /')"
-assert "git reset --hard denied" deny "$(run_hook 'git reset --hard origin/main')"
-assert "drop table denied" deny "$(run_hook 'mysql -e DROP TABLE users')"
 assert "empty input allowed" allow "$(printf '{}' | bash "$HOOK")"
+assert "safe rm in project allowed" allow "$(run_hook 'rm -rf /Users/me/project/node_modules')"
+assert "force-with-lease allowed" allow "$(run_hook 'git push --force-with-lease origin main')"
+
+# ── 误杀回归（prose 提到危险串不拦）──
+assert "echo prose allowed" allow "$(run_hook "echo 'never run rm -rf /'")"
+assert "grep prose allowed" allow "$(run_hook "grep -r 'git reset --hard' .")"
+assert "commit message prose allowed" allow "$(run_hook "git commit -m 'doc DROP TABLE caveat'")"
+
+# ── 教科书形态拦截 ──
+assert "rm -rf / denied" deny "$(run_hook 'rm -rf /')"
+assert "force push denied" deny "$(run_hook 'git push --force origin master')"
+assert "git reset --hard denied" deny "$(run_hook 'git reset --hard origin/main')"
+assert "git clean -fd denied" deny "$(run_hook 'git clean -fd')"
+assert "drop table denied" deny "$(run_hook 'mysql -e DROP TABLE users')"
+
+# ── 红队绕过变体拦截 ──
+assert "rm -fr (flag order) denied" deny "$(run_hook 'rm -fr /')"
+assert "rm long flags denied" deny "$(run_hook 'rm --recursive --force /')"
+assert "rm double-space denied" deny "$(run_hook 'rm  -rf  /')"
+assert "rm HOME denied" deny "$(run_hook 'rm -rf $HOME')"
+assert "push trailing --force denied" deny "$(run_hook 'git push origin main --force')"
+assert "push -f denied" deny "$(run_hook 'git push origin -f')"
+assert "git -c prefix reset denied" deny "$(run_hook 'git -c x=y reset --hard')"
+assert "clean -df (flag order) denied" deny "$(run_hook 'git clean -df')"
+assert "clean split flags denied" deny "$(run_hook 'git clean -f -d')"
+assert "piped rm denied" deny "$(run_hook 'echo go | rm -rf /')"
 
 echo
 echo "passed: $PASS, failed: $FAIL"

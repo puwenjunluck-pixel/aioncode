@@ -14,7 +14,7 @@ Browser-driven QA: discover bugs with evidence, write reports, optionally fix is
 You are a **QA engineer with optional browser access**. With a browser tool you navigate the running app like a real user; without one you trace test paths through the code statically. Either way: bugs need evidence, classification by severity and ownership, and a report `/aion:fix` can consume.
 
 > ⚠️ **CRITICAL**: Only fix bugs with clear evidence (browser reproduction, or `file:line` static evidence). NEVER guess at bugs you haven't substantiated. This is the #1 failure mode of this skill.
-> ⚠️ **CRITICAL**: 浏览器自动化**仅允许在 QA 场景**使用（项目 pitfalls 硬规则，无例外）。不要让本 skill 的浏览器会话泄漏到其他工作流。
+> ⚠️ **CRITICAL**: 浏览器自动化**仅允许在 /aion:qa 与 /aion:scan --url 两种模式**使用（项目 pitfalls 硬规则，无例外）。不要让本 skill 的浏览器会话泄漏到其他工作流。
 
 ### Auto Mode (`--auto`)
 
@@ -65,7 +65,7 @@ You are a **QA engineer with optional browser access**. With a browser tool you 
 ## Step 3 — Bug Classification
 
 - **Severity**: P0 crashes/data loss/security/payment-auth broken · P1 core journey broken · P2 有 workaround · P3 cosmetic
-- **Type**（角色标签，供 `/aion:fix` 按角色消费）: `F-` frontend（UI/渲染/JS）· `B-` backend（API/数据/server）· `X-` cross-cutting
+- **Type**（角色标签，供 `/aion:fix` 按角色消费）: `F-` frontend（UI/渲染/JS）· `B-` backend（API/数据/server）· `X-` cross-cutting。映射说明：frontmatter `type: cross` ↔ 文件名前缀 `X-` — 跨切 bug 在 /aion:fix 中对 frontend 与 backend 两个角色 scope 都纳入
 - **Auto-classification**: HTTP 4xx/5xx → `B-`；视觉/布局/console error → `F-`；API 数据对但 UI 错 → `F-`；API 数据错 → `B-`；auth/session → `X-`
 - **Risk keywords → 自动升 P0**: payment/billing/checkout · auth/login/password/token/permission · data loss/delete/reset/migration
 - **Bug ID**: `{F|B|X}-{MMDD}-{SEQ:03d}`（e.g. `F-0612-001`）
@@ -119,7 +119,7 @@ P0 → P1；P2/P3 除非用户显式要求否则跳过。每个 bug：
 2. Reuse Scan — 搜索代码库中类似修复模式
 3. 最小修改解决根因
 4. **验证**：浏览器路径 → 重导航到 bug URL 复现步骤确认已解决；静态路径 → 跑对应测试/静态核对。未修好 → 换方法（每 bug 最多 2 次尝试）
-5. **原子提交**：`fix(bug): {BUG-ID} {title}` — commit message **必须严格以 `fix(bug): ` 开头**（门禁 hook 豁免格式），一 bug 一 commit
+5. **原子提交**：`fix(bug): {BUG-ID} {title}` — 提交信息**必须以 `fix(bug): ` 开头**（hook 锚定校验，门禁豁免格式），一 bug 一 commit
 6. 更新 bug 状态 `open` → `fixed`，加 `fixed_by_commit: {hash}`
 
 **Regression**（全部修完后）：重测所有已测页面/路径 + 核心用户旅程 smoke test，确认没引入新问题。
@@ -137,7 +137,7 @@ Regression: {PASS | issues found}
 ## Next Steps
 
 - report-only 后：`/aion:fix {BUG-ID}` 按角色消费 bug 报告
-- fix mode 后：`/aion:review` 审查修复，再 `/aion:commit`
+- fix mode 后：`/aion:review` 对修复批次做事后审查（原子提交已在 fix mode 内以 `fix(bug): ` 前缀完成，无需再 `/aion:commit`）
 
 ## Checklist
 
@@ -153,11 +153,11 @@ Regression: {PASS | issues found}
 
 | Violation | Why it fails | Severity |
 |-----------|-------------|----------|
-| 在 QA 场景之外发起浏览器自动化 | 违反项目 pitfalls 硬规则；耗 token 且超出作用域，**无例外** | CRITICAL |
+| 在 /aion:qa 与 /aion:scan --url 两种模式之外发起浏览器自动化 | 违反项目 pitfalls 硬规则；耗 token 且超出作用域，**无例外** | CRITICAL |
 | Fixing bugs without evidence | 猜根因会引入新 bug | CRITICAL |
 | 浏览器不可用时直接 BLOCKED 退出 | 静态路径仍能产出有价值的报告和测试建议 | HIGH |
 | 静态发现不标 `suspected` 就直接修 | 未复现的 bug 修复无法验证 | HIGH |
-| 不重导航/重测就声称修好 | Fix may not actually resolve the issue（Iron Law 2） | HIGH |
+| 不重导航/重测就声称修好 | Fix may not actually resolve the issue（metacognition RULE 2: NO COMPLETION WITHOUT VERIFICATION） | HIGH |
 | 多个 bug 修复合进一个 commit | 无法 bisect 或单独 revert；破坏 `fix(bug):` 门禁契约 | HIGH |
 | 修复后跳过回归测试 | 修复可能破坏其他功能 | HIGH |
 | 无关键词证据就升级 severity | 虚增 critical 数量 | MEDIUM |
@@ -170,7 +170,7 @@ Regression: {PASS | issues found}
 | "没有浏览器工具，这次 QA 做不了" | 静态路径就是为此设计的。降级 ≠ 放弃。 |
 | "顺手把这几个 bug 一起提交" | 一 bug 一 commit 是 `/aion:fix` 和门禁 hook 的契约。 |
 | "修完了，应该没问题" | Should ≠ does。重导航或跑测试，看到证据再说 fixed。 |
-| "别的命令里开下浏览器也没事" | pitfalls 规则无例外。浏览器只属于 QA 场景。 |
+| "别的命令里开下浏览器也没事" | pitfalls 规则无例外。浏览器仅允许在 /aion:qa 与 /aion:scan --url 两种模式。 |
 
 ## Exit Status
 

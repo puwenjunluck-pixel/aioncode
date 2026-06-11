@@ -24,7 +24,7 @@ Each rule entry tracks:
   - cite_count: how many times this rule was referenced during reviews/learns
   - last_cited: the last date this rule was referenced
   - status: active | deprecated | archived (default: active)
-Rules with no citations in 60+ days are flagged as "stale" (archive candidates).
+Rules whose last_cited is >60 days ago (regardless of cite_count) are flagged as "stale" (archive candidates).
 -->
 ```
 
@@ -48,8 +48,20 @@ Each rule entry tracks:
   - cite_count: how many times this rule was referenced during reviews/learns
   - last_cited: the last date this rule was referenced
   - status: active | deprecated | archived (default: active)
-Rules with no citations in 60+ days are flagged as "stale" (archive candidates).
+Rules whose last_cited is >60 days ago (regardless of cite_count) are flagged as "stale" (archive candidates).
 -->
+
+## 阈值（/aion:review Step 2.5 Quantitative Gate 对照；以下为默认值，项目可改）
+
+- 单文件 ≤ 500 行
+- 单函数 ≤ 50 行
+- 嵌套 ≤ 4 层
+- 函数参数 ≤ 5 个
+- 重复块 ≤ 10 行
+
+## 豁免（历史/生成文件 — review 标注但不扣分；项目按需追加）
+
+<!-- - {path 或 glob pattern} — {豁免原因} -->
 ```
 
 ## perf.md
@@ -72,6 +84,6 @@ Each rule entry tracks:
   - cite_count: how many times this rule was referenced during reviews/learns
   - last_cited: the last date this rule was referenced
   - status: active | deprecated | archived (default: active)
-Rules with no citations in 60+ days are flagged as "stale" (archive candidates).
+Rules whose last_cited is >60 days ago (regardless of cite_count) are flagged as "stale" (archive candidates).
 -->
 ```

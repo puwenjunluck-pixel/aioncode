@@ -7,7 +7,7 @@ description: 安全提交 — 生成 commit message、用户确认后执行 git 
 
 Generate a commit message, execute the commit safely, and update the changelog.
 
-**Arguments**: 可选的提交上下文；`amend` 修正上一个 commit；`--auto` / `-y`（bug 关联自动化；commit 确认照常）。
+**Arguments**: 可选的提交上下文；`amend` 修正上一个 commit（amend 时 HEAD 为上次提交，原 review 的 `base_commit` 必然过期 — 需重跑 `/aion:review` 或确认命中豁免）；`--auto` / `-y`（bug 关联自动化；commit 确认照常）。
 
 ## Role
 
@@ -26,7 +26,7 @@ You are a **disciplined release engineer** — always show the user exactly what
 
 ## Review Gate — 机械门禁（PreToolUse hook 强制）
 
-review→commit 门禁不再靠自觉：`scripts/check-review.sh`（由 /aion:init 安装为 PreToolUse hook）在每次 `git commit` 时检查 `.aion/reviews/*.md` — 若不存在 frontmatter 满足 `status: approved` 且 `base_commit == 当前 HEAD` 且 `reviewed_files` 覆盖全部 staged 非 `.aion/` 文件的 review，commit 被直接 **deny**（`-a/-am/--all` 时未 staged 的 tracked 改动也计入；hook 解析失败时 fail-open，行为层仍是第一道防线）。
+review→commit 门禁不再靠自觉：`scripts/check-review.sh`（随 Aion 插件自动注册（hooks/hooks.json）的 PreToolUse hook，宿主项目存在 `.aion/` 即生效）在每次 `git commit` 时检查 `.aion/reviews/*.md` — 若不存在 frontmatter 满足 `status: approved` 且 `base_commit == 当前 HEAD` 的 review，或这些 review 的 `reviewed_files` **并集**未覆盖全部 staged 非 `.aion/` 文件，commit 被直接 **deny**（`-a/-am/--all` 时未 staged 的 tracked 改动也计入；hook 解析失败时 fail-open，行为层仍是第一道防线）。
 
 **行为层指引（别等 hook 拦）**：
 1. commit 前先确认 `.aion/reviews/` 有覆盖本次改动的 approved review；没有 → 先跑 `/aion:review`
@@ -38,7 +38,7 @@ review→commit 门禁不再靠自觉：`scripts/check-review.sh`（由 /aion:in
 - **NEVER 绕过**：不要为过门禁给消息加 `fix(bug):` 前缀、不要临时 unstage 文件、不要修改/禁用 hook
 
 **豁免（与 hook 实现完全一致 — 自动判定，无手动跳过）**：
-1. 提交信息以 `fix(bug):` 开头的原子修复（来自 /aion:fix、/aion:qa）
+1. 提交信息以 `fix(bug): ` 开头的原子修复（hook 锚定校验该前缀；来自 /aion:fix、/aion:qa）
 2. staged 文件全部在 `.aion/` 下（纯工件层 bookkeeping）
 3. 宿主项目无 `.aion/` 目录（hook 放行，本 skill 走普通规范提交）
 
@@ -49,7 +49,7 @@ review→commit 门禁不再靠自觉：`scripts/check-review.sh`（由 /aion:in
 ### Step 0: Context Loading
 1. Read the most recent `.aion/specs/` spec（feature 上下文）与 `.aion/reviews/` review（结论与 score）
 2. Read `.aion/rules/` — 确认有无提交规范类规则
-3. Check `.aion/bugs/` 中 `status: in-progress` 的 bug — 可能与本次提交相关
+3. Check `.aion/bugs/` 中 `status: open` 的 bug — 可能与本次提交相关
 4. **`.aion/` 不存在时优雅降级**：跳过 Step 0 / 4.5 / 4.7 / 5（无工件层），门禁 hook 也会放行，按 Step 1-4 走普通规范提交
 
 ### Step 1: Assess Changes
@@ -73,13 +73,13 @@ Rules：subject ≤ 50 字符；body 解释 WHY 不只是 WHAT；可引用 spec/
 
 ### Step 4: Execute Commit
 1. `git add` 指定文件名（优先于 `git add .`）
-2. `git commit`（多行消息用 HEREDOC）；参数为 `amend` 时用 `git commit --amend`，但同样先展示 delta
+2. `git commit`（多行消息用 HEREDOC）；参数为 `amend` 时用 `git commit --amend`，但同样先展示 delta。注意：amend 时 HEAD 为上次提交，原 review 的 `base_commit` 必然过期 — 需重跑 `/aion:review` 或确认命中豁免
 3. `git log -1` 验证提交成功
 
 ### Step 4.5: Bug Linking (conditional)
-`.aion/bugs/` 有 in-progress bug 且改动文件与其 evidence 位置 overlap 时：
+`.aion/bugs/` 有 `status: open` 的 bug 且改动文件与其 evidence 位置 overlap 时：
 1. 问用户是否关联（`--auto`：直接关联，log "Auto-linked Bug {ID}"）
-2. 确认后：有 `verify_test` 则运行 — 通过 → bug `status: fixed` + `fixed_by_commit`；失败 → 保持 in-progress 并警告。无 `verify_test` → 标 fixed 但加 `[NO_TEST_VERIFY]` 注记。更新 `updated_at`
+2. 确认后：有 `verify_test` 则运行 — 通过 → bug `status: fixed` + `fixed_by_commit`；失败 → 保持 open 并警告。无 `verify_test` → 标 fixed 但加 `[NO_TEST_VERIFY]` 注记。更新 `updated_at`
 3. 关联时 commit message 含 `fix(bug): {BUG-ID}`
 
 ### Step 4.7: Tech Debt Scan

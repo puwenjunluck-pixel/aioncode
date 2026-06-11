@@ -15,7 +15,7 @@
 
 ```yaml
 ---
-status: completed              # draft | in_review | completed | archived
+status: in_review              # draft | in_review | completed | archived — Phase 9 用户批准后改为 completed
 created_at: {YYYY-MM-DD}
 version: 1
 author: {current user, or "unknown"}

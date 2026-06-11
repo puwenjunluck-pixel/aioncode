@@ -24,7 +24,7 @@ description: 讨论·碰撞·思考·目标对齐 — 把模糊想法收敛为�
 
 ## TodoWrite 驱动
 
-命令启动时，**必须**用 TodoWrite 建立 10 个 phase 的 todo（按下方标题），每进入一个 phase 标 in_progress，完成标 completed。这不是建议，是**硬要求** — 这是本命令与普通对话的核心区别。
+命令启动时，**必须**用 TodoWrite 建立 Phase 1-10（含条件性 1.5 与 10.1）的 todo（按下方标题），每进入一个 phase 标 in_progress，完成标 completed。这不是建议，是**硬要求** — 这是本命令与普通对话的核心区别。
 
 ---
 
@@ -112,22 +112,24 @@ description: 讨论·碰撞·思考·目标对齐 — 把模糊想法收敛为�
 
 > "Spec 已写入 `{path}`。请 review 一遍，有要改的告诉我，之后进入实现计划阶段。"
 
-等用户回复。提修改 → 应用 → 重跑 Phase 8 → 再问。循环直到批准。没有批准，不进 Phase 10。
+等用户回复。提修改 → 应用 → 重跑 Phase 8 → 再问。循环直到批准。批准后将 spec frontmatter `status` 改为 `completed`。没有批准，不进 Phase 10。
 
-## Phase 10 — 主动建议过渡到 plan
+## Phase 10 — _product.md 传播 + 主动建议过渡到 plan
 
-spec 批准后立刻建议：
+### Phase 10.1 — _product.md 自动传播（spec 获 Phase 9 批准后立即执行，先于 10.2 的选项）
+
+按 `references/product-template.md` 结构更新 `.aion/specs/_product.md`：不存在则初始化（内容标 `[from:spec]`, confidence: low）；存在则增量追加功能地图/业务流程（**不**覆盖 `[CONFIRMED]` 项），更新 `updated_at`。汇报增量。
+
+### Phase 10.2 — 主动建议进入 plan
+
+传播完成后立刻建议：
 
 > "Spec 已收敛。是否现在进入 **plan** 阶段？
 >  - (a) 是，直接进入（我会读 spec + 探索代码库 + 生成 bite-sized plan）
 >  - (b) 先暂停，我想再想想
 >  - (c) 我要手动修 spec"
 
-选 (a)：**立即执行 plan skill 流程**（`/aion:plan` 的内容，不要求用户显式输入命令）。选 (b)/(c)：退出，spec 保留。
-
-### Phase 10.1 — _product.md 自动传播
-
-按 `references/product-template.md` 结构更新 `.aion/specs/_product.md`：不存在则初始化（内容标 `[from:spec]`, confidence: low）；存在则增量追加功能地图/业务流程（**不**覆盖 `[CONFIRMED]` 项），更新 `updated_at`。汇报增量。
+选 (a)：**立即执行 plan skill 流程**（`/aion:plan` 的内容，不要求用户显式输入命令）。选 (b)/(c)：退出，spec 保留（_product.md 传播已在 10.1 完成，不受影响）。
 
 ---
 
@@ -140,8 +142,8 @@ spec 批准后立刻建议：
 - [ ] Phase 6 逐章节获批
 - [ ] Phase 7 Version Check 执行，格式按 spec-template
 - [ ] Phase 8 自审 + Placeholder scan 通过
-- [ ] Phase 9 用户复核通过
-- [ ] Phase 10 主动建议 + _product.md 传播完成
+- [ ] Phase 9 用户复核通过（批准后 spec frontmatter status 改为 completed）
+- [ ] Phase 10：_product.md 传播（10.1，先于建议选项）+ 主动建议进入 plan（10.2）完成
 - [ ] TodoWrite 全程驱动
 
 ## Anti-Patterns

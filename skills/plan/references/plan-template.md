@@ -40,8 +40,8 @@ total_steps: {N}
 ```markdown
 # Plan: {Feature Name}
 
-> **For agentic workers:** 用 subagent 逐 task 执行（推荐）或在当前会话逐 task 执行
-> （也可用 /aion:loop 自动流水线）。Steps 使用 `- [ ]` checkbox 跟踪。
+> **For agentic workers:** 用 Agent 工具逐 task 流水线执行（推荐），或在当前会话逐 task 执行。
+> Steps 使用 `- [ ]` checkbox 跟踪。
 
 **Goal:** {One sentence describing what this builds}
 
@@ -160,7 +160,7 @@ total_steps: {N}
 > **(b) Inline** — 本会话内逐 task 执行,每 task 完成后 pause 供 review
 > **(c) 暂不执行** — 保留 plan,后续再触发
 
-若选 (a):用 Agent 工具逐 task 派发,或 `/aion:loop` 自动流水线。
+若选 (a):用 Agent 工具逐 task 流水线派发执行。
 若选 (b):在当前会话逐 task 执行,按每个 step 的 Verify 验证,checkpoint 分批 review。
 若选 (c):退出,plan 保留供后续触发。
 

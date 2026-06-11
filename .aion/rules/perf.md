@@ -15,5 +15,5 @@ Each rule entry tracks:
   - cite_count: how many times this rule was referenced during reviews/learns
   - last_cited: the last date this rule was referenced
   - status: active | deprecated | archived (default: active)
-Rules with no citations in 60+ days are flagged as "stale" by aion-status.
+Rules with no citations in 60+ days are flagged as "stale" by `bash scripts/rules-status.sh`（机械扫描）.
 -->

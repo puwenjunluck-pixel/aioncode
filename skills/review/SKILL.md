@@ -9,7 +9,7 @@ Review code changes, score quality, extract reusable rules, and write a review r
 
 **Arguments**: 可选指定文件或 "all"。`--quick`（跳过 test gap 分析）| `--deep`（全项目审计，见 Deep Mode）| `--auto`（AUTO-FIX 类自动应用，ASK 类跳过并记录）。为空 = 审查全部未提交改动。
 
-## Iron Laws（不可协商 — 宿主 `.aion/rules/metacognition.md` 存在时以宿主版为准）
+## Review Laws（不可协商 — 宿主 `.claude/rules/metacognition.md`（由 /aion:init 安装）存在时以宿主版为准）
 
 ```
 1. NO REVIEW WITHOUT READING FULL FILE（不是只看 diff）
@@ -52,7 +52,7 @@ Review code changes, score quality, extract reusable rules, and write a review r
 
 对照 `rules/style.md` 阈值：文件 >500 行 / 函数 >50 行 / 嵌套 >4 层 / 参数 >5 个 / 重复块 >10 行 → 各计 WARNING，每个从 Code Quality 扣 5 分。输出 metrics 表。历史豁免文件标注但不扣分；新代码超标必须列为 issue。
 
-## Step 2.8 — Verification Gate（Iron Law 2）
+## Step 2.8 — Verification Gate（Review Law 2）
 
 打分前必须**在本 session** 跑验证命令：识别（什么命令证明代码真的能跑）→ 执行 → 读完整输出/exit code → 记入报告 `Verification` 段。
 
@@ -63,7 +63,7 @@ Review code changes, score quality, extract reusable rules, and write a review r
 | "Bug 修好了" | 原始复现用例现在通过 |
 | "需求全部满足" | 逐条 P0 checklist 核对 |
 
-**未跑验证 = 不能 approve**，verdict 降为 `needs_fix`。唯一豁免出口：纯文档/配置变更，报告明确标 `Verification: N/A — pure doc/config` 并写明判断依据。
+**未跑验证 = 不能 approve**，verdict 降为 `needs_fix`。豁免出口一：纯文档/配置变更，报告明确标 `Verification: N/A — pure doc/config` 并写明判断依据。豁免出口二（绿地项目）：项目无任何测试基建时，最小冒烟验证（运行入口文件 / 一条手写断言命令）可作为合法证据等级 — 报告中标注 `Verification: smoke-only` 并建议补测试基建。
 
 ## Step 3 — Score & Verdict
 
@@ -84,7 +84,7 @@ Score 0-100 = **Code Quality（40）+ Security（30）+ Spec Compliance（30）*
 
 ### 4c 引用更新 + 退役建议（学习飞轮的出口 — MUST，不可跳过）
 1. 本次 review 引用过的每条规则（违反或遵守都算）：`cite_count` +1，`last_cited` = 今天；缺元数据的条目补 `[cite_count: 1, last_cited: 今天]`
-2. **退役扫描**：遍历 `.aion/rules/`，找出 `cite_count: 0` 且 `last_cited` 距今 **>60 天**的规则，列表呈现给用户并建议标 `status: archived` — 用户确认后才改标记，**NEVER 自动删除规则内容**
+2. **退役扫描**：遍历 `.aion/rules/`，找出 `last_cited` 距今 **>60 天**的规则（无论 cite_count），列表呈现给用户并建议标 `status: archived` — 用户确认后才改标记，**NEVER 自动删除规则内容**
 3. 更新各规则文件 frontmatter 的 `last_updated` 与 `rule_count`
 
 ## Step 5 — 写 Review 报告（commit 门禁联动）
@@ -95,7 +95,6 @@ Score 0-100 = **Code Quality（40）+ Security（30）+ Spec Compliance（30）*
 ---
 status: {approved | needs_fix}
 score: {N}
-verdict: {approved | needs_fix}
 issues_found: {N}
 rules_extracted: {N}
 reviewed_at: {YYYY-MM-DD}
@@ -107,7 +106,7 @@ base_commit: {`git rev-parse --short HEAD` 的输出}
 
 # Review: {Feature Name}
 ## Score: {N}/100
-**Verdict**: {approved | needs_fix}
+**Verdict**: {approved | needs_fix}（展示用 — frontmatter `status` 为唯一机读权威，hook 只读 status）
 ### Dimension Scores
 - Code Quality: {N}/40
 - Security: {N}/30
@@ -120,7 +119,7 @@ base_commit: {`git rev-parse --short HEAD` 的输出}
 - Added to `rules/{category}.md`: {title}；建议归档：{list 或 none}
 ```
 
-**Hook 联动（为什么必填）**：`scripts/check-review.sh` 是 PreToolUse hook，拦截 `git commit`，只放行同时满足三条的提交：① 存在 `status: approved` 的 review；② 其 `base_commit` == 当前 HEAD（short 或 full hash）；③ staged 文件 ⊆ 满足①②的所有 review 的 `reviewed_files` 并集。推论：路径必须是 repo 相对路径；review 之后又改了文件 → 把新文件补入 `reviewed_files` 重审或重新 review，否则门禁拒绝。门禁豁免（hook 内置）：纯 `.aion/` 提交、`fix(bug):` 前缀提交、非 aion 项目。
+**Hook 联动（为什么必填）**：`scripts/check-review.sh` 是 PreToolUse hook，拦截 `git commit`，只放行同时满足三条的提交：① 存在 `status: approved` 的 review；② 其 `base_commit` == 当前 HEAD（short 或 full hash）；③ staged 文件 ⊆ 满足①②的所有 review 的 `reviewed_files` 并集。推论：路径必须是 repo 相对路径；review 之后又改了文件 → 把新文件补入 `reviewed_files` 重审或重新 review，否则门禁拒绝。门禁豁免（hook 内置）：纯 `.aion/` 提交、提交信息以 `fix(bug): ` 开头的提交（hook 锚定校验）、非 aion 项目。
 
 ## Step 5.5 — Auto-Fix Loop（verdict = needs_fix 时）
 
@@ -186,8 +185,8 @@ base_commit: {`git rev-parse --short HEAD` 的输出}
 | "写代码时我已经在脑子里 review 过了" | 自审客观性为 0。新鲜眼睛才能看见熟悉感掩盖的东西 |
 | "只是 refactor，不会坏" | "不可能坏"的 refactor 是回归的 #1 来源 |
 | "测试过了，肯定没问题" | 测试只验证你想到要测的。review 抓你没想到的 |
-| "上次跑过验证了" | Iron Law 2：只有本 session 的证据才算数 |
-| "这条老规则也许还有用，先留着" | 0 引用 + 60 天 = 建议归档。留着的成本是每次 review 都要读它 |
+| "上次跑过验证了" | Review Law 2：只有本 session 的证据才算数 |
+| "这条老规则也许还有用，先留着" | last_cited 距今 >60 天（无论 cite_count）= 建议归档。留着的成本是每次 review 都要读它 |
 | "代码库太大，--deep 抽几个文件看看" | 审计 = 全量扫描。用 `--ignore` 显式排除，不要静默抽样 |
 
 ## Exit Status

@@ -25,7 +25,7 @@ Commands that write to `.aion/` MUST follow this protocol. Before ANY write oper
 ### Versioned (design artifacts with history)
 
 **Files**: `specs/*.md`, `plans/*.md`
-**Commands**: think, plan, save
+**Commands**: think, plan, save, scan（`specs/_product.md` 由 scan 以 Versioned 写）
 
 **Rules**:
 1. Before writing, check if a file with the same name exists in the target directory.
@@ -63,7 +63,7 @@ created_at: {YYYY-MM-DD}
 
 ### Regenerable (derived from analysis)
 
-**Files**: `refs/*`, `checklists/*`, `tests/reports/*`, `tests/perf/*`, `tests/ui/*`, `contracts/*`
+**Files**: `refs/*`, `tests/e2e/*`, `contracts/*`, `checklists/*`
 **Commands**: scan, qa
 
 **Rules**:

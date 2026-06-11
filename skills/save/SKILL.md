@@ -47,7 +47,7 @@ description: 会话工件落盘 — 把本次会话的关键决策、未落盘�
 
 - **changelog**（Accumulative）：先读全文 → 语义去重（已记录则跳过并告知）→ 追加条目：`## {YYYY-MM-DD HH:MM} | Context Save`，含 Summary / Key Conclusions / Pending 三段。即使其他类型无内容，changelog 条目也总是追加。
 - **specs / plans**（Versioned）：同名文件存在 → 读完整内容、展示 diff 摘要、A) 版本归档（推荐）/ B) 覆盖 / C) 新文件名；不存在 → 仅当对话材料足够支撑时才新建（半生不熟的 spec 比没有更糟）。
-- **rules**（Accumulative）：先读现有规则去重，格式 `- **{Title}** ({source}, {date})`。
+- **rules**（Accumulative）：先读现有规则去重，格式 `- **{Title}** ({source}, {date}) [cite_count: 0, last_cited: {date}]`。
 
 ### Step 4 — 报告
 

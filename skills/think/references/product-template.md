@@ -8,8 +8,12 @@
 ```yaml
 ---
 product: {产品名}
+version: {N}                       # Versioned 标准字段
+author: {from team.yml or "unknown"}
+scope: full                        # Versioned 标准字段；_product.md 固定为 full
+change_reason: "{reason, null for v1}"
 updated_at: {YYYY-MM-DD}
-generation_method: scan | spec-propagation
+generation_method: scan | scan+file | scan+explore | scan+file+explore | spec-propagation
 confidence: high | medium | low
 sources:
   - code-scan | spec:{name}.md | user-confirmed

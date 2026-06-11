@@ -26,10 +26,12 @@ description: 初始化/升级 Aion 工作流层 — 创建 .aion/ 工件层、�
 
 逐项检查以下条目，分类为 **新装** / **相同（skip）** / **不同（diff + 询问）**：
 
-1. `.aion/` 各子目录与 `.aion/changelog.md`
-2. `.aion/rules/pitfalls.md` / `style.md` / `perf.md`（读 frontmatter 的 `rule_count`）
-3. `.claude/rules/metacognition.md` — 与 `references/metacognition.md` 逐字节比对
-4. `.claude/CLAUDE.md` — 是否存在；是否已有 `AION:START/END` 标记对；标记间内容是否与 `references/claude-md-section.md` 一致
+1. **git 仓库检测**：`git rev-parse --git-dir` 失败 → 非 git 仓库。引导用户先 `git init`，并如实说明「门禁 hook 在非 git 目录不生效」；用户选择不建仓也可继续安装其余资产，但摘要中必须标注此限制
+2. `.aion/` 各子目录与 `.aion/changelog.md`
+3. `.aion/rules/pitfalls.md` / `style.md` / `perf.md`（读 frontmatter 的 `rule_count`）
+4. `.claude/rules/metacognition.md` — 与 `references/metacognition.md` 逐字节比对
+5. `.claude/CLAUDE.md` — 是否存在；是否已有 `AION:START/END` 标记对；标记间内容是否与 `references/claude-md-section.md` 一致
+6. **根目录 `./CLAUDE.md` 检测**：存在时询问用户将 Aion 工作流段合并进根目录 `./CLAUDE.md` 还是 `.claude/CLAUDE.md`（Phase 4 按用户选择的目标执行）— **绝不静默造出第二份**
 
 输出一张**安装计划表**（条目 / 当前状态 / 将执行的动作），再进入 Phase 2。
 若发现标记残缺（只有 START 没有 END，或顺序颠倒）→ 不要猜测边界，展示上下文问用户如何处理，未决前跳过条目 3。
@@ -63,7 +65,7 @@ NEVER 截断、改写或"精简"规则内容 — 元认知规则是产品核心�
 
 ## Phase 4 — 合并 CLAUDE.md 工作流段
 
-以 `references/claude-md-section.md` 的**完整内容**（含首尾标记行）为待合并块：
+以 `references/claude-md-section.md` 的**完整内容**（含首尾标记行）为待合并块；目标文件默认 `.claude/CLAUDE.md`，根目录 `./CLAUDE.md` 存在时按 Phase 1 中用户的选择执行（绝不同时写两份）：
 
 | 宿主状态 | 动作 |
 |---|---|
@@ -82,13 +84,13 @@ NEVER 截断、改写或"精简"规则内容 — 元认知规则是产品核心�
    > 安装完成。下一步：
    > - 新项目从 `/aion:think` 开始 — 把想法收敛为 spec
    > - 接手已有项目先跑 `/aion:scan` — 冷启动扫描
-   > - 提交用 `/aion:commit`（门禁 hook 已激活，review 先行）
+   > - 提交用 `/aion:commit`（门禁 hook 随插件已生效 — 仅在 git 仓库 + `.aion/` 存在时拦截，review 先行）
 
 ---
 
 ## Checklist
 
-- [ ] Phase 1 安装计划表已输出，分类清楚
+- [ ] Phase 1 安装计划表已输出，分类清楚（含 git 仓库与根目录 `./CLAUDE.md` 检测）
 - [ ] Phase 2 目录齐全，已有规则文件未被覆盖
 - [ ] Phase 3 metacognition 逐字节写入，差异时三选项询问
 - [ ] Phase 4 仅动标记间内容，用户内容零改动

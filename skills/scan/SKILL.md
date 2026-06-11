@@ -72,12 +72,12 @@ Write Protocol category: **Versioned**。结构按 `../think/references/product-
 
 ## Step 3 — 规则种子（`.aion/rules/`）
 
-Write Protocol category: **Regenerable**（fingerprint 机制）。每条规则标 `[from:code]`：
+Write Protocol category: **Accumulative**（先读去重、只追加、NEVER 覆盖）。每条规则标 `[from:code]`：
 
 - **style.md** ← linter 配置 + 代表性代码模式（命名/结构约定）
 - **pitfalls.md** ← git log 的 fix commits + 危险代码模式
 
-格式：`- **{约定}** (scan, {date}) [from:code]` + 一行带本项目实例的说明。**只写有证据的规则** — 找不到证据就不写。
+格式：`- **{约定}** (scan, {date}) [from:code] [cite_count: 0, last_cited: {date}]` + 一行带本项目实例的说明。**只写有证据的规则** — 找不到证据就不写。
 
 **RE_SCAN**：先读全部既有规则（Refusal Condition — 不读不许写）；新发现的约定**逐条向用户提议后追加**；疑似过时的规则只标注、不修改。NEVER 覆盖已有条目。
 
@@ -147,7 +147,7 @@ Suggest: {后续建议}
 - [ ] `--file`：转换/回退/分类/`[from:file]` 标注完成
 - [ ] `--url`：工具检测 → live 或 static 回退，截图入 refs/screenshots/
 - [ ] `_product.md` 按 product-template 生成/增量，`[CONFIRMED]` 未被覆盖
-- [ ] 规则种子全部有证据 + `[from:code]` + fingerprint
+- [ ] 规则种子全部有证据 + `[from:code]`（Accumulative：先读去重、只追加）
 - [ ] E2E 定义多源生成，Then 全部可验证
 - [ ] 产品确认 Q&A 完成，confidence 已更新
 - [ ] RE_SCAN：Delta Report 已呈现

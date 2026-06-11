@@ -21,6 +21,9 @@ jobs:
       - name: Safety hook test suite
         run: bash tests/hook/test_safety_check.sh
 
+      - name: Rules status test suite
+        run: bash tests/hook/test_rules_status.sh
+
   consistency:
     runs-on: ubuntu-latest
     steps:
