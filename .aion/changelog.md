@@ -2,6 +2,34 @@
 
 <!-- AionCode auto-appends entries here. Do not remove this file. -->
 
+## 2026-06-12 | milestone(v0.8.0): 三轮对抗复评 — 内容质量达领先水平
+
+### Summary
+基于 superpowers 5.1.0 本地源做三轮对抗性复评（每轮多代理独立视角，明确要求"找出 Aion 输的地方"）。第三轮终评判定：**零 high、零 critical、回归全干净，内容质量已达同类插件领先水平**。主干路径经第三方代理在临时仓库端到端实测零阻断。
+
+### 三轮收敛
+- **第一轮**：5 个纪律 GAP（RCA 门控 / TDD 缺失 / 调试工具链 / receiving-feedback 压缩 / 优先级矛盾）+ 飞轮判"不成立" + 4 个 hook fail-open 绕过 + 8 个旅程摩擦
+- **第二轮**：5 GAP 全闭合、飞轮升"部分成立"、工件闭环达标；新揪出 dogfood 破功（C-1：自身 metacognition 缺三补丁）+ hook 残留漏洞
+- **第三轮**：零 high；剩 1 medium + 4 low 全修
+
+### 领先点（vs superpowers，均带 file:line 证据）
+1. **机械强制力**（最大代差）：PreToolUse hook 门禁 + 安全拦截，superpowers 全靠行为自觉
+2. **学习飞轮 + 工件闭环**：rules-status.sh 机械扫描 + cite_count + `.aion/` 持久工件，superpowers 无
+3. **receiving-feedback 证据硬化**：pushback 强制带 file:line，比 superpowers 原版更严
+
+### 唯一非 high 短板
+TDD 纪律鼓励密度落后（superpowers test-driven-development 是带红绿图/反例的 rigid skill；Aion 核心精神全在但缺独立高反例密度文档）。质量上限差距，不构成缺陷。
+
+### Verification
+- 三 hook 测试套 54 例全过（含两轮红队对抗用例）；`claude plugin validate .` 通过；死引用 0
+- 飞轮真实维护：本仓库规则库 stale 23→5、归档 18 条，全程 git 留痕
+- review 记录：red-team-round{1,2,3} + wave2 共 4 份（均含 reviewed_files+base_commit）
+
+### 待用户侧动作（非我能执行）
+git push、仓库转公开、提交 community marketplace（platform.claude.com/plugins/submit）
+
+---
+
 ## 2026-06-12 | feat(v0.8.0): 插件形态重生 — P1-P4 完成
 
 ### Summary
