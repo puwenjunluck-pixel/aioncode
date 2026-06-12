@@ -7,12 +7,12 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/safety-check.sh",
-            "timeout": 5000
+            "timeout": 5
           },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/check-review.sh",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
