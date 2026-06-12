@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.1 (2026-06-12)
+
+### Fixed
+- **插件加载失败（发布即坏）**：plugin.json 误声明了 `skills` 与 `hooks` 字段——二者是 Claude Code 标准自动加载位置，显式声明触发运行时「Duplicate hooks file detected」使整个插件 `failed to load`。改为纯元数据 manifest（对齐 superpowers 惯例）。`claude plugin validate` 只校验 schema 不模拟加载，故未提前抓到；第一次真人 `/plugin install` 暴露。
+
 ## 0.8.0 (2026-06-12)
 
 **形态重生：CLI → Claude Code 插件。** 战略背景见 `.aion/specs/contraction-to-plugin.md`。

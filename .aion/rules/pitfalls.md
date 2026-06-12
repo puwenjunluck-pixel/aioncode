@@ -1,6 +1,6 @@
 ---
 category: pitfalls
-rule_count: 4
+rule_count: 5
 last_updated: 2026-06-12
 ---
 
@@ -17,6 +17,9 @@ Each rule entry tracks:
   - status: active | deprecated | archived (default: active)
 Rules with no citations in 60+ days are flagged as "stale" by `bash scripts/rules-status.sh`（机械扫描）.
 -->
+
+- **plugin.json 不要声明标准自动加载位置（skills/、hooks/hooks.json）** (review, 2026-06-12) [cite_count: 1, last_cited: 2026-06-12]
+  Claude Code 自动发现 `skills/` 与自动加载 `hooks/hooks.json`。在 plugin.json 的 `skills`/`hooks` 字段里再显式声明它们会触发运行时「Duplicate hooks file detected」并使**整个插件加载失败**。manifest 只应是元数据 + 指向**额外**（非标准位置）的文件。**关键教训：`claude plugin validate` 只校验 manifest schema 合法性，不模拟运行时加载——validate 通过 ≠ 插件能装**。v0.8.0 因此发布即坏，第一次真人 `/plugin install` 才暴露（`claude plugin list` 显示 `failed to load`）。对照标准：superpowers 的 plugin.json 只有元数据，零 skills/hooks 字段。验收新插件必须以 `claude plugin list` 状态为准，不能只信 validate。
 
 - **uninstall.sh 命令列表必须与 profiles.py 同步** (scan, 2026-03-21, updated 2026-03-26) [cite_count: 0, last_cited: 2026-03-26, status: archived]
   `uninstall.sh` 硬编码命令名用于删除，增删命令时必须同步更新删除列表，否则卸载后残留命令文件。当前核心命令（v0.7 架构）：aion-scan, aion-think, aion-plan, aion-review, aion-qa, aion-fix, aion-commit, aion-loop, aion-save, aion-help。每次命令体系变更后检查 `uninstall.sh`。v0.8 插件化后 `uninstall.sh` 与 `profiles.py` 均已删除，该规则归档。
