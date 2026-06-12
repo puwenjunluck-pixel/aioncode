@@ -96,7 +96,6 @@ review 报告的 frontmatter 含 `reviewed_files` + `base_commit`，hook 做集�
 
 ## 与其他工具的关系
 
-- **superpowers**：Aion 的纪律层（Iron Laws / Verification Gate / 反合理化）基于 superpowers 改编并中文化，见 [CREDITS](CREDITS.md)。差异：Aion 加了机械门禁 hook、`.aion/` 工件闭环和学习飞轮。
 - **原生 `/init` / memory / plan mode**：不竞争，互补。`/aion:scan` 开头第一句就是"代码库通识请用原生 /init"。
 - **从 AionCode CLI（≤ v0.7.6）迁移**：见 [MIGRATION.md](MIGRATION.md)，`.aion/` 数据完全兼容。
 
