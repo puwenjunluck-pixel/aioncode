@@ -23,6 +23,13 @@ assert() {
 
 echo "safety-check.sh test suite"
 
+# ── 执行位（运行时 hooks.json 由 /bin/sh 直接 exec，缺 +x 即 126 拒载 — v0.8.1 事故）──
+if [ -x "$HOOK" ]; then
+  PASS=$((PASS + 1)); echo "  ✓ hook script has exec bit"
+else
+  FAIL=$((FAIL + 1)); echo "  ✗ hook script has exec bit — chmod +x $HOOK"
+fi
+
 # ── 正常命令放行 ──
 assert "normal command allowed" allow "$(run_hook 'ls -la && git status')"
 assert "git commit allowed" allow "$(run_hook 'git commit -m x')"
