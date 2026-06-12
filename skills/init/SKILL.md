@@ -52,7 +52,7 @@ description: 初始化/升级 Aion 工作流层（重复运行 = 幂等升级）
 
 ## Phase 3 — 安装元认知规则
 
-将 `references/metacognition.md` 写入宿主 `.claude/rules/metacognition.md`（先 `mkdir -p .claude/rules`）。这是原生 rules 目录，每会话自动加载。**用文件复制（`cp "$CLAUDE_PLUGIN_ROOT/skills/init/references/metacognition.md" .claude/rules/`）而非读进来再重新输出** — 后者有改写/截断风险。
+将 `references/metacognition.md` 写入宿主 `.claude/rules/metacognition.md`（先 `mkdir -p .claude/rules`）。这是原生 rules 目录，每会话自动加载。**用文件复制（`cp "$CLAUDE_PLUGIN_ROOT/skills/init/references/metacognition.md" .claude/rules/`；`$CLAUDE_PLUGIN_ROOT` 在 Bash 环境常未设置——此时改用本 skill 加载时显示的 Base directory 拼出 `references/metacognition.md` 的绝对路径）而非读进来再重新输出** — 后者有改写/截断风险。
 
 - 不存在 → 直接写入
 - 已存在且内容相同 → skip 并报告
